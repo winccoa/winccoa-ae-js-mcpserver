@@ -1,0 +1,10 @@
+node_modules/
+log/
+
+*.sqlite-*
+*.bak
+*.tmp
+*.rptdesign
+*.wsdl
+*.xltm
+*.xls
