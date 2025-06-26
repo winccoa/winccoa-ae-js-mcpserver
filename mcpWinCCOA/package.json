@@ -1,0 +1,20 @@
+{
+  "type": "module",
+  "bin": {
+    "weather": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc && chmod 755 build/index.js",
+    "inspect": "npx @modelcontextprotocol/inspector"
+  },
+  "files": [
+    "build"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "express": "^5.1.0",
+    "mcp-remote": "^0.1.13",
+    "winccoa-manager": "file:C:/Siemens/Automation/WinCC_OA/3.20/javascript/winccoa-manager",
+    "zod": "^3.25.51"
+  }
+}
