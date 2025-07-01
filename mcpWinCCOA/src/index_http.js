@@ -10,7 +10,12 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import express from 'express';
 import { init_tools } from './tool_oa.js';
 
-const server=init_tools();
+/* Random token generation*/
+import crypto from 'crypto';
+
+const API_TOKEN = '1a89f5420cc0f92318b29552198592e4'; //crypto.randomBytes(16).toString('hex');
+
+const server = init_tools();
 
 // ==================== EXPRESS SERVER SETUP ====================
 
@@ -18,6 +23,19 @@ const app = express();
 app.use(express.json());
 
 app.post('/mcp', async (req, res) => {
+  const token = req.headers['authorization'] || req.body?.token;
+  console.log(token);
+  if (token !== API_TOKEN) {
+    return res.status(401).json({
+      jsonrpc: '2.0',
+      error: {
+        code: -32001,
+        message: 'Unauthorized: Invalid or missing token',
+      },
+      id: null,
+    });
+  }
+  console.log('Received POST MCP request');
   try {
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
