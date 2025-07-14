@@ -8,3 +8,5 @@ log/
 *.wsdl
 *.xltm
 *.xls
+*.presentations
+mcpWinCCOA/build

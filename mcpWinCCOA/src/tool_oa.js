@@ -2,8 +2,12 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 import { z } from 'zod';
 import { WinccoaManager } from 'winccoa-manager'; 
+import { loadFieldConfigurations, getActiveField, parseFieldRules, loadProjectConfiguration, mergeInstructions, mergeRules } from './field_loader.js';
 
 let winccoa=null, server=null;
+let fieldConfigs = {};
+let activeFieldName = 'default';
+let projectConfig = null;
 
 function mkTypesContent(arr, withInternals) {
   const ret = [];
@@ -80,32 +84,64 @@ function init_dp(winccoa, server) {
   });
 
   server.tool("dp-set", `Set value of datapoint element. 
-    Only '*_AI_Assistant' datapoints can beused for manipulation.
-    'Intecity' and 'recipe' setpoints MUST not be used for volume control.
-    'Intecity' and 'recipe' setpoints MUST contain exact values from recipe.
-    DO NOT USE OTHER DATAPIOINTS.
-
-    CRITICAL: After setting any production setpoints, ALWAYS verify actual material consumption using:
-    - Production time
-    - Flow rates  
-    - Valve positions from applied setpoints
-
-    IMPORTANT RECIPE INTERPRETATION:
-    - Recipe percentages (Cyan: 30%, Magenta: 25%, etc.) are VALVE INTENSITY SETPOINTS
-    - They are NOT percentages of the target volume
-    - Material consumption = (setpoint_percentage/100) × flow_rate × production_time
-
-  NEVER calculate material requirements as (percentage/100) × target_volume
-  ALWAYS use the production time and flow rate formula for verification
+    This tool respects field-specific rules and validations.
+    Check the active field configuration using the field://active-instructions resource.
     `, {
     dpeName: z.string(),
     value: z.any(),
   }, async ({ dpeName, value }) => {
-    if (!dpeName.includes('_AI_Assistant'))
-    {
-      return {content: [{type: "text", text: "Only '*_AI_Assistant' datapoints can beused for manipulation. DO NOT USE OTHER DATAPIOINTS."}]}
+    // Get active field rules with project overrides
+    const fieldConfig = fieldConfigs[activeFieldName] || fieldConfigs.default;
+    const fieldRules = parseFieldRules(fieldConfig.content);
+    
+    // Merge with project rules if available
+    let rules = fieldRules;
+    if (projectConfig) {
+      const projectRules = parseFieldRules(projectConfig.content);
+      rules = mergeRules(fieldRules, projectRules);
     }
+    
+    // Check if datapoint matches forbidden patterns
+    for (const pattern of rules.forbidden_patterns) {
+      const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$', 'i');
+      if (regex.test(dpeName)) {
+        return {content: [{type: "text", text: `Error: Datapoint '${dpeName}' matches forbidden pattern '${pattern}' in ${activeFieldName} field configuration. This datapoint is read-only.`}]};
+      }
+    }
+    
+    // Check if datapoint matches allowed patterns
+    let isAllowed = false;
+    for (const pattern of rules.allowed_patterns) {
+      const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$', 'i');
+      if (regex.test(dpeName)) {
+        isAllowed = true;
+        break;
+      }
+    }
+    
+    // Check warning patterns
+    let warning = null;
+    for (const pattern of rules.warning_patterns) {
+      const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$', 'i');
+      if (regex.test(dpeName)) {
+        warning = `Warning: Datapoint '${dpeName}' matches pattern '${pattern}' which requires validation in ${activeFieldName} field.`;
+        break;
+      }
+    }
+    
+    // If not explicitly allowed and no warning, deny by default
+    if (!isAllowed && !warning && rules.allowed_patterns.length > 0) {
+      return {content: [{type: "text", text: `Error: Datapoint '${dpeName}' is not in the allowed patterns for ${activeFieldName} field. Allowed patterns: ${rules.allowed_patterns.join(', ')}`}]};
+    }
+    
+    // Execute the set operation
     const result = winccoa.dpSet(dpeName, value);
+    
+    // Add warning if applicable
+    if (warning) {
+      return {content: [{type: "text", text: `${warning}\n\nOperation completed: ${JSON.stringify(result)}`}]};
+    }
+    
     return {content: [{type: "text", text: JSON.stringify(result)}]};
   });
 
@@ -1093,7 +1129,184 @@ function init_mgmnt(winccoa, server) {
   });*/
 }
 
-export function init_tools() {
+async function init_resources(server) {
+  // Load all field configurations
+  fieldConfigs = await loadFieldConfigurations();
+  activeFieldName = getActiveField();
+  
+  // Load project configuration if available
+  projectConfig = await loadProjectConfiguration();
+  
+  // Resource: List of available fields
+  server.resource("field://list", "List of all available field configurations", async () => {
+    const fields = Object.keys(fieldConfigs).map(name => ({
+      name: name,
+      active: name === activeFieldName,
+      hasContent: fieldConfigs[name].content.length > 0
+    }));
+    
+    return {
+      contents: [{
+        uri: "field://list",
+        mimeType: "application/json",
+        text: JSON.stringify(fields, null, 2)
+      }]
+    };
+  });
+  
+  // Resource: Active field name
+  server.resource("field://active", "Currently active field configuration", async () => {
+    return {
+      contents: [{
+        uri: "field://active",
+        mimeType: "text/plain",
+        text: activeFieldName
+      }]
+    };
+  });
+  
+  // Resource: Field instructions
+  server.resource("field://instructions/*", "Field-specific instructions", async (uri) => {
+    // Extract field name from URI
+    const match = uri.match(/^field:\/\/instructions\/(.+)$/);
+    if (!match) {
+      throw new Error("Invalid field instructions URI");
+    }
+    
+    const fieldName = match[1];
+    const config = fieldConfigs[fieldName];
+    
+    if (!config) {
+      throw new Error(`Field configuration '${fieldName}' not found`);
+    }
+    
+    return {
+      contents: [{
+        uri: uri,
+        mimeType: "text/markdown",
+        text: config.content
+      }]
+    };
+  });
+  
+  // Resource: Active field instructions (convenience)
+  server.resource("field://active-instructions", "Instructions for the currently active field (including project overrides)", async () => {
+    const fieldConfig = fieldConfigs[activeFieldName] || fieldConfigs.default;
+    
+    // Merge with project instructions if available
+    const mergedContent = projectConfig 
+      ? mergeInstructions(fieldConfig.content, projectConfig.content)
+      : fieldConfig.content;
+    
+    return {
+      contents: [{
+        uri: "field://active-instructions",
+        mimeType: "text/markdown",
+        text: mergedContent
+      }]
+    };
+  });
+  
+  // Resource: Project configuration status
+  server.resource("project://active", "Currently loaded project configuration", async () => {
+    if (!projectConfig) {
+      return {
+        contents: [{
+          uri: "project://active",
+          mimeType: "application/json",
+          text: JSON.stringify({
+            loaded: false,
+            message: "No project configuration loaded. Set WINCCOA_PROJECT_INSTRUCTIONS environment variable to load a project."
+          }, null, 2)
+        }]
+      };
+    }
+    
+    return {
+      contents: [{
+        uri: "project://active",
+        mimeType: "application/json",
+        text: JSON.stringify({
+          loaded: true,
+          name: projectConfig.name,
+          path: projectConfig.path,
+          field: activeFieldName
+        }, null, 2)
+      }]
+    };
+  });
+  
+  // Resource: Project instructions only
+  server.resource("project://instructions", "Project-specific instructions only", async () => {
+    if (!projectConfig) {
+      return {
+        contents: [{
+          uri: "project://instructions",
+          mimeType: "text/plain",
+          text: "No project configuration loaded."
+        }]
+      };
+    }
+    
+    return {
+      contents: [{
+        uri: "project://instructions",
+        mimeType: "text/markdown",
+        text: projectConfig.content
+      }]
+    };
+  });
+  
+  // Resource: Field rules (parsed from instructions)
+  server.resource("field://rules/*", "Parsed rules for a specific field", async (uri) => {
+    const match = uri.match(/^field:\/\/rules\/(.+)$/);
+    if (!match) {
+      throw new Error("Invalid field rules URI");
+    }
+    
+    const fieldName = match[1];
+    const config = fieldConfigs[fieldName];
+    
+    if (!config) {
+      throw new Error(`Field configuration '${fieldName}' not found`);
+    }
+    
+    const rules = parseFieldRules(config.content);
+    
+    return {
+      contents: [{
+        uri: uri,
+        mimeType: "application/json",
+        text: JSON.stringify(rules, null, 2)
+      }]
+    };
+  });
+  
+  // Resource: Active field rules
+  server.resource("field://active-rules", "Parsed rules for the currently active field (including project overrides)", async () => {
+    const fieldConfig = fieldConfigs[activeFieldName] || fieldConfigs.default;
+    const fieldRules = parseFieldRules(fieldConfig.content);
+    
+    // Merge with project rules if available
+    let finalRules = fieldRules;
+    if (projectConfig) {
+      const projectRules = parseFieldRules(projectConfig.content);
+      finalRules = mergeRules(fieldRules, projectRules);
+    }
+    
+    return {
+      contents: [{
+        uri: "field://active-rules",
+        mimeType: "application/json",
+        text: JSON.stringify(finalRules, null, 2)
+      }]
+    };
+  });
+  
+  console.log(`Initialized field resources. Active field: ${activeFieldName}`);
+}
+
+export async function init_tools() {
 //console.error("init_tools 0");
   winccoa = new WinccoaManager();
   // Create server instance
@@ -1102,7 +1315,10 @@ export function init_tools() {
     name: "WinCC OA Extended with CNS/UNS",
     version: "3.0.0",
     capabilities: {
-      resources: {},
+      resources: {
+        list: true,
+        read: true
+      },
       tools: {},
     },
   });
@@ -1116,5 +1332,9 @@ export function init_tools() {
 //console.error("init_tools 5");
   init_mgmnt(winccoa, server);
 //console.error("init_tools 6");
+  
+  // Initialize field resources
+  await init_resources(server);
+  
   return server;  
 }
