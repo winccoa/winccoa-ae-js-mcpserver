@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import { validateDatapointAccess, shouldLogOperation } from '../../utils/validation.js';
 import { createSuccessResponse, createErrorResponse } from '../../utils/helpers.js';
 
 /**
- * Register datapoint set tools with field validation
+ * Register datapoint set tools
  * @param {McpServer} server - MCP server instance
  * @param {Object} context - Server context with winccoa, configs, etc.
  * @returns {number} Number of tools registered
@@ -11,41 +10,47 @@ import { createSuccessResponse, createErrorResponse } from '../../utils/helpers.
 export function registerTools(server, context) {
   const { winccoa } = context;
   
-  server.tool("dp-set", `Set value of datapoint element. 
-    This tool respects field-specific rules and validations.
-    Check the active field configuration using the field://active-instructions resource.
+  server.tool("dp-set", `Set value of datapoint element(s) in WinCC OA.
+    
+    For a single datapoint: pass as object with dpeName and value
+    For multiple datapoints: pass as array of objects with dpeName and value
+    
+    Example single: { dpeName: 'System1:Pump.cmd.start', value: true }
+    Example multiple: [{ dpeName: 'System1:Pump.cmd.start', value: true }, { dpeName: 'System1:Valve.cmd.open', value: 50 }]
+    
+    CAUTION: This operation directly controls real industrial equipment. Use with care in production environments.
     `, {
-    dpeName: z.string(),
-    value: z.any(),
-  }, async ({ dpeName, value }) => {
+    datapoints: z.union([
+      z.object({
+        dpeName: z.string(),
+        value: z.any()
+      }),
+      z.array(z.object({
+        dpeName: z.string(),
+        value: z.any()
+      }))
+    ]),
+  }, async ({ datapoints }) => {
     try {
-      // Validate datapoint access against field rules
-      const validation = validateDatapointAccess(dpeName, context);
+      const dpArray = Array.isArray(datapoints) ? datapoints : [datapoints];
+      const results = {};
       
-      if (validation.error) {
-        console.warn(`Access denied for ${dpeName}: ${validation.error}`);
-        return createErrorResponse(validation.error, 'ACCESS_DENIED');
+      for (const dp of dpArray) {
+        try {
+          console.log(`🔄 Setting ${dp.dpeName} = ${dp.value}`);
+          const result = winccoa.dpSet(dp.dpeName, dp.value);
+          results[dp.dpeName] = { success: true, result };
+        } catch (error) {
+          console.error(`❌ Error setting ${dp.dpeName}:`, error.message);
+          results[dp.dpeName] = { success: false, error: error.message };
+        }
       }
       
-      // Execute the set operation
-      const result = winccoa.dpSet(dpeName, value);
-      
-      // Log if it's a critical operation
-      if (shouldLogOperation(dpeName, context)) {
-        console.log(`CRITICAL OPERATION: Set ${dpeName} = ${value} (Result: ${JSON.stringify(result)})`);
-      }
-      
-      // Prepare response
-      let responseMessage = `Successfully set ${dpeName} = ${value}`;
-      if (validation.warning) {
-        responseMessage = `${validation.warning}\n\nOperation completed: ${JSON.stringify(result)}`;
-      }
-      
-      return createSuccessResponse(result, responseMessage);
+      return createSuccessResponse(results);
       
     } catch (error) {
-      console.error(`Error setting ${dpeName}:`, error);
-      return createErrorResponse(`Failed to set ${dpeName}: ${error.message}`, 'SET_FAILED');
+      console.error(`Error in dp-set:`, error);
+      return createErrorResponse(`Failed to set datapoints: ${error.message}`);
     }
   });
 
