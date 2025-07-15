@@ -30,17 +30,27 @@ export function registerTools(server, context) {
   server.tool("get-datapoints", `Search and return datapoint names from WinCC OA by pattern and type. 
     For each match, provides the datapoint's type, description, and full structure including children fields with
      their full path and engineering unit metadata. 
-    Supports wildcard pattern and case-insensitive search.`, {
+    Supports wildcard pattern and case-insensitive search.
+    Pagination: Results are limited to 200 items per request. Use 'start' (default: 0) and 'limit' (default: 200, max: 200) 
+    parameters for pagination. Response includes metadata with total count and hasMore flag.`, {
     dpNamePattern: z.string().optional(),
     dpType: z.string().optional(),
     ignoreCase: z.boolean().optional(),
-  }, async ({ dpNamePattern, type, ignoreCase }) => {
+    start: z.number().min(0).optional(),
+    limit: z.number().min(1).max(200).optional(),
+  }, async ({ dpNamePattern, dpType, ignoreCase, start = 0, limit = 200 }) => {
     try {
       const pattern = (dpNamePattern && dpNamePattern.length > 0) ? dpNamePattern : '*';
-      const dps = winccoa.dpNames(pattern, type, ignoreCase);
+      const dps = winccoa.dpNames(pattern, dpType, ignoreCase);
+      
+      const totalCount = dps.length;
+      const effectiveLimit = Math.min(limit, 200);
+      const endIndex = Math.min(start + effectiveLimit, totalCount);
+      const paginatedDps = dps.slice(start, endIndex);
+      const hasMore = endIndex < totalCount;
 
       const results = [];
-      for (const name of dps) {
+      for (const name of paginatedDps) {
         const dp = {};
         dp.name = name;
         dp.type = winccoa.dpTypeName(name);
@@ -50,8 +60,20 @@ export function registerTools(server, context) {
         results.push({ type: "text", text: JSON.stringify(dp) });
       }
 
-      console.log(`Found ${results.length} datapoints matching pattern '${pattern}'`);
-      return { content: results };
+      console.log(`Found ${totalCount} total datapoints, returning ${results.length} (start: ${start}, limit: ${effectiveLimit})`);
+      
+      const response = {
+        content: results,
+        metadata: {
+          totalCount,
+          start,
+          limit: effectiveLimit,
+          returnedCount: results.length,
+          hasMore
+        }
+      };
+      
+      return response;
     } catch (error) {
       console.error('Error getting datapoints:', error);
       return createErrorResponse(`Failed to get datapoints: ${error.message}`);
