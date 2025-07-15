@@ -39,18 +39,25 @@ export function addFullPathAndUnitToChildren(children, parentPath, winccoa) {
 /**
  * Create standardized error response for MCP tools
  * @param {string} message - Error message
- * @param {string} code - Error code (optional)
+ * @param {string|Object} codeOrDetails - Error code (string) or details object (optional)
  * @returns {Object} MCP error response
  */
-export function createErrorResponse(message, code = 'TOOL_ERROR') {
+export function createErrorResponse(message, codeOrDetails = 'TOOL_ERROR') {
+  const response = {
+    error: true,
+    message
+  };
+  
+  if (typeof codeOrDetails === 'string') {
+    response.code = codeOrDetails;
+  } else if (typeof codeOrDetails === 'object') {
+    Object.assign(response, codeOrDetails);
+  }
+  
   return {
     content: [{
       type: "text", 
-      text: JSON.stringify({
-        error: true,
-        code,
-        message
-      })
+      text: JSON.stringify(response)
     }]
   };
 }
