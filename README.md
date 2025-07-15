@@ -81,7 +81,7 @@ WINCCOA_FIELD=default        # default instructions
 # WINCCOA_FIELD=oil   # For Oil & Gas
 
 # Configure which tools to load
-TOOLS=alerts/alerts,cns/cns_views,datapoints/dp_basic,datapoints/dp_set,datapoints/dp_types,system/system
+TOOLS=alerts/alerts,cns/cns_views,datapoints/dp_basic,datapoints/dp_create,datapoints/dp_set,datapoints/dp_types,system/system
 ```
 
 ### Step 4: Configure WinCC OA Manager
@@ -166,10 +166,10 @@ You can configure which tools are available to the AI by editing the `TOOLS` set
 
 ```env
 # Load all available tools (default)
-TOOLS=alerts/alerts,cns/cns_views,datapoints/dp_basic,datapoints/dp_set,datapoints/dp_types,system/system
+TOOLS=alerts/alerts,cns/cns_views,datapoints/dp_basic,datapoints/dp_create,datapoints/dp_set,datapoints/dp_types,system/system
 
 # Load only datapoint tools
-TOOLS=datapoints/dp_basic,datapoints/dp_set,datapoints/dp_types
+TOOLS=datapoints/dp_basic,datapoints/dp_create,datapoints/dp_set,datapoints/dp_types
 
 # Load only system and alert tools
 TOOLS=system/system,alerts/alerts
@@ -179,6 +179,7 @@ TOOLS=system/system,alerts/alerts
 - **alerts/alerts** - Alarm and event management
 - **cns/cns_views** - Control navigation system views
 - **datapoints/dp_basic** - Basic datapoint operations (read, write)
+- **datapoints/dp_create** - Create new datapoints
 - **datapoints/dp_set** - Datapoint configuration and setup
 - **datapoints/dp_types** - Datapoint type management
 - **system/system** - System information and management
