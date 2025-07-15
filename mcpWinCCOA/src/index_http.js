@@ -1,31 +1,34 @@
 /*******************************************************/
 /*                                                     */
 /*   This file was initially creates by Martin Kumhera */
-/*   and extended by AI with CNS (UNS) functions!     */
+/*   and extended by AI with CNS (UNS) functions!      */
 /*                                                     */
 /*******************************************************/
-
-
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import express from 'express';
-import { init_tools } from './tool_oa.js';
+import fs from 'fs';
+import https from 'https';
+import State from "./tools/stateManager.js";
+import { init_tools } from './tools/tool_oa.js';
+import { WinccoaManager } from 'winccoa-manager'; 
 
-/* Random token generation*/
-import crypto from 'crypto';
+const winccoa = new WinccoaManager();
+const instance = await new State().init(winccoa);
 
-const API_TOKEN = '1a89f5420cc0f92318b29552198592e4'; //crypto.randomBytes(16).toString('hex');
+const options = {
+  key: fs.readFileSync(instance.getState().keyPath), 
+  cert: fs.readFileSync(instance.getState().certPath)
+};
 
-const server = init_tools();
-
-// ==================== EXPRESS SERVER SETUP ====================
-
+const server = init_tools(winccoa);
 const app = express();
+console.log(instance.getState().mainInstructions);
+console.log(instance.getState().specificInstructions);
 app.use(express.json());
 
 app.post('/mcp', async (req, res) => {
-  const token = req.headers['authorization'] || req.body?.token;
-  console.log(token);
-  if (token !== API_TOKEN) {
+  const token = req.headers['authorization'];
+  if (token !== instance.getState().token) {
     return res.status(401).json({
       jsonrpc: '2.0',
       error: {
@@ -86,8 +89,7 @@ app.delete('/mcp', async (req, res) => {
   }));
 });
 
-// Start the server
 const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`MCP Extended WinCC OA Server with CNS/UNS listening on port ${PORT}`);
+https.createServer(options, app).listen(PORT, () => {
+  console.log(`HTTPS server running on port ${PORT}`);
 });

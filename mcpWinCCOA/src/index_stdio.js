@@ -7,7 +7,7 @@
 
 
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { init_tools } from './tool_oa.js';
+import { init_tools } from './tools/tool_oa.js';
 
 
 async function main() {
