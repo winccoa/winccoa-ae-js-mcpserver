@@ -166,7 +166,6 @@ The GitHub Action performs these steps:
 ├── build/                    # Compiled JavaScript
 │   ├── index_stdio.js       # Main STDIO entry point
 │   ├── index_http.js        # HTTP server entry point
-│   ├── tool_oa.js          # WinCC OA tools
 │   └── field_loader.js     # Field configuration loader
 ├── fields/                  # Field configurations (from parent directory)
 │   ├── oil.md

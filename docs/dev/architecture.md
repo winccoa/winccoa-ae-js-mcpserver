@@ -57,7 +57,6 @@ src/
 ├── server.js                   # Main server initialization
 ├── tool_loader.js              # Dynamic tool loading system
 ├── field_loader.js             # Field configuration loader
-├── tool_oa.js                  # Legacy monolithic file (to be removed)
 │
 ├── resources/                  # MCP resources
 │   └── field_resources.js      # Field and project configuration resources
@@ -162,6 +161,5 @@ Each tool module exports a `registerTools(server, context)` function:
 ## Migration Notes
 
 - Entry points (`index_stdio.js`, `index_http.js`) now use `initializeServer()` from `server.js`
-- Legacy `tool_oa.js` remains for reference but is no longer used
 - All tools maintain the same external API for backwards compatibility
 - Field validation rules are preserved and enhanced with better error messages
