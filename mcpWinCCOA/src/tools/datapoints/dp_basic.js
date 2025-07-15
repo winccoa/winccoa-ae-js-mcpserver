@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { mkTypesContent, addFullPathAndUnitToChildren, createSuccessResponse, createErrorResponse } from '../../utils/helpers.js';
+import { mkTypesContent, addDescriptionAndUnitsToChildren, createSuccessResponse, createErrorResponse } from '../../utils/helpers.js';
 
 /**
  * Register basic datapoint tools (get-dpTypes, get-datapoints, get-value)
@@ -74,7 +74,7 @@ export function registerTools(server, context) {
         dp.type = winccoa.dpTypeName(name);
         dp.description = winccoa.dpGetDescription(name);
         dp.structure = winccoa.dpTypeGet(dp.type);
-        addFullPathAndUnitToChildren(dp.structure.children, name, winccoa);
+        addDescriptionAndUnitsToChildren(dp.structure.children, name, winccoa);
         results.push({ type: "text", text: JSON.stringify(dp) });
       }
 

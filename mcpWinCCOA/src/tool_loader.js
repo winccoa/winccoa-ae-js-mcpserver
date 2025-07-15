@@ -32,7 +32,6 @@ export async function loadAllTools(server, context) {
       // Load each tool file
       for (const file of jsFiles) {
         try {
-          const toolPath = join(categoryPath, file);
           const relativePath = `./tools/${category}/${file}`;
           
           // Dynamic import of the tool module

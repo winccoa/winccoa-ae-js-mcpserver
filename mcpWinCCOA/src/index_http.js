@@ -173,7 +173,7 @@ function authenticate(req, res, next) {
     const authHeader = req.headers['authorization'];
     console.log('🔍 Authorization header:', authHeader ? `${authHeader.substring(0, 20)}...` : 'NOT SET');
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7);
+      token = authHeader.replace('Bearer ', '');
       console.log('🔍 Bearer token extracted:', token ? `${token.substring(0, 8)}...` : 'NOT FOUND');
     }
   } else if (serverConfig.http.auth.type === 'api-key') {

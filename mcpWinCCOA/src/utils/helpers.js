@@ -17,16 +17,16 @@ export function mkTypesContent(arr, withInternals) {
 }
 
 /**
- * Recursively add full path and unit information to datapoint children
+ * Recursively add description and unit information to datapoint children
  * @param {Array} children - Array of child datapoint elements
  * @param {string} parentPath - Parent datapoint path
  * @param {Object} winccoa - WinCC OA manager instance
  */
-export function addFullPathAndUnitToChildren(children, parentPath, winccoa) {
+export function addDescriptionAndUnitsToChildren(children, parentPath, winccoa) {
   children.forEach(child => {
     const currentPath = `${parentPath}.${child.name}`;
     if (Array.isArray(child.children) && child.children.length > 0) {
-      addFullPathAndUnitToChildren(child.children, currentPath, winccoa);
+      addDescriptionAndUnitsToChildren(child.children, currentPath, winccoa);
     } else {
       if (winccoa.dpElementType !== 1) {
         child.unit = winccoa.dpGetUnit(currentPath);
@@ -100,12 +100,3 @@ export function isValidDatapointName(dpName) {
   return dpName.length > 0 && !dpName.includes('..') && !dpName.startsWith('.');
 }
 
-/**
- * Sanitize datapoint name for safe usage
- * @param {string} dpName - Datapoint name to sanitize
- * @returns {string} Sanitized datapoint name
- */
-export function sanitizeDatapointName(dpName) {
-  if (!dpName) return '';
-  return dpName.trim().replace(/[<>:"\\|?*]/g, '_');
-}

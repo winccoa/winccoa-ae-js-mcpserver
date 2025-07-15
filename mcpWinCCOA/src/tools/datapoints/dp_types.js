@@ -43,19 +43,7 @@ export function registerTools(server, context) {
   });
 
 
-  //todo die methode dpTypeRef ist in der doku nicht aufgelistet: https://www.winccoa.com/documentation/WinCCOA/latest/en_US/apis/winccoa-manager/classes/WinccoaManager.html#dpset
-  //todo sollte das dpGetDpTypeRefs sein?
-  server.tool("dp-type-ref", "Get type reference of datapoint element", {
-    dpeName: z.string(),
-  }, async ({ dpeName }) => {
-    try {
-      const result = winccoa.dpTypeRef(dpeName);
-      return createSuccessResponse({ dpeName, typeRef: result });
-    } catch (error) {
-      console.error(`Error getting type reference for ${dpeName}:`, error);
-      return createErrorResponse(`Failed to get type reference for ${dpeName}: ${error.message}`);
-    }
-  });
+
 
   return 3; // Number of tools registered
 }
