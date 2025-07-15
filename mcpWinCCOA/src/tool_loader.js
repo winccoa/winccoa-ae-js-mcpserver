@@ -6,51 +6,39 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 /**
- * Dynamically load and register all tools from the tools directory
+ * Dynamically load and register tools based on TOOLS environment variable
  * @param {McpServer} server - The MCP server instance
  * @param {Object} context - Shared context with winccoa, configs, etc.
  */
 export async function loadAllTools(server, context) {
-  const toolsDir = join(__dirname, 'tools');
-  const toolCategories = ['datapoints', 'cns', 'alerts', 'system'];
+  const toolsToLoad = process.env.TOOLS ? process.env.TOOLS.split(',').map(t => t.trim()) : [];
+  
+  if (toolsToLoad.length === 0) {
+    console.log('No tools configured in TOOLS environment variable');
+    return;
+  }
   
   let totalTools = 0;
   
-  for (const category of toolCategories) {
-    const categoryPath = join(toolsDir, category);
-    
+  console.log(`Loading ${toolsToLoad.length} configured tools`);
+  
+  for (const toolPath of toolsToLoad) {
     try {
-      // Check if category directory exists
-      await fs.access(categoryPath);
+      const relativePath = `./tools/${toolPath}.js`;
       
-      // Get all .js files in the category
-      const files = await fs.readdir(categoryPath);
-      const jsFiles = files.filter(file => file.endsWith('.js'));
+      // Dynamic import of the tool module
+      const toolModule = await import(relativePath);
       
-      console.log(`Loading ${jsFiles.length} tool files from ${category}/`);
-      
-      // Load each tool file
-      for (const file of jsFiles) {
-        try {
-          const relativePath = `./tools/${category}/${file}`;
-          
-          // Dynamic import of the tool module
-          const toolModule = await import(relativePath);
-          
-          // Register tools if the module has a registerTools function
-          if (typeof toolModule.registerTools === 'function') {
-            const toolCount = await toolModule.registerTools(server, context);
-            totalTools += toolCount || 0;
-            console.log(`  ✓ Loaded ${file} (${toolCount || 'unknown'} tools)`);
-          } else {
-            console.warn(`  ⚠ ${file} does not export registerTools function`);
-          }
-        } catch (error) {
-          console.error(`  ✗ Failed to load ${file}:`, error.message);
-        }
+      // Register tools if the module has a registerTools function
+      if (typeof toolModule.registerTools === 'function') {
+        const toolCount = await toolModule.registerTools(server, context);
+        totalTools += toolCount || 0;
+        console.log(`  ✓ Loaded ${toolPath} (${toolCount || 'unknown'} tools)`);
+      } else {
+        console.warn(`  ⚠ ${toolPath} does not export registerTools function`);
       }
     } catch (error) {
-      console.log(`Category ${category}/ not found or empty, skipping`);
+      console.error(`  ✗ Failed to load ${toolPath}:`, error.message);
     }
   }
   

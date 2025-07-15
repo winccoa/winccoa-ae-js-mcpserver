@@ -68,13 +68,20 @@ Required settings:
 MCP_API_TOKEN=your-secure-token-here
 
 # Server settings
+MCP_MODE=http                # Server mode: 'http' or 'stdio'
 MCP_HTTP_PORT=3000
 MCP_HTTP_HOST=0.0.0.0
+
+# Authentication
+MCP_AUTH_TYPE=bearer         # 'bearer' or 'api-key'
 
 # Choose your industry
 WINCCOA_FIELD=default        # default instructions
 # WINCCOA_FIELD=transport # For Transportation systems
 # WINCCOA_FIELD=oil   # For Oil & Gas
+
+# Configure which tools to load
+TOOLS=alerts/alerts,cns/cns_views,datapoints/dp_basic,datapoints/dp_set,datapoints/dp_types,system/system
 ```
 
 ### Step 4: Configure WinCC OA Manager
@@ -152,6 +159,41 @@ WINCCOA_PROJECT_INSTRUCTIONS=./config/my-plant-rules.md
 ```
 
 The AI will now combine your custom instructions with the industry template, giving priority to your project-specific rules when conflicts arise.
+
+## Tool Configuration
+
+You can configure which tools are available to the AI by editing the `TOOLS` setting in your `.env` file:
+
+```env
+# Load all available tools (default)
+TOOLS=alerts/alerts,cns/cns_views,datapoints/dp_basic,datapoints/dp_set,datapoints/dp_types,system/system
+
+# Load only datapoint tools
+TOOLS=datapoints/dp_basic,datapoints/dp_set,datapoints/dp_types
+
+# Load only system and alert tools
+TOOLS=system/system,alerts/alerts
+```
+
+### Available Tools:
+- **alerts/alerts** - Alarm and event management
+- **cns/cns_views** - Control navigation system views
+- **datapoints/dp_basic** - Basic datapoint operations (read, write)
+- **datapoints/dp_set** - Datapoint configuration and setup
+- **datapoints/dp_types** - Datapoint type management
+- **system/system** - System information and management
+
+**Note:** If a tool file doesn't exist or fails to load, an error will be logged but the server will continue running with the other tools.
+
+## Advanced Configuration
+
+### Server Modes
+
+The MCP server supports two connection modes:
+
+- **HTTP Mode** (`MCP_MODE=http`): Default mode for remote connections
+- **STDIO Mode** (`MCP_MODE=stdio`): For direct process communication
+
 
 ## Industry Field Templates
 
