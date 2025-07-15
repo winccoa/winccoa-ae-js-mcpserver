@@ -196,71 +196,52 @@ The MCP server supports two connection modes:
 - **STDIO Mode** (`MCP_MODE=stdio`): For direct process communication
 
 
-## Industry Field Templates
+## Instruction Hierarchy
 
-The MCP Server comes with pre-configured templates for different industries. These templates contain ready-to-use safety rules, operational limits, and best practices specific to each industry.
+The MCP Server uses a 3-level instruction system to provide context and guidance to AI assistants:
 
-### What are Field Templates?
+### 1. System Instructions
+**Global AI behavior and capabilities**
+- Loaded from `systemprompt.md`
+- Defines overall AI personality and constraints
+- Always active regardless of field or project
 
-Field templates are pre-built configurations that:
-- **Set operational limits** - Temperature ranges, pressure limits, flow rates
-- **Include validation rules** - What needs double-checking before changes
-- **Provide AI guidance** - Industry-specific knowledge for smarter assistance
+### 2. Field Instructions
+**Industry-specific knowledge and guidelines**
+- Selected via `WINCCOA_FIELD` environment variable
+- Stored in `fields/[fieldname].md` files
+- Provides industry context and best practices
 
-### Available Templates
+Available fields:
+- **`default`** - General WinCC OA guidance
+- **`oil`** - Oil & Gas industry specifics
+- **`transport`** - Transportation systems guidance
 
-#### Oil & Gas (`oil`)
-**Pre-configured for refineries and petrochemical plants:**
-- Forbidden patterns: `*_SAFETY_*`, `*_ESD_*`, `*_PROD_*` (production systems)
-- Operational limits: Flow 0-1000 m³/h, Pressure max 100 bar, Temperature -20°C to +80°C
-- Recipe management rules for batch processes
-- Special validation for pressure vessels and reactors
-- AI guidance for production optimization
+### 3. Project Instructions (Optional)
+**Plant-specific rules and customizations**
+- Path specified via `WINCCOA_PROJECT_INSTRUCTIONS`
+- Your own Markdown file with plant-specific rules
+- Highest priority - overrides field instructions
 
-#### Transportation (`transport`)
-**Pre-configured for traffic and railway systems:**
-- Forbidden patterns: `*_EMSTOP_*`, `*_SIGNAL_*`, `*_TRACK_*` (critical infrastructure)
-- Traffic light sequencing rules (no green-green conflicts)
-- Railway interlocking logic
-- Emergency brake system protection
-- AI guidance for traffic flow optimization
+### Configuration Example
 
-#### Default (`default`)
-**General template for other industries:**
-- Basic safety patterns
-- Standard WinCC OA protections
-- Suitable for testing and development
-- Can be customized for any industry
-
-### Using a Template
-
-Simply set the field in your `.env` file:
 ```env
-# For Oil & Gas plants
+# Choose industry field
 WINCCOA_FIELD=oil
 
-# For Transportation systems
-WINCCOA_FIELD=transport
-
-# Default Instructions
-WINCCOA_FIELD=default
-```
-
-### Template + Custom Rules
-
-You can combine templates with your own rules:
-1. Choose a base template (e.g., `oil`)
-2. Add your plant-specific rules via `WINCCOA_PROJECT_INSTRUCTIONS`
-3. Your rules override template rules where they conflict
-
-Example:
-```env
-# Use Oil & Gas template as base
-WINCCOA_FIELD=oil
-
-# Add your specific rules on top
+# Add your plant-specific instructions
 WINCCOA_PROJECT_INSTRUCTIONS=./config/my-refinery-rules.md
 ```
+
+### Instruction Resources
+
+The AI can access these instruction levels via MCP resources:
+- `instructions://system` - System prompt
+- `instructions://field` - Field instructions
+- `instructions://project` - Project instructions
+- `instructions://combined` - All levels merged
+
+**Priority:** Project instructions > Field instructions > System instructions
 ## Known restrictions
 
 ### Transport Layer Security
