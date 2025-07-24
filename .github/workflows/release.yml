@@ -71,7 +71,7 @@ jobs:
     
           
           # Add package metadata
-          npm pkg set name="@etm/winccoa-mcp-server"
+          npm pkg set name="@etm-professional-control/winccoa-mcp-server"
           npm pkg set description="MCP Server for WinCC OA with field-specific configurations"
           npm pkg set keywords[0]="mcp"
           npm pkg set keywords[1]="winccoa"
