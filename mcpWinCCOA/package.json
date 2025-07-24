@@ -1,5 +1,5 @@
 {
-  "name": "@etm/winccoa-mcp-server",
+  "name": "@etm-professional-control/winccoa-mcp-server",
   "version": "1.0.0",
   "description": "MCP Server for WinCC OA with field-specific configurations",
   "type": "module",
