@@ -81,7 +81,7 @@ jobs:
           npm pkg set license="ISC"
           npm pkg set repository.type="git"
           
-          npm pkg set repository.url="git+https://github.com/winccoa/winccoa-mcp-server.git"
+          npm pkg set repository.url="git+https://github.com/winccoa/winccoa-ae-js-mcpserver.git"
           #npm pkg set repository.url="git+https://github.com/uebelmar/oa-mcp.git"
           
           npm pkg set homepage="https://github.com/winccoa/winccoa-ae-js-mcpserver#readme"
