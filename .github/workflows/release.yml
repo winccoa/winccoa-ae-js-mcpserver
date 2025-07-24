@@ -31,10 +31,6 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Release version: $VERSION"
           
-      - name: Update package.json version
-        run: |
-          cd mcpWinCCOA
-          npm version ${{ steps.get_version.outputs.version }} --no-git-tag-version
           
       - name: Install TypeScript globally
         run: npm install -g typescript
