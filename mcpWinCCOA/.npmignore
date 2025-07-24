@@ -1,0 +1,51 @@
+# Source files (only include build output)
+src/
+*.ts
+tsconfig.json
+
+# Development files
+.github/
+.gitignore
+.gitattributes
+*.log
+npm-debug.log*
+node_modules/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+test/
+tests/
+*.test.js
+*.test.ts
+__tests__/
+
+# Documentation that's not needed in package
+CLAUDE.md
+example-projects/
+
+# Development dependencies
+package-lock.json
+yarn.lock
+
+# Temporary files
+*.tmp
+*.temp
+
+# Environment files (but include example)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Force include fields directory from parent
+!../fields/

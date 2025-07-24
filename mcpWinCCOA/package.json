@@ -1,20 +1,61 @@
 {
+  "name": "@etm/winccoa-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server for WinCC OA with field-specific configurations",
   "type": "module",
   "bin": {
-    "weather": "./build/index.js"
+    "winccoa-mcp-stdio": "./build/index_stdio.js",
+    "winccoa-mcp-http": "./build/index_http.js"
   },
   "scripts": {
-    "build": "tsc && chmod 755 build/index.js",
-    "inspect": "npx @modelcontextprotocol/inspector"
+    "build": "./build.sh",
+    "postinstall": "node postinstall.cjs",
+    "inspect": "npx @modelcontextprotocol/inspector",
+    "start": "node build/index_stdio.js",
+    "start:http": "node build/index_http.js",
+    "dev": "tsc && npm start"
   },
-  "files": [
-    "build"
+
+  "keywords": [
+    "mcp",
+    "winccoa",
+    "scada",
+    "automation",
+    "siemens",
+    "industrial"
   ],
+  "author": "ETM Control GesmbH",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/winccoa/winccoa-ae-js-mcpserver.git"
+  },
+  "homepage": "https://github.com/winccoa/winccoa-ae-js-mcpserver#readme",
+  "bugs": {
+    "url": "https://github.com/winccoa/winccoa-ae-js-mcpserver/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^5.1.0",
+    "express-rate-limit": "^7.1.5",
     "mcp-remote": "^0.1.13",
-    "winccoa-manager": "file:C:/Siemens/Automation/WinCC_OA/3.20/javascript/winccoa-manager",
     "zod": "^3.25.51"
+  },
+  "peerDependencies": {
+    "winccoa-manager": "*"
+  },
+  "peerDependenciesMeta": {
+    "winccoa-manager": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^5.8.3"
   }
 }
