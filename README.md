@@ -20,7 +20,7 @@ cd <OA_ProjPath>/javascript
 mkdir mcpServer && cd mcpServer
 
 # Install packages
-npm install @etm/winccoa-mcp-server
+npm install @etm-professional-control/winccoa-mcp-server
 npm install file:C:/Siemens/Automation/WinCC_OA/3.20/javascript/winccoa-manager
 ```
 
@@ -34,7 +34,8 @@ notepad .env  # Windows
 
 **Minimal .env setup:**
 ```env
-# Generate with: openssl rand -hex 32
+# IMPORTANT: This token MUST match the token in Claude Desktop config!
+# Optional: Generate a secure token with: openssl rand -hex 32
 MCP_API_TOKEN=your-secure-token-here
 
 # Choose industry context
@@ -64,6 +65,8 @@ Edit `%APPDATA%/Claude/claude_desktop_config.json`:
   }
 }
 ```
+
+**⚠️ IMPORTANT:** Replace `YOUR_TOKEN_HERE` with the exact same token from your `.env` file's `MCP_API_TOKEN`. The tokens must match exactly!
 
 ## Documentation
 
