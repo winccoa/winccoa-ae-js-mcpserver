@@ -1,6 +1,6 @@
 {
   "name": "@etm-professional-control/winccoa-mcp-server",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "MCP Server for WinCC OA with field-specific configurations",
   "type": "module",
   "bin": {
@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "./build.sh",
+    "postinstall": "node postinstall.cjs",
     "inspect": "npx @modelcontextprotocol/inspector",
     "start": "node build/index_stdio.js",
     "start:http": "node build/index_http.js",
