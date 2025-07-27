@@ -10,6 +10,8 @@ const packageName = packageJson.name;
 // Determine the installation directory (where npm install was run)
 const installDir = process.env.INIT_CWD || process.cwd();
 const nodeModulesPath = path.join(installDir, 'node_modules', packageName);
+const srcPath = path.join(nodeModulesPath, 'src');
+
 
 console.log(`Installing WinCC OA MCP Server files to: ${installDir}`);
 console.log(`Package location: ${nodeModulesPath}`);
@@ -46,13 +48,40 @@ try {
       console.log('Copied .env.example');
     }
 
+    // Copy systempprompt.md
+    const systemPromptSrc = path.join(srcPath, 'systemprompt.md');
+    const systemPromptDest = path.join(installDir, 'systemprompt.md');
+
+    if (fs.existsSync(systemPromptSrc) && !fs.existsSync(systemPromptDest)) {
+      fs.copyFileSync(systemPromptSrc, systemPromptDest);
+      console.log('Copied systemprompt.md');
+    }
+
     // Copy package.json
     const packageJsonSrc = path.join(nodeModulesPath, 'package.json');
     const packageJsonDest = path.join(installDir, 'package.json');
     if (fs.existsSync(packageJsonSrc)) {
       fs.copyFileSync(packageJsonSrc, packageJsonDest);
-      console.log('Copied .env.example');
+      console.log('Copied package.json');
     }
+
+    const fieldsPathSrc = path.join(srcPath, 'fields');
+    const fieldsPathDest = path.join(installDir, 'fields');
+
+    if (fs.existsSync(fieldsPathSrc)) {
+      // Copy all files from src/fields directory
+      const files = fs.readdirSync(fieldsPathSrc, { withFileTypes: true });
+
+      for (const file of files) {
+        // Copy file
+        const destinationFilePath = path.join(fieldsPathDest, file.name);
+        if(!fs.existsSync(destinationFilePath)) {
+           fs.copyFileSync(srcPath, destinationFilePath);
+           console.log(`Copied file: ${file.name}`);
+      }
+      }
+    }
+
     
     console.log('\n✅ Installation complete!');
     console.log('\nNext steps:');

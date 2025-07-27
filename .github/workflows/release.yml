@@ -94,6 +94,7 @@ jobs:
           npm pkg set files[3]="README.md"
           npm pkg set files[4]=".env.example"
           npm pkg set files[5]="postinstall.cjs"
+          npm pkg set files[6]="src/systemprompt.md"
           
       - name: Copy README for npm
         run: |
