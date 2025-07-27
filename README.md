@@ -76,6 +76,21 @@ Edit `%APPDATA%/Claude/claude_desktop_config.json`:
 
 **⚠️ IMPORTANT:** Replace `YOUR_TOKEN_HERE` with the exact same token from your `.env` file's `MCP_API_TOKEN`. The tokens must match exactly!
 
+**Windows Path Issue:** If you encounter the error `"C:\Program" is either misspelled or could not be found`, use this alternative configuration:
+
+```json
+{
+  "mcpServers": {
+    "winccoa": {
+      "command": "cmd",
+      "args": ["/c", "npx", "mcp-remote", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
+    }
+  }
+}
+```
+
+This method uses `cmd` to properly handle paths with spaces in Windows.
+
 ## Documentation
 
 - **[📦 Installation Guide](docs/INSTALLATION.md)** - Complete setup instructions

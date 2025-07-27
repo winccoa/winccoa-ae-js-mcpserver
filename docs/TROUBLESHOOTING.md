@@ -90,6 +90,29 @@ Common issues, solutions, and known limitations.
 
 ## Configuration Issues
 
+### Windows Path Issue in Claude Desktop
+
+**Symptoms:**
+- Error message: `"C:\Program" is either misspelled or could not be found`
+- Claude Desktop cannot start MCP server on Windows
+- Issue occurs when npx is installed in a path with spaces (e.g., "C:\Program Files")
+
+**Solution:**
+Use `cmd` to properly handle paths with spaces:
+
+```json
+{
+  "mcpServers": {
+    "winccoa": {
+      "command": "cmd",
+      "args": ["/c", "npx", "mcp-remote", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
+    }
+  }
+}
+```
+
+This wraps the npx command in Windows Command Prompt, which correctly handles paths containing spaces.
+
 ### "Invalid token" Errors
 
 **Symptoms:**
