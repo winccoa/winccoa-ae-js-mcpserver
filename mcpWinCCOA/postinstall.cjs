@@ -65,6 +65,15 @@ try {
       console.log('Copied package.json');
     }
 
+
+    // Copy demo-project-instructions.md
+    const demoSrc = path.join(nodeModulesPath, 'config', 'demo-project-instructions.md');
+    const demoDest = path.join(installDir, 'demo-project-instructions.md');
+    if (fs.existsSync(demoSrc)) {
+      fs.copyFileSync(demoSrc, demoDest);
+      console.log('Copied demo-project-instructions.md');
+    }
+
     const fieldsPathSrc = path.join(srcPath, 'fields');
     const fieldsPathDest = path.join(installDir, 'fields');
 
