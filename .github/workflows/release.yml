@@ -31,10 +31,6 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Release version: $VERSION"
           
-      - name: Update package.json version
-        run: |
-          cd mcpWinCCOA
-          npm version ${{ steps.get_version.outputs.version }} --no-git-tag-version
           
       - name: Install TypeScript globally
         run: npm install -g typescript
@@ -75,7 +71,7 @@ jobs:
     
           
           # Add package metadata
-          npm pkg set name="@etm/winccoa-mcp-server"
+          npm pkg set name="@etm-professional-control/winccoa-mcp-server"
           npm pkg set description="MCP Server for WinCC OA with field-specific configurations"
           npm pkg set keywords[0]="mcp"
           npm pkg set keywords[1]="winccoa"
@@ -85,7 +81,7 @@ jobs:
           npm pkg set license="ISC"
           npm pkg set repository.type="git"
           
-          npm pkg set repository.url="git+https://github.com/winccoa/winccoa-mcp-server.git"
+          npm pkg set repository.url="git+https://github.com/winccoa/winccoa-ae-js-mcpserver.git"
           #npm pkg set repository.url="git+https://github.com/uebelmar/oa-mcp.git"
           
           npm pkg set homepage="https://github.com/winccoa/winccoa-ae-js-mcpserver#readme"
