@@ -68,15 +68,26 @@ try {
     const fieldsPathSrc = path.join(srcPath, 'fields');
     const fieldsPathDest = path.join(installDir, 'fields');
 
+    if(!fs.existsSync(fieldsPathDest)) {
+      fs.mkdirSync(fieldsPathDest);
+      console.log('Created fields directory');
+    }
+
     if (fs.existsSync(fieldsPathSrc)) {
       // Copy all files from src/fields directory
       const files = fs.readdirSync(fieldsPathSrc, { withFileTypes: true });
 
       for (const file of files) {
+        // Skip . and .. entries
+        if (file.name === '.' || file.name === '..') {
+          continue;
+        }
+
         // Copy file
+        const sourceFilePath = path.join(fieldsPathSrc, file.name);
         const destinationFilePath = path.join(fieldsPathDest, file.name);
         if(!fs.existsSync(destinationFilePath)) {
-           fs.copyFileSync(srcPath, destinationFilePath);
+           fs.copyFileSync(sourceFilePath, destinationFilePath);
            console.log(`Copied file: ${file.name}`);
       }
       }
