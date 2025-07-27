@@ -49,6 +49,10 @@ try {
     // Copy package.json
     const packageJsonSrc = path.join(nodeModulesPath, 'package.json');
     const packageJsonDest = path.join(installDir, 'package.json');
+    if (fs.existsSync(packageJsonSrc)) {
+      fs.copyFileSync(packageJsonSrc, packageJsonDest);
+      console.log('Copied .env.example');
+    }
     
     console.log('\n✅ Installation complete!');
     console.log('\nNext steps:');
