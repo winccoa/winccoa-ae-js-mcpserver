@@ -15,16 +15,6 @@ This configuration applies to WinCC OA systems used in Oil & Gas production, ref
 - **Temperature**: -20°C to +80°C operational range
 - **Valve positions**: 0-100% (check for intermediate restrictions)
 
-## Datapoint Naming Conventions
-- `*_SAFETY_*`: Safety instrumented systems - READ ONLY
-- `*_ESD_*`: Emergency shutdown - READ ONLY
-- `*_PROD_*`: Production systems - requires validation
-- `*_FLOW_*`: Flow measurements and control
-- `*_PRESSURE_*`: Pressure measurements and control
-- `*_TEMP_*`: Temperature measurements and control
-- `*_VALVE_*`: Valve positions and control
-- `*_AI_Assistant`: Datapoints designated for AI manipulation
-
 ## Process Control Rules
 1. **Before changing flow rates**:
    - Verify upstream and downstream pressures
