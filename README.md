@@ -4,6 +4,20 @@
 
 This Model Context Protocol (MCP) server connects AI assistants to WinCC OA SCADA systems, enabling intelligent automation and monitoring for industrial environments.
 
+## ⚠️ Warning
+
+**This tool can modify datapoint values in your WinCC OA system.** Changes made through this MCP server directly affect your SCADA system and connected industrial processes. Use at your own risk and ensure proper testing in a safe environment before deploying to production systems.
+
+**To prevent write operations**, exclude these tools from your configuration:
+- `datapoints/dp_set` - Allows writing values to datapoints
+- `datapoints/dp_create` - Allows creating new datapoints
+
+Example read-only configuration:
+```env
+# Only include read operations
+TOOLS=datapoints/dp_basic,datapoints/dp_types
+```
+
 ## Prerequisites
 
 This MCP server requires an AI tool that supports Model Context Protocol (MCP) servers. It works with any AI tool that has MCP support. For instructions on how to configure an MCP server in your specific AI tool, please refer to your tool's documentation.
