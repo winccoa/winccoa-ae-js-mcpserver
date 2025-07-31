@@ -40,16 +40,9 @@ For detailed prerequisites, see **[📋 Prerequisites Guide](docs/PREREQUISITES.
 
 Navigate to your WinCC OA project's javascript directory and create a folder for the MCP server. You can choose any name for this folder - we'll use `mcpServer` in this guide:
 
-**Windows:**
+**Windows & Linux:**
 ```cmd
 cd <OA_ProjPath>\javascript
-mkdir mcpServer
-cd mcpServer
-```
-
-**Linux/macOS:**
-```bash
-cd <OA_ProjPath>/javascript
 mkdir mcpServer
 cd mcpServer
 ```
