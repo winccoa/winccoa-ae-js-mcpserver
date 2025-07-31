@@ -1,10 +1,5 @@
 # WinCC OA Demo Application - Project-Specific Instructions
 
-## Datapoint Access Rules
-
-### AI Assistant Restriction
-- **Only '*_AI_Assistant' datapoints can be used for manipulation**
-- DO NOT USE OTHER DATAPOINTS
 
 ## Recipe and Production Control Rules
 
@@ -27,10 +22,7 @@
 - Flow rates  
 - Valve positions from applied setpoints
 
-## Allowed Datapoint Patterns
 
-### For AI Manipulation
-- `*_AI_Assistant` - ONLY these datapoints can be manipulated by AI
 
 ### Read-Only Patterns
 All other datapoints are READ-ONLY for the AI system

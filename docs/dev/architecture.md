@@ -128,18 +128,12 @@ All tools receive a shared context object containing:
 - `fieldConfigs`: Loaded field configurations
 - `projectInstructions`: Project-specific instructions (if any)
 
-### 2. Validation-First Approach
-The `dp-set` tool demonstrates field-aware validation:
-- Checks forbidden patterns (e.g., `*_SAFETY_*`)
-- Enforces allowed patterns (e.g., `*_AI_Assistant`)
-- Provides warnings for critical operations
-
-### 3. Resource-Based Configuration
+### 2. Resource-Based Configuration
 Field and project configurations are exposed as MCP resources:
 - `field://active-instructions`: Current field configuration
 - `field://project-instructions`: Project-specific overrides (if any)
 
-### 4. Modular Tool Registration
+### 3. Modular Tool Registration
 Each tool module exports a `registerTools(server, context)` function:
 - Returns the number of tools registered
 - Follows consistent naming and structure

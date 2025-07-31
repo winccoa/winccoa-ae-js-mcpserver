@@ -9,12 +9,6 @@ These are general instructions for WinCC OA systems when no specific field confi
 - Emergency stop functionality must remain accessible
 - Backup current values before making modifications
 
-## Datapoint Conventions
-- `*_AI_Assistant`: Datapoints designated for AI manipulation
-- `*_TEST_*`: Test points safe for experimentation
-- `*_DEMO_*`: Demonstration datapoints
-- System datapoints (starting with `_`) are generally read-only
-
 ## Best Practices
 1. **Read Before Write**:
    - Always check current value before modification
