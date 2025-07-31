@@ -36,12 +36,25 @@ For detailed prerequisites, see **[📋 Prerequisites Guide](docs/PREREQUISITES.
 
 ### 1. Install
 
-```bash
-# In your WinCC OA project directory
-cd <OA_ProjPath>/javascript
-mkdir mcpServer && cd mcpServer
+Navigate to your WinCC OA project's javascript directory and create a folder for the MCP server. You can choose any name for this folder - we'll use `mcpServer` in this guide:
 
-# Install packages
+**Windows:**
+```cmd
+cd <OA_ProjPath>\javascript
+mkdir mcpServer
+cd mcpServer
+```
+
+**Linux/macOS:**
+```bash
+cd <OA_ProjPath>/javascript
+mkdir mcpServer
+cd mcpServer
+```
+
+Then install the required packages:
+
+```bash
 npm install @etm-professional-control/winccoa-mcp-server
 npm install file:C:/Siemens/Automation/WinCC_OA/3.20/javascript/winccoa-manager
 ```
@@ -129,7 +142,7 @@ Edit the configuration file:
 This method uses `cmd` to properly handle paths with spaces in Windows.
 
 **Note:** After modifying the configuration, you must restart Claude Desktop completely:
-- On Windows: Close Claude and end the task in Task Manager, as it continues running in the background
+- On Windows: Close Claude through the task-tray menu by selecting "Exit", or end the task in Task Manager if needed
 - On macOS/Linux: Quit Claude Desktop completely and restart
 
 ## Documentation
