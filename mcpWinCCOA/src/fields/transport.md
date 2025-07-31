@@ -15,15 +15,6 @@ This configuration applies to WinCC OA systems used in transportation infrastruc
 - Conflicting movements must be interlocked
 - Emergency vehicle preemption overrides normal operation
 
-## Datapoint Naming Conventions
-- `*_EMSTOP_*`: Emergency stop systems - STRICTLY READ ONLY
-- `*_SIGNAL_*`: Traffic or rail signals - validate sequences
-- `*_TRACK_*`: Track/route control - coordinate with dispatch
-- `*_BARRIER_*`: Safety barriers and gates
-- `*_DETECTOR_*`: Vehicle/train detection systems
-- `*_DISPATCH_*`: Dispatch and scheduling systems
-- `*_AI_Assistant`: Datapoints designated for AI manipulation
-
 ## Operational Rules
 
 ### Rail Systems

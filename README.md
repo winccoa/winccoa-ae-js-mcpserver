@@ -8,18 +8,48 @@ This Model Context Protocol (MCP) server connects AI assistants to WinCC OA SCAD
 
 **Ask your AI:**
 - "Show me all temperature values in the plant"
-- "Which pumps are currently running?"  
+- "Which pumps are currently running?"
 - "Set the setpoint for pump P-101 to 50%"
 - "Create a production report for today"
+- 
+## ⚠️ Warning
+
+**This tool can modify datapoint values in your WinCC OA system.** Changes made through this MCP server directly affect your SCADA system and connected industrial processes. Use at your own risk and ensure proper testing in a safe environment before deploying to production systems.
+
+**To prevent write operations**, exclude these tools from your configuration:
+- `datapoints/dp_set` - Allows writing values to datapoints
+- `datapoints/dp_create` - Allows creating new datapoints
+
+Example read-only configuration:
+```env
+# Only include read operations
+TOOLS=datapoints/dp_basic,datapoints/dp_types
+```
+
+## Prerequisites
+
+This MCP server requires an AI tool that supports Model Context Protocol (MCP) servers. It works with any AI tool that has MCP support. For instructions on how to configure an MCP server in your specific AI tool, please refer to your tools documentation.
+
+For this guide, we'll use Claude Desktop as an example. [Download Claude Desktop](https://claude.ai/download)
+
+For detailed prerequisites, see **[📋 Prerequisites Guide](docs/PREREQUISITES.md)**.
+
+
 
 ### 1. Install
 
-```bash
-# In your WinCC OA project directory
-cd <OA_ProjPath>/javascript
-mkdir mcpServer && cd mcpServer
+Navigate to your WinCC OA projects javascript directory and create a folder for the MCP server. You can choose any name for this folder - we'll use `mcpServer` in this guide:
 
-# Install packages
+**Windows & Linux:**
+```cmd
+cd <OA_ProjPath>\javascript
+mkdir mcpServer
+cd mcpServer
+```
+
+Then install the required packages:
+
+```bash
 npm install @etm-professional-control/winccoa-mcp-server
 npm install file:C:/Siemens/Automation/WinCC_OA/3.20/javascript/winccoa-manager
 ```
@@ -43,7 +73,15 @@ nano .env  # or use your preferred editor
 **Minimal .env setup:**
 ```env
 # IMPORTANT: This token MUST match the token in Claude Desktop config!
-# Optional: Generate a secure token with: openssl rand -hex 32
+# IMPORTANT: You can use any string as token (e.g., "my-secret-token-123")
+# For better security, generate a random token:
+# Windows:
+#   - PowerShell: -join ((1..64) | ForEach {'{0:X}' -f (Get-Random -Max 16)})
+#   - Node.js: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# Linux/macOS:
+#   - openssl rand -hex 32
+#   - pwgen 64 1
+#   - node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 MCP_API_TOKEN=your-secure-token-here
 
 # Choose industry context
@@ -61,7 +99,14 @@ Add JavaScript Manager in WinCC OA:
 
 ### 4. Connect Claude Desktop
 
-Edit `%APPDATA%/Claude/claude_desktop_config.json`:
+**To access the configuration file:**
+1. Open Claude Desktop
+2. Click the menu (☰) in the upper left corner
+3. Navigate to File → Settings
+4. Go to the Developer section
+5. Click "Edit Config" to open the configuration file
+
+Edit the configuration file:
 
 ```json
 {
@@ -90,6 +135,10 @@ Edit `%APPDATA%/Claude/claude_desktop_config.json`:
 ```
 
 This method uses `cmd` to properly handle paths with spaces in Windows.
+
+**Note:** After modifying the configuration, you must restart Claude Desktop completely:
+- On Windows: Close Claude through the task-tray menu by selecting "Exit", or end the task in Task Manager if needed
+- On macOS/Linux: Quit Claude Desktop completely and restart
 
 ## Documentation
 
