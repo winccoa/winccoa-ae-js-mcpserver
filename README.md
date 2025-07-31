@@ -38,7 +38,7 @@ For detailed prerequisites, see **[📋 Prerequisites Guide](docs/PREREQUISITES.
 
 ### 1. Install
 
-Navigate to your WinCC OA project's javascript directory and create a folder for the MCP server. You can choose any name for this folder - we'll use `mcpServer` in this guide:
+Navigate to your WinCC OA projects javascript directory and create a folder for the MCP server. You can choose any name for this folder - we'll use `mcpServer` in this guide:
 
 **Windows & Linux:**
 ```cmd
