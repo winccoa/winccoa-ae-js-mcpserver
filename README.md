@@ -28,7 +28,7 @@ TOOLS=datapoints/dp_basic,datapoints/dp_types
 
 ## Prerequisites
 
-This MCP server requires an AI tool that supports Model Context Protocol (MCP) servers. It works with any AI tool that has MCP support. For instructions on how to configure an MCP server in your specific AI tool, please refer to your tool's documentation.
+This MCP server requires an AI tool that supports Model Context Protocol (MCP) servers. It works with any AI tool that has MCP support. For instructions on how to configure an MCP server in your specific AI tool, please refer to your tools documentation.
 
 For this guide, we'll use Claude Desktop as an example. [Download Claude Desktop](https://claude.ai/download)
 
