@@ -4,6 +4,14 @@
 
 This Model Context Protocol (MCP) server connects AI assistants to WinCC OA SCADA systems, enabling intelligent automation and monitoring for industrial environments.
 
+## Quick Start
+
+**Ask your AI:**
+- "Show me all temperature values in the plant"
+- "Which pumps are currently running?"
+- "Set the setpoint for pump P-101 to 50%"
+- "Create a production report for today"
+- 
 ## ⚠️ Warning
 
 **This tool can modify datapoint values in your WinCC OA system.** Changes made through this MCP server directly affect your SCADA system and connected industrial processes. Use at your own risk and ensure proper testing in a safe environment before deploying to production systems.
@@ -26,13 +34,7 @@ For this guide, we'll use Claude Desktop as an example. [Download Claude Desktop
 
 For detailed prerequisites, see **[📋 Prerequisites Guide](docs/PREREQUISITES.md)**.
 
-## Quick Start
 
-**Ask your AI:**
-- "Show me all temperature values in the plant"
-- "Which pumps are currently running?"  
-- "Set the setpoint for pump P-101 to 50%"
-- "Create a production report for today"
 
 ### 1. Install
 
