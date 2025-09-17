@@ -20,39 +20,43 @@ export function registerTools(server, context) {
     
     CAUTION: This operation directly controls real industrial equipment. Use with care in production environments.
     `, {
-    datapoints: z.union([
-      z.object({
-        dpeName: z.string(),
-        value: z.any()
-      }),
-      z.array(z.object({
-        dpeName: z.string(),
-        value: z.any()
-      }))
-    ]),
-  }, async ({ datapoints }) => {
-    try {
-      const dpArray = Array.isArray(datapoints) ? datapoints : [datapoints];
-      const results = {};
-      
-      for (const dp of dpArray) {
+        datapoints: z.union([
+            z.object({
+                dpeName: z.string(),
+                value: z.any()
+            }),
+            z.array(z.object({
+                dpeName: z.string(),
+                value: z.any()
+            })),
+            z.string(),
+            z.array(z.string()),
+        ]),
+    }, async ({ datapoints }) => {
         try {
-          console.log(`🔄 Setting ${dp.dpeName} = ${dp.value}`);
-          const result = winccoa.dpSet(dp.dpeName, dp.value);
-          results[dp.dpeName] = { success: true, result };
-        } catch (error) {
-          console.error(`❌ Error setting ${dp.dpeName}:`, error.message);
-          results[dp.dpeName] = { success: false, error: error.message };
+            if (typeof datapoints === 'string') {
+                datapoints = JSON.parse(datapoints);
+            }
+            const dpArray = Array.isArray(datapoints) ? datapoints : [datapoints];
+            const results = {};
+            for (const dp of dpArray) {
+                try {
+                    console.log(`🔄 Setting ${dp.dpeName} = ${dp.value}`);
+                    const result = winccoa.dpSet(dp.dpeName, dp.value);
+                    results[dp.dpeName] = { success: true, result };
+                }
+                catch (error) {
+                    console.error(`❌ Error setting ${dp.dpeName}:`, error.message);
+                    results[dp.dpeName] = { success: false, error: error.message };
+                }
+            }
+            return createSuccessResponse(results);
         }
-      }
-      
-      return createSuccessResponse(results);
-      
-    } catch (error) {
-      console.error(`Error in dp-set:`, error);
-      return createErrorResponse(`Failed to set datapoints: ${error.message}`);
-    }
-  });
-
-  return 1; // Number of tools registered
+        catch (error) {
+            console.error(`Error in dp-set:`, error);
+            return createErrorResponse(`Failed to set datapoints: ${error.message}`);
+        }
+    });
+    return 1; // Number of tools registered
 }
+//# sourceMappingURL=dp_set.js.map
