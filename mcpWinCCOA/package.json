@@ -55,6 +55,7 @@
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "winccoa-manager": "file:C:/Program Files/Siemens/WinCC_OA/3.21/javascript/winccoa-manager"
   }
 }
