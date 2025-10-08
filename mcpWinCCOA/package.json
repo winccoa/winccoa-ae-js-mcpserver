@@ -15,7 +15,6 @@
     "start:http": "node build/index_http.js",
     "dev": "tsc && npm start"
   },
-
   "keywords": [
     "mcp",
     "winccoa",
@@ -47,7 +46,7 @@
     "zod": "^3.25.51"
   },
   "peerDependencies": {
-    "winccoa-manager": "*"
+    "winccoa-manager": "file:C:/Program Files/Siemens/WinCC_OA/3.21/javascript/winccoa-manager"
   },
   "peerDependenciesMeta": {
     "winccoa-manager": {
