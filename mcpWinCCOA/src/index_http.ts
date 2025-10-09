@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /*******************************************************/
 /*                                                     */
 /*   This file was initially creates by Martin Kumhera */
@@ -5,6 +6,8 @@
 /*                                                     */
 /*******************************************************/
 
+import type { Request, Response, NextFunction } from 'express';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Try to load dotenv if available BEFORE importing config
 try {
@@ -12,18 +15,18 @@ try {
   const path = await import('path');
   const { fileURLToPath } = await import('url');
   const fs = await import('fs');
-  
+
   // Get the directory of the current script
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  
+
   // Check if .env file exists
   const envPath = path.join(__dirname, '.env');
   if (fs.existsSync(envPath)) {
     // Load .env from the script directory
     const result = dotenv.config({ path: envPath });
     console.log(`✓ .env file found and loaded from: ${envPath}`);
-    
+
     // Debug: Check if dotenv actually loaded the variables
     if (result.error) {
       console.log(`✗ Error loading .env file: ${result.error}`);
@@ -44,32 +47,41 @@ try {
 
 // Import modules dynamically after dotenv is loaded
 console.log('🔄 Starting module imports...');
-let StreamableHTTPServerTransport, express, initializeServer, serverConfig, loadSSLConfig, validateConfig, https, createRequire, require, cors, rateLimit;
+
+let StreamableHTTPServerTransport: any;
+let express: any;
+let initializeServer: () => Promise<McpServer>;
+let serverConfig: any;
+let loadSSLConfig: () => any;
+let validateConfig: () => string[];
+let https: any;
+let cors: any;
+let rateLimit: any;
 
 try {
   console.log('🔄 Importing StreamableHTTPServerTransport...');
   ({ StreamableHTTPServerTransport } = await import("@modelcontextprotocol/sdk/server/streamableHttp.js"));
   console.log('✅ StreamableHTTPServerTransport imported');
-  
+
   console.log('🔄 Importing express...');
   express = (await import('express')).default;
   console.log('✅ Express imported');
-  
+
   console.log('🔄 Importing server.js...');
   ({ initializeServer } = await import('./server.js'));
   console.log('✅ server.js imported');
-  
+
   console.log('🔄 Importing server.config.js...');
   ({ serverConfig, loadSSLConfig, validateConfig } = await import('./config/server.config.js'));
   console.log('✅ server.config.js imported');
   console.log('🔍 serverConfig.http.auth.token:', serverConfig.http.auth.token ? 'SET' : 'NOT SET');
-  
+
   console.log('🔄 Importing https...');
   https = await import('https');
   console.log('✅ https imported');
-  
-  ({ createRequire } = await import('module'));
-  require = createRequire(import.meta.url);
+
+  const { createRequire } = await import('module');
+  const require = createRequire(import.meta.url);
   cors = require('cors');
   rateLimit = require('express-rate-limit');
   console.log('✅ All modules imported successfully');
@@ -78,7 +90,7 @@ try {
   process.exit(1);
 }
 
-let server;
+let server: McpServer;
 
 // ==================== EXPRESS SERVER SETUP ====================
 
@@ -90,10 +102,12 @@ console.log('✅ Express JSON middleware enabled');
 // Apply CORS if enabled
 if (serverConfig.http.cors.enabled) {
   console.log('🔄 Setting up CORS middleware...');
-  app.use(cors({
-    origin: serverConfig.http.cors.origins,
-    credentials: serverConfig.http.cors.credentials
-  }));
+  app.use(
+    cors({
+      origin: serverConfig.http.cors.origins,
+      credentials: serverConfig.http.cors.credentials
+    })
+  );
   console.log('✅ CORS middleware enabled for origins:', serverConfig.http.cors.origins);
 } else {
   console.log('ℹ️  CORS disabled');
@@ -108,7 +122,13 @@ if (serverConfig.security.rateLimit.enabled) {
     message: 'Too many requests from this IP, please try again later.'
   });
   app.use('/mcp', limiter);
-  console.log('✅ Rate limiting enabled:', serverConfig.security.rateLimit.max, 'requests per', serverConfig.security.rateLimit.windowMs, 'ms');
+  console.log(
+    '✅ Rate limiting enabled:',
+    serverConfig.security.rateLimit.max,
+    'requests per',
+    serverConfig.security.rateLimit.windowMs,
+    'ms'
+  );
 } else {
   console.log('ℹ️  Rate limiting disabled');
 }
@@ -116,59 +136,66 @@ if (serverConfig.security.rateLimit.enabled) {
 // IP filtering middleware
 if (serverConfig.security.ipFilter.enabled) {
   console.log('🔄 Setting up IP filtering middleware...');
-  app.use((req, res, next) => {
-    const clientIp = req.ip || req.connection.remoteAddress;
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const clientIp = req.ip || (req.connection as any).remoteAddress;
     console.log('🔍 IP filter check for:', clientIp);
-    
+
     // Check whitelist
     if (serverConfig.security.ipFilter.whitelist.length > 0) {
       if (!serverConfig.security.ipFilter.whitelist.includes(clientIp)) {
         console.log('❌ IP not whitelisted:', clientIp);
-        return res.status(403).json({
+        res.status(403).json({
           jsonrpc: '2.0',
           error: {
             code: -32003,
-            message: 'Forbidden: IP not whitelisted',
+            message: 'Forbidden: IP not whitelisted'
           },
-          id: null,
+          id: null
         });
+        return;
       }
       console.log('✅ IP whitelisted:', clientIp);
     }
-    
+
     // Check blacklist
     if (serverConfig.security.ipFilter.blacklist.includes(clientIp)) {
       console.log('❌ IP blacklisted:', clientIp);
-      return res.status(403).json({
+      res.status(403).json({
         jsonrpc: '2.0',
         error: {
           code: -32003,
-          message: 'Forbidden: IP blacklisted',
+          message: 'Forbidden: IP blacklisted'
         },
-        id: null,
+        id: null
       });
+      return;
     }
-    
+
     next();
   });
-  console.log('✅ IP filtering enabled. Whitelist:', serverConfig.security.ipFilter.whitelist, 'Blacklist:', serverConfig.security.ipFilter.blacklist);
+  console.log(
+    '✅ IP filtering enabled. Whitelist:',
+    serverConfig.security.ipFilter.whitelist,
+    'Blacklist:',
+    serverConfig.security.ipFilter.blacklist
+  );
 } else {
   console.log('ℹ️  IP filtering disabled');
 }
 
 // Authentication middleware
-function authenticate(req, res, next) {
+function authenticate(req: Request, res: Response, next: NextFunction): void {
   console.log('🔍 Authentication check started');
   console.log('🔍 Auth enabled:', serverConfig.http.auth.enabled);
   console.log('🔍 Auth type:', serverConfig.http.auth.type);
-  
+
   if (!serverConfig.http.auth.enabled) {
     console.log('ℹ️  Authentication disabled, skipping');
     return next();
   }
-  
-  let token;
-  
+
+  let token: string | undefined;
+
   if (serverConfig.http.auth.type === 'bearer') {
     const authHeader = req.headers['authorization'];
     console.log('🔍 Authorization header:', authHeader ? `${authHeader.substring(0, 20)}...` : 'NOT SET');
@@ -177,98 +204,111 @@ function authenticate(req, res, next) {
       console.log('🔍 Bearer token extracted:', token ? `${token.substring(0, 8)}...` : 'NOT FOUND');
     }
   } else if (serverConfig.http.auth.type === 'api-key') {
-    token = req.headers['x-api-key'] || req.query.apiKey;
+    token = (req.headers['x-api-key'] as string) || (req.query.apiKey as string);
     console.log('🔍 API key token:', token ? `${token.substring(0, 8)}...` : 'NOT FOUND');
   }
-  
+
   // Fallback to body token for backward compatibility
-  token = token || req.body?.token;
+  token = token || (req.body as any)?.token;
   console.log('🔍 Final token (after fallback):', token ? `${token.substring(0, 8)}...` : 'NOT FOUND');
-  console.log('🔍 Expected token:', serverConfig.http.auth.token ? `${serverConfig.http.auth.token.substring(0, 8)}...` : 'NOT SET');
-  
+  console.log(
+    '🔍 Expected token:',
+    serverConfig.http.auth.token ? `${serverConfig.http.auth.token.substring(0, 8)}...` : 'NOT SET'
+  );
+
   if (token !== serverConfig.http.auth.token) {
     console.log('❌ Authentication failed: token mismatch');
-    return res.status(401).json({
+    res.status(401).json({
       jsonrpc: '2.0',
       error: {
         code: -32001,
-        message: 'Unauthorized: Invalid or missing token',
+        message: 'Unauthorized: Invalid or missing token'
       },
-      id: null,
+      id: null
     });
+    return;
   }
-  
+
   console.log('✅ Authentication successful');
   next();
 }
 
-app.post('/mcp', authenticate, async (req, res) => {
+app.post('/mcp', authenticate, async (req: Request, res: Response) => {
   console.log('📨 Received POST MCP request');
   console.log('🔍 Request body size:', JSON.stringify(req.body).length, 'bytes');
   console.log('🔍 Request headers:', Object.keys(req.headers));
-  
+
   try {
     console.log('🔄 Creating StreamableHTTPServerTransport...');
     const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
+      sessionIdGenerator: undefined
     });
-    
+
     res.on('close', () => {
       console.log('📪 Request closed');
       transport.close();
       server.close();
     });
-    
+
     console.log('🔄 Connecting server to transport...');
     await server.connect(transport);
     console.log('✅ Server connected to transport');
-    
+
     console.log('🔄 Handling request...');
     await transport.handleRequest(req, res, req.body);
     console.log('✅ Request handled successfully');
-    
   } catch (error) {
     console.error('❌ Error handling MCP request:', error);
-    console.error('❌ Error stack:', error.stack);
+    if (error instanceof Error) {
+      console.error('❌ Error stack:', error.stack);
+    }
     if (!res.headersSent) {
       res.status(500).json({
         jsonrpc: '2.0',
         error: {
           code: -32603,
-          message: 'Internal server error',
+          message: 'Internal server error'
         },
-        id: null,
+        id: null
       });
     }
   }
 });
 
-app.get('/mcp', async (req, res) => {
+app.get('/mcp', async (req: Request, res: Response) => {
   console.log('📨 Received GET MCP request (not allowed)');
-  res.writeHead(405).end(JSON.stringify({
-    jsonrpc: "2.0",
-    error: {
-      code: -32000,
-      message: "Method not allowed."
-    },
-    id: null
-  }));
+  res
+    .writeHead(405)
+    .end(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        error: {
+          code: -32000,
+          message: 'Method not allowed.'
+        },
+        id: null
+      })
+    );
 });
 
-app.delete('/mcp', async (req, res) => {
+app.delete('/mcp', async (req: Request, res: Response) => {
   console.log('📨 Received DELETE MCP request (not allowed)');
-  res.writeHead(405).end(JSON.stringify({
-    jsonrpc: "2.0",
-    error: {
-      code: -32000,
-      message: "Method not allowed."
-    },
-    id: null
-  }));
+  res
+    .writeHead(405)
+    .end(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        error: {
+          code: -32000,
+          message: 'Method not allowed.'
+        },
+        id: null
+      })
+    );
 });
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
     service: 'WinCC OA MCP Server',
@@ -278,7 +318,7 @@ app.get('/health', (req, res) => {
 });
 
 // Initialize and start the server
-async function start() {
+async function start(): Promise<void> {
   // Validate configuration
   const configErrors = validateConfig();
   if (configErrors.length > 0) {
@@ -286,13 +326,13 @@ async function start() {
     configErrors.forEach(error => console.error(`  - ${error}`));
     process.exit(1);
   }
-  
+
   server = await initializeServer();
-  
+
   const { host, port } = serverConfig.http;
-  
+
   // Create HTTP or HTTPS server
-  let httpServer;
+  let httpServer: any;
   if (serverConfig.http.ssl.enabled) {
     const sslConfig = loadSSLConfig();
     if (!sslConfig) {
@@ -303,13 +343,13 @@ async function start() {
   } else {
     httpServer = app;
   }
-  
+
   httpServer.listen(port, host, () => {
     const protocol = serverConfig.http.ssl.enabled ? 'https' : 'http';
     console.log(`MCP Extended WinCC OA Server with CNS/UNS`);
     console.log(`Server listening on ${protocol}://${host}:${port}`);
     console.log(`Health check: ${protocol}://${host}:${port}/health`);
-    
+
     if (serverConfig.http.auth.enabled) {
       console.log(`Authentication: ${serverConfig.http.auth.type}`);
       if (serverConfig.http.auth.token) {
@@ -318,14 +358,14 @@ async function start() {
     } else {
       console.log('⚠️  WARNING: Authentication is disabled!');
     }
-    
+
     if (serverConfig.http.cors.enabled) {
       console.log('CORS enabled for:', serverConfig.http.cors.origins);
     }
   });
 }
 
-start().catch((error) => {
+start().catch((error: Error) => {
   console.error("Failed to start server:", error);
   process.exit(1);
 });

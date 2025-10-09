@@ -1,14 +1,21 @@
+/**
+ * OPC UA Connection Tools
+ *
+ * MCP tools for creating and browsing OPC UA connections.
+ */
+
 import { z } from 'zod';
-import OpcUaConnection from '../../helpers/OpcUaConnection.js';
+import OpcUaConnection from '../../helpers/drivers/OpcUaConnection.js';
 import { createSuccessResponse, createErrorResponse } from '../../utils/helpers.js';
+import type { ServerContext } from '../../types/index.js';
 
 /**
  * Register OPC UA Connection tools (add-connection, browse)
- * @param {McpServer} server - MCP server instance
- * @param {Object} context - Server context with winccoa, configs, etc.
- * @returns {number} Number of tools registered
+ * @param server - MCP server instance
+ * @param context - Server context with winccoa, configs, etc.
+ * @returns Number of tools registered
  */
-export function registerTools(server, context) {
+export function registerTools(server: any, context: ServerContext): number {
   const opcua = new OpcUaConnection();
 
   // Tool 1: Add OPC UA Connection
@@ -42,15 +49,25 @@ export function registerTools(server, context) {
       managerNumber: z.number().min(1).max(99).describe('WinCC OA manager number (1-99)'),
       connectionName: z.string().optional().describe('Custom connection name (auto-generated if not specified)'),
       reconnectTimer: z.number().positive().optional().describe('Reconnect timer in seconds (default: 10)'),
-      securityPolicy: z.number().min(0).max(6).optional().describe('Security policy: 0=None, 2=Basic128Rsa15, 3=Basic256, 4=Basic256Sha256, 5=Aes128Sha256RsaOaep, 6=Aes256Sha256RsaPss'),
-      messageSecurityMode: z.number().min(0).max(2).optional().describe('Message security mode: 0=None, 1=Sign, 2=SignAndEncrypt'),
+      securityPolicy: z
+        .number()
+        .min(0)
+        .max(6)
+        .optional()
+        .describe('Security policy: 0=None, 2=Basic128Rsa15, 3=Basic256, 4=Basic256Sha256, 5=Aes128Sha256RsaOaep, 6=Aes256Sha256RsaPss'),
+      messageSecurityMode: z
+        .number()
+        .min(0)
+        .max(2)
+        .optional()
+        .describe('Message security mode: 0=None, 1=Sign, 2=SignAndEncrypt'),
       username: z.string().optional().describe('Username for authentication'),
       password: z.string().optional().describe('Password for authentication'),
       clientCertificate: z.string().optional().describe('Client certificate name'),
       separator: z.string().optional().describe('Separator for display names (default: ".")'),
       enableConnection: z.boolean().optional().describe('Enable connection immediately (default: true)')
     },
-    async (params) => {
+    async (params: any) => {
       try {
         console.log('Adding OPC UA connection:', params);
 
@@ -65,10 +82,12 @@ export function registerTools(server, context) {
           message: 'OPC UA connection created and configured successfully'
         });
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : undefined;
         console.error('Error adding OPC UA connection:', error);
-        return createErrorResponse(`Failed to add OPC UA connection: ${error.message}`, {
-          details: error.message,
-          stack: error.stack
+        return createErrorResponse(`Failed to add OPC UA connection: ${errorMessage}`, {
+          details: errorMessage,
+          stack: errorStack
         });
       }
     }
@@ -106,19 +125,21 @@ export function registerTools(server, context) {
     {
       connectionName: z.string().describe('Name of the OPC UA connection'),
       parentNodeId: z.string().optional().describe('Parent node ID to browse from (default: "ns=0;i=85" for Objects folder)'),
-      eventSource: z.enum(['0', '1', '2']).or(z.number().min(0).max(2)).optional().describe('Event source type: 0=Value, 1=Event, 2=Alarm&Condition')
+      eventSource: z
+        .enum(['0', '1', '2'])
+        .or(z.number().min(0).max(2))
+        .optional()
+        .describe('Event source type: 0=Value, 1=Event, 2=Alarm&Condition')
     },
-    async ({ connectionName, parentNodeId, eventSource }) => {
+    async ({ connectionName, parentNodeId, eventSource }: { connectionName: string; parentNodeId?: string; eventSource?: '0' | '1' | '2' | number }) => {
       try {
         console.log('Browsing OPC UA connection:', { connectionName, parentNodeId, eventSource });
 
         // Convert eventSource to number if it's a string
-        const eventSourceNum = eventSource !== undefined
-          ? (typeof eventSource === 'string' ? parseInt(eventSource) : eventSource)
-          : 0;
+        const eventSourceNum = eventSource !== undefined ? (typeof eventSource === 'string' ? parseInt(eventSource) : eventSource) : 0;
 
         // Call the browse method
-        const nodes = await opcua.browse(connectionName, parentNodeId, eventSourceNum);
+        const nodes = await opcua.browse(connectionName, parentNodeId, eventSourceNum as 0 | 1 | 2);
 
         console.log(`Found ${nodes.length} nodes in OPC UA address space`);
         return createSuccessResponse({
@@ -128,11 +149,13 @@ export function registerTools(server, context) {
           nodes
         });
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : undefined;
         console.error('Error browsing OPC UA connection:', error);
-        return createErrorResponse(`Failed to browse OPC UA connection: ${error.message}`, {
+        return createErrorResponse(`Failed to browse OPC UA connection: ${errorMessage}`, {
           connectionName,
-          details: error.message,
-          stack: error.stack
+          details: errorMessage,
+          stack: errorStack
         });
       }
     }
