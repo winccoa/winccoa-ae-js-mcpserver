@@ -446,6 +446,103 @@ export class OpcUaConnection extends BaseConnection {
   }
 
   /**
+   * Ensure that a poll group exists for polling or spontaneous mode
+   *
+   * Based on reference implementation IT_OT_BL.ctl lines 1014-1041:
+   * - Uses _PollGroup type (not _OPCUASubscription)
+   * - For polling mode: Uses PollInterval to control how often data is queried
+   * - For spontaneous mode: Just needs a name in _poll_group attribute
+   * - Poll group can be shared across multiple datapoints
+   *
+   * @param subscriptionName - Poll group/subscription name (e.g., '_DefaultSubscription' or 'DefaultSubscription')
+   * @param connectionName - Connection name (normalized with _ prefix)
+   * @returns Poll group name with _ prefix
+   * @throws Error if poll group cannot be created
+   */
+  private async ensureSubscriptionExists(
+    subscriptionName: string,
+    connectionName: string
+  ): Promise<string> {
+    try {
+      // Normalize subscription name (ensure _ prefix)
+      const normalizedSub = subscriptionName.startsWith('_')
+        ? subscriptionName
+        : `_${subscriptionName}`;
+
+      // Check if subscription/poll group already exists
+      const subscriptionExists = this.checkDpExists(normalizedSub);
+
+      if (subscriptionExists) {
+        console.log(`Poll group/subscription ${normalizedSub} already exists`);
+        return normalizedSub;
+      }
+
+      // Create as _PollGroup (used for both polling and spontaneous)
+      // For polling mode: PollInterval controls how often data is queried
+      // For spontaneous mode: Just needs a name reference in _poll_group attribute
+      console.log(`Creating poll group ${normalizedSub} of type _PollGroup`);
+
+      const created = await this.winccoa.dpCreate(normalizedSub, '_PollGroup');
+      if (!created) {
+        throw new Error(`Failed to create poll group ${normalizedSub}`);
+      }
+
+      // Configure poll group settings
+      // Active: Enable the poll group
+      // PollInterval: Controls polling frequency (1000ms = 1 second)
+      console.log(`Configuring poll group ${normalizedSub}:`);
+      console.log(`  - Active: true`);
+      console.log(`  - PollInterval: 1000ms`);
+
+      await this.winccoa.dpSetWait(
+        [
+          `${normalizedSub}.Active`,
+          `${normalizedSub}.PollInterval`
+        ],
+        [
+          1,     // Active = true
+          1000   // Poll interval in ms (1 second)
+        ]
+      );
+
+      console.log(`✓ Successfully created and configured poll group ${normalizedSub}`);
+      return normalizedSub;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to ensure subscription exists: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Build OPC UA reference string
+   * Format: ConnectionName$$1$1$NodeId (note the DOUBLE $$)
+   *
+   * IMPORTANT: Based on reference implementation IT_OT_BL.ctl line 1048:
+   * - Use DOUBLE dollar signs $$ between connection and mode
+   * - Do NOT include subscription name in reference string
+   * - Subscription is specified separately in _poll_group attribute
+   *
+   * @param connectionName - Connection name (with _ prefix, e.g., '_OpcUAConnection1')
+   * @param nodeId - OPC UA Node ID (e.g., 'ns=2;s=MyVariable')
+   * @returns Formatted reference string
+   */
+  private buildReferenceString(
+    connectionName: string,
+    nodeId: string
+  ): string {
+    // Remove leading underscore for reference string
+    const conn = connectionName.startsWith('_')
+      ? connectionName.substring(1)
+      : connectionName;
+
+    // Format: Connection$$Variant$Mode$NodeId
+    // Note: DOUBLE $$ is critical!
+    // Variant: 1 = NodeId (not browse path)
+    // Mode: 1 = NodeId format
+    return `${conn}$$1$1$${nodeId}`;
+  }
+
+  /**
    * Configure address and distribution settings for an OPC UA datapoint element
    * Sets both _address and _distrib configs with OPC UA-specific parameters
    *
@@ -453,9 +550,10 @@ export class OpcUaConnection extends BaseConnection {
    * @param connectionName - OPC UA connection name (with or without _ prefix)
    * @param reference - OPC UA NodeId reference (e.g., 'ns=2;s=MyVariable')
    * @param datatype - OPC UA transformation type (750-768, default: 750=DEFAULT)
-   * @param direction - Address direction mode (0-15, default: 2=INPUT_SPONT)
+   * @param direction - Address direction mode (0-15, default: 4=INPUT_POLL)
    * @param active - Activate address immediately (default: true)
    * @param managerNumber - Optional manager number (1-255). If not specified, auto-detected.
+   * @param subscription - Optional poll group name. If not specified, uses '_DefaultPollingFast'.
    * @returns true on success
    * @throws Error with detailed message on failure
    */
@@ -464,9 +562,10 @@ export class OpcUaConnection extends BaseConnection {
     connectionName: string,
     reference: string,
     datatype: number = OpcUaDatatype.DEFAULT,
-    direction: number = DpAddressDirection.DPATTR_ADDR_MODE_INPUT_SPONT,
+    direction: number = DpAddressDirection.DPATTR_ADDR_MODE_INPUT_POLL,
     active: boolean = true,
-    managerNumber?: number
+    managerNumber?: number,
+    subscription: string = 'DefaultPollingFast'
   ): Promise<boolean> {
     try {
       console.log(`Configuring OPC UA address for ${dpName}`);
@@ -523,58 +622,73 @@ export class OpcUaConnection extends BaseConnection {
         throw new Error(
           `Invalid address direction ${direction}. Must be between 0 and 15.\n` +
           `Common values:\n` +
+          `  4 = INPUT_POLL (polled input, default)\n` +
           `  2 = INPUT_SPONT (spontaneous input)\n` +
-          `  4 = INPUT_POLL (polled input)\n` +
           `  1 = OUTPUT (output)\n` +
           `See DpAddressDirection enum for full list.`
         );
       }
 
-      // 7. Build DpAddressConfig
+      // 7. Ensure subscription exists (create if necessary)
+      const normalizedSubscription = await this.ensureSubscriptionExists(
+        subscription,
+        normalizedConnection
+      );
+
+      // 8. Build proper reference string (NO subscription in reference!)
+      //    Subscription is specified in _poll_group attribute
+      const fullReference = this.buildReferenceString(
+        normalizedConnection,
+        reference
+      );
+
+      // 9. Build DpAddressConfig with ALL required fields
       const addressConfig: DpAddressConfig = {
         _type: DpConfigType.DPCONFIG_PERIPH_ADDR_MAIN,
         _drv_ident: "OPCUA",
         _connection: normalizedConnection,
-        _reference: reference,
+        _reference: fullReference,  // Full reference (double $$ format)
         _direction: direction,
-        _internal: false
-        // _active is NOT set here - will be set separately if needed
+        _datatype: datatype,        // CRITICAL: Transformation type
+        _subindex: 0,               // Always 0 for OPC UA
+        _internal: false,
+        _lowlevel: false,           // No low-level comparison by default
+        _offset: 0,                 // No offset by default
+        _poll_group: normalizedSubscription,  // Poll group name (used for both polling and spontaneous modes)
+        _active: active             // Set active in the initial config
       };
 
-      // 8. Build DpDistribConfig
+      // 10. Build DpDistribConfig
       const distribConfig: DpDistribConfig = {
         _type: DpConfigType.DPCONFIG_DISTRIBUTION_INFO,
         _driver: finalManagerNumber
       };
 
-      console.log(`Setting address config for ${dpName}:`);
+      console.log(`\n╔════════════════════════════════════════════════════════════════╗`);
+      console.log(`║ OPC UA Address Configuration for: ${dpName.padEnd(30)} ║`);
+      console.log(`╠════════════════════════════════════════════════════════════════╣`);
       console.log(`  Connection: ${normalizedConnection}`);
-      console.log(`  Reference: ${reference}`);
-      console.log(`  Datatype: ${datatype}`);
+      console.log(`  Poll Group: ${normalizedSubscription}`);
+      console.log(`  Full Reference: ${fullReference}`);
+      console.log(`  Original NodeId: ${reference}`);
+      console.log(`  Datatype: ${datatype} (CRITICAL FIELD)`);
       console.log(`  Direction: ${direction}`);
       console.log(`  Manager: ${finalManagerNumber}`);
+      console.log(`╠════════════════════════════════════════════════════════════════╣`);
+      console.log(`║ Complete addressConfig object:                                 ║`);
+      console.log(`╚════════════════════════════════════════════════════════════════╝`);
+      console.log(JSON.stringify(addressConfig, null, 2));
+      console.log(`\n╔════════════════════════════════════════════════════════════════╗`);
+      console.log(`║ Complete distribConfig object:                                 ║`);
+      console.log(`╚════════════════════════════════════════════════════════════════╝`);
+      console.log(JSON.stringify(distribConfig, null, 2));
+      console.log();
 
-      // 9. Set _address config
-      const addressSuccess = await this.setAddressConfig(dpName, addressConfig);
-      if (!addressSuccess) {
-        throw new Error('Failed to set _address configuration');
-      }
-
-      // 10. Set _distrib config
-      const distribSuccess = await this.setDistribConfig(dpName, distribConfig);
-      if (!distribSuccess) {
-        throw new Error(
-          '_address config was set successfully, but _distrib config failed. ' +
-          'The address may be incomplete.'
-        );
-      }
-
-      // 11. Set _active separately if requested
-      if (active) {
-        await this.winccoa.dpSet(`${dpName}:_address.._active`, true);
-        console.log(`Address activated for ${dpName}`);
-      } else {
-        console.log(`Address created but not activated for ${dpName}`);
+      // 11. Set BOTH _address and _distrib configs in a SINGLE ATOMIC operation
+      //     CRITICAL: WinCC OA requires these to be set together!
+      const configSuccess = await this.setAddressAndDistribConfig(dpName, addressConfig, distribConfig);
+      if (!configSuccess) {
+        throw new Error('Failed to set _address and _distrib configuration atomically');
       }
 
       console.log(`✓ Successfully configured OPC UA address for ${dpName}`);

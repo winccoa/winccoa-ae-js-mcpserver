@@ -21,7 +21,12 @@ export interface DpAddressConfig {
   _reference: string;
   _internal: boolean;
   _direction: number;
-  _active?: boolean;
+  _datatype: number;      // OPC UA transformation type (750-768)
+  _subindex: number;      // Subindex (0 for OPC UA)
+  _lowlevel?: boolean;    // Low-level comparison (onDataChange)
+  _offset?: number;       // Offset for historical data
+  _poll_group?: string;   // Subscription/poll group name
+  _active?: boolean;      // Active flag (usually set separately)
 }
 
 /**

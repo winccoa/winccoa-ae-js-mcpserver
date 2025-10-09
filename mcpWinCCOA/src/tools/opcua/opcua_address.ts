@@ -35,16 +35,19 @@ export function registerTools(server: any, context: ServerContext): number {
     - datatype: OPC UA datatype transformation (default: 750 = automatic detection)
       Available types: 750-768 (DEFAULT, BOOLEAN, SBYTE, BYTE, INT16, UINT16, INT32, UINT32,
       INT64, UINT64, FLOAT, DOUBLE, STRING, DATETIME, GUID, BYTESTRING, XMLELEMENT, NODEID, LOCALIZEDTEXT)
-    - direction: Address direction mode (default: 2 = INPUT_SPONT for spontaneous input)
+    - direction: Address direction mode (default: 4 = INPUT_POLL for polled input)
       Common modes: 1=OUTPUT, 2=INPUT_SPONT, 3=INPUT_SQUERY, 4=INPUT_POLL, 5=OUTPUT_SINGLE,
       6=IO_SPONT, 7=IO_POLL, 14=INPUT_SPONT_ON_USE
     - active: Enable address immediately (default: true)
     - managerNumber: OPC UA manager number (1-255). If not specified, automatically detected from connection.
+    - subscription: Poll group name (default: 'DefaultPollingFast' with 1000ms interval). Created automatically if not exists as _PollGroup type.
 
     The tool automatically:
     - Validates all parameters
     - Auto-detects the manager number from the connection if not provided
-    - Sets both _address and _distrib configurations
+    - Creates poll group (_PollGroup) if it doesn't exist
+    - Builds proper reference string format
+    - Sets both _address and _distrib configurations atomically with all required fields (_datatype, _subindex, _poll_group, etc.)
     - Activates the address if requested
 
     Returns: Success status with configuration details.`,
@@ -63,14 +66,18 @@ export function registerTools(server: any, context: ServerContext): number {
         .min(0)
         .max(15)
         .optional()
-        .describe('Address direction mode (0-15, default: 2=INPUT_SPONT)'),
+        .describe('Address direction mode (0-15, default: 4=INPUT_POLL)'),
       active: z.boolean().optional().describe('Enable address immediately (default: true)'),
       managerNumber: z
         .number()
         .min(1)
         .max(255)
         .optional()
-        .describe('OPC UA manager number (1-255, auto-detected if not specified)')
+        .describe('OPC UA manager number (1-255, auto-detected if not specified)'),
+      subscription: z
+        .string()
+        .optional()
+        .describe('Poll group name (default: "DefaultPollingFast" with 1000ms interval, auto-created as _PollGroup if not exists)')
     },
     async (params: any) => {
       try {
@@ -78,8 +85,9 @@ export function registerTools(server: any, context: ServerContext): number {
 
         // Set defaults
         const datatype = params.datatype ?? OpcUaDatatype.DEFAULT;
-        const direction = params.direction ?? DpAddressDirection.DPATTR_ADDR_MODE_INPUT_SPONT;
+        const direction = params.direction ?? DpAddressDirection.DPATTR_ADDR_MODE_INPUT_POLL;
         const active = params.active ?? true;
+        const subscription = params.subscription ?? 'DefaultPollingFast';
 
         // Call the addAddressConfig method
         const success = await opcua.addAddressConfig(
@@ -89,7 +97,8 @@ export function registerTools(server: any, context: ServerContext): number {
           datatype,
           direction,
           active,
-          params.managerNumber
+          params.managerNumber,
+          subscription
         );
 
         if (success) {
@@ -102,6 +111,7 @@ export function registerTools(server: any, context: ServerContext): number {
             direction,
             active,
             managerNumber: params.managerNumber ?? 'auto-detected',
+            subscription,
             message: 'OPC UA address configuration completed successfully'
           });
         } else {
