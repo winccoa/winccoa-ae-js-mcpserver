@@ -25,6 +25,15 @@ export interface DpAddressConfig {
 }
 
 /**
+ * Datapoint configuration for distribution (manager allocation)
+ * This is a separate config parallel to _address
+ */
+export interface DpDistribConfig {
+  _type: number;
+  _driver: number;
+}
+
+/**
  * Datapoint element type enum (subset of WinCC OA types)
  */
 export enum DpElementType {

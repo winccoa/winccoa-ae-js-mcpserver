@@ -6,14 +6,13 @@
  */
 
 import { WinccoaManager } from 'winccoa-manager';
+import type { DpAddressConfig, DpDistribConfig } from '../../types/index.js';
 
 /**
  * Abstract base class for driver connections
  *
  * All driver-specific connection classes must extend this class.
  * Provides common helper methods for datapoint management and validation.
- *
- * Future extension: Will include abstract addAddressConfig() method
  */
 export abstract class BaseConnection {
   /** WinCC OA manager instance */
@@ -22,6 +21,102 @@ export abstract class BaseConnection {
   constructor() {
     this.winccoa = new WinccoaManager();
   }
+
+  /**
+   * Protected method to set address configuration (common implementation)
+   * Sets all address fields
+   *
+   * @param dpName - Full datapoint element name (e.g., 'MyDP.Value')
+   * @param config - Address configuration
+   * @returns true on success, false on failure
+   */
+  protected async setAddressConfig(dpName: string, config: DpAddressConfig): Promise<boolean> {
+    try {
+      // Build the address configuration datapoints
+      const dpes = [
+        `${dpName}:_address.._type`,
+        `${dpName}:_address.._drv_ident`,
+        `${dpName}:_address.._connection`,
+        `${dpName}:_address.._reference`,
+        `${dpName}:_address.._internal`,
+        `${dpName}:_address.._direction`
+      ];
+
+      const values = [
+        config._type,
+        config._drv_ident,
+        config._connection,
+        config._reference,
+        config._internal,
+        config._direction
+      ];
+
+      // Add optional _active if provided
+      if (config._active !== undefined) {
+        dpes.push(`${dpName}:_address.._active`);
+        values.push(config._active);
+      }
+
+      console.log(`Setting address config for ${dpName}:`);
+      console.log(`- Type: ${config._type}`);
+      console.log(`- Driver: ${config._drv_ident}`);
+      console.log(`- Connection: ${config._connection}`);
+      console.log(`- Reference: ${config._reference}`);
+
+      // Apply configuration using dpSetWait for synchronous execution
+      await this.winccoa.dpSetWait(dpes, values);
+
+      console.log(`Successfully configured address for ${dpName}`);
+      return true;
+    } catch (error) {
+      console.error(`Error configuring address for ${dpName}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Protected method to set distribution config (manager allocation)
+   * This is a separate config parallel to _address
+   *
+   * @param dpName - Full datapoint element name (e.g., 'MyDP.Value')
+   * @param config - Distribution configuration
+   * @returns true on success, false on failure
+   */
+  protected async setDistribConfig(dpName: string, config: DpDistribConfig): Promise<boolean> {
+    try {
+      const dpes = [
+        `${dpName}:_distrib.._type`,
+        `${dpName}:_distrib.._driver`
+      ];
+
+      const values = [
+        config._type,
+        config._driver
+      ];
+
+      console.log(`Setting distrib config for ${dpName}:`);
+      console.log(`- Type: ${config._type}`);
+      console.log(`- Driver: ${config._driver}`);
+
+      // Apply configuration using dpSetWait for synchronous execution
+      await this.winccoa.dpSetWait(dpes, values);
+
+      console.log(`Successfully configured distrib for ${dpName}`);
+      return true;
+    } catch (error) {
+      console.error(`Error configuring distrib for ${dpName}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Configure address settings for a datapoint
+   * Must be implemented by each driver-specific class with driver-specific parameters
+   *
+   * Note: Each driver implements this with its own signature based on driver requirements.
+   * This method should handle validation and call setAddressConfig() and setDistribConfig().
+   */
+  abstract addAddressConfig(...args: any[]): Promise<boolean>;
 
   /**
    * Check if a datapoint exists

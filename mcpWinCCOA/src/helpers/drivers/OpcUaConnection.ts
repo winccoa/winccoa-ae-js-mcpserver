@@ -11,8 +11,11 @@ import type {
   MessageSecurityMode,
   BrowseNode,
   BrowseEventSource,
-  OPCUA_DEFAULTS
+  OPCUA_DEFAULTS,
+  DpAddressConfig,
+  DpDistribConfig
 } from '../../types/index.js';
+import { DpConfigType, OpcUaDatatype, DpAddressDirection } from '../../types/index.js';
 
 // Re-export enums and constants for backward compatibility
 export { SecurityPolicy, MessageSecurityMode, OPCUA_DEFAULTS } from '../../types/index.js';
@@ -321,6 +324,266 @@ export class OpcUaConnection extends BaseConnection {
     } catch (error) {
       console.error(`Error browsing OPC UA connection:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * Get manager number for a given OPC UA connection
+   * Searches for which _OPCUA{num} manager has this connection registered
+   *
+   * @param connectionName - Connection name (normalized with _ prefix)
+   * @returns Manager number (1-255)
+   * @throws Error if no manager found
+   */
+  private async getManagerNumberForConnection(connectionName: string): Promise<number> {
+    try {
+      // Normalize connection name (remove leading underscore for search)
+      const normalizedName = connectionName.startsWith('_')
+        ? connectionName.substring(1)
+        : connectionName;
+
+      console.log(`Auto-detecting manager for connection: ${normalizedName}`);
+
+      // 1. Try to find which _OPCUA{num} has this connection registered
+      // Get all _OPCUA{num} datapoints
+      const opcuaManagers = this.winccoa.dpNames('_OPCUA*', '_OPCUA');
+
+      for (const managerDp of opcuaManagers) {
+        try {
+          const servers = await this.winccoa.dpGet(`${managerDp}.Config.Servers`) as string[];
+          if (Array.isArray(servers) && servers.includes(normalizedName)) {
+            // Extract number from "_OPCUA{num}"
+            const match = managerDp.match(/_OPCUA(\d+)/);
+            if (match && match[1]) {
+              const managerNum = parseInt(match[1]);
+              console.log(`Found connection registered with ${managerDp}`);
+              return managerNum;
+            }
+          }
+        } catch (error) {
+          // Skip managers that don't have Config.Servers or are not accessible
+          continue;
+        }
+      }
+
+      // 2. Fallback: Find first running OPCUA driver by checking _Driver* datapoints
+      const drivers = this.winccoa.dpNames('_Driver*', '_DriverCommon');
+
+      for (const driverDp of drivers) {
+        try {
+          const driverType = await this.winccoa.dpGet(`${driverDp}.DT`) as string;
+          if (driverType === "OPCUAC") { // OPC UA Client driver type
+            const match = driverDp.match(/_Driver(\d+)/);
+            if (match && match[1]) {
+              const driverNum = parseInt(match[1]);
+              console.log(`Found running OPC UA driver with number ${driverNum}`);
+              return driverNum;
+            }
+          }
+        } catch (error) {
+          continue;
+        }
+      }
+
+      throw new Error(
+        `No OPC UA manager found for connection ${connectionName}. ` +
+        `Please ensure: 1) Connection is registered with a manager (_OPCUA{num}.Config.Servers), ` +
+        `or 2) An OPC UA driver is running.`
+      );
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to detect manager number: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Validate manager number and check if connection is registered with it
+   *
+   * @param managerNumber - Manager number to validate
+   * @param connectionName - Connection name (normalized with _ prefix)
+   * @throws Error if validation fails
+   */
+  private async validateManagerNumberForConnection(
+    managerNumber: number,
+    connectionName: string
+  ): Promise<void> {
+    // 1. Validate range
+    if (managerNumber < 1 || managerNumber > 255) {
+      throw new Error(
+        `Manager number ${managerNumber} out of valid range (1-255)`
+      );
+    }
+
+    // 2. Check if manager datapoint exists
+    const managerDp = `_OPCUA${managerNumber}`;
+    if (!this.checkDpExists(managerDp)) {
+      throw new Error(
+        `OPC UA Manager ${managerDp} does not exist. ` +
+        `Please create it first or check your manager number.`
+      );
+    }
+
+    // 3. Check if connection is registered with this manager
+    const normalizedName = connectionName.startsWith('_')
+      ? connectionName.substring(1)
+      : connectionName;
+
+    try {
+      const servers = await this.winccoa.dpGet(`${managerDp}.Config.Servers`) as string[];
+
+      if (!Array.isArray(servers) || !servers.includes(normalizedName)) {
+        throw new Error(
+          `Connection ${connectionName} is not registered with manager ${managerDp}. ` +
+          `Registered connections: ${servers && servers.length > 0 ? servers.join(', ') : 'none'}`
+        );
+      }
+
+      console.log(`Validated: Connection ${connectionName} is registered with ${managerDp}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to validate manager registration: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Configure address and distribution settings for an OPC UA datapoint element
+   * Sets both _address and _distrib configs with OPC UA-specific parameters
+   *
+   * @param dpName - Full datapoint element name (e.g., 'MyDatapoint.Value')
+   * @param connectionName - OPC UA connection name (with or without _ prefix)
+   * @param reference - OPC UA NodeId reference (e.g., 'ns=2;s=MyVariable')
+   * @param datatype - OPC UA transformation type (750-768, default: 750=DEFAULT)
+   * @param direction - Address direction mode (0-15, default: 2=INPUT_SPONT)
+   * @param active - Activate address immediately (default: true)
+   * @param managerNumber - Optional manager number (1-255). If not specified, auto-detected.
+   * @returns true on success
+   * @throws Error with detailed message on failure
+   */
+  async addAddressConfig(
+    dpName: string,
+    connectionName: string,
+    reference: string,
+    datatype: number = OpcUaDatatype.DEFAULT,
+    direction: number = DpAddressDirection.DPATTR_ADDR_MODE_INPUT_SPONT,
+    active: boolean = true,
+    managerNumber?: number
+  ): Promise<boolean> {
+    try {
+      console.log(`Configuring OPC UA address for ${dpName}`);
+
+      // 1. Validate datapoint exists
+      const dpBaseName = dpName.split('.')[0];
+      if (!dpBaseName || !this.checkDpExists(dpBaseName)) {
+        throw new Error(
+          `Datapoint ${dpName} does not exist. Please create it first.`
+        );
+      }
+
+      // 2. Normalize connectionName (ensure _ prefix)
+      const normalizedConnection = connectionName.startsWith('_')
+        ? connectionName
+        : `_${connectionName}`;
+
+      // 3. Validate connection exists
+      if (!this.checkDpExists(normalizedConnection)) {
+        throw new Error(
+          `OPC UA connection ${normalizedConnection} does not exist. ` +
+          `Available connections: ${this.winccoa.dpNames('_OpcUAConnection*', '_OPCUAServer').join(', ')}`
+        );
+      }
+
+      // 4. Get manager number: explicit or auto-detect
+      let finalManagerNumber: number;
+
+      if (managerNumber !== undefined) {
+        await this.validateManagerNumberForConnection(managerNumber, normalizedConnection);
+        finalManagerNumber = managerNumber;
+        console.log(`Using explicitly specified manager number: ${finalManagerNumber}`);
+      } else {
+        finalManagerNumber = await this.getManagerNumberForConnection(normalizedConnection);
+        console.log(`Auto-detected manager number: ${finalManagerNumber}`);
+      }
+
+      // 5. Validate datatype (750-768 for OPC UA)
+      if (datatype < 750 || datatype > 768) {
+        throw new Error(
+          `Invalid OPC UA datatype ${datatype}. Must be between 750 and 768.\n` +
+          `Common values:\n` +
+          `  750 = DEFAULT (automatic detection)\n` +
+          `  751 = BOOLEAN\n` +
+          `  756 = INT32\n` +
+          `  760 = FLOAT\n` +
+          `  762 = STRING\n` +
+          `See OpcUaDatatype enum for full list.`
+        );
+      }
+
+      // 6. Validate direction (0-15)
+      if (direction < 0 || direction > 15) {
+        throw new Error(
+          `Invalid address direction ${direction}. Must be between 0 and 15.\n` +
+          `Common values:\n` +
+          `  2 = INPUT_SPONT (spontaneous input)\n` +
+          `  4 = INPUT_POLL (polled input)\n` +
+          `  1 = OUTPUT (output)\n` +
+          `See DpAddressDirection enum for full list.`
+        );
+      }
+
+      // 7. Build DpAddressConfig
+      const addressConfig: DpAddressConfig = {
+        _type: DpConfigType.DPCONFIG_PERIPH_ADDR_MAIN,
+        _drv_ident: "OPCUA",
+        _connection: normalizedConnection,
+        _reference: reference,
+        _direction: direction,
+        _internal: false
+        // _active is NOT set here - will be set separately if needed
+      };
+
+      // 8. Build DpDistribConfig
+      const distribConfig: DpDistribConfig = {
+        _type: DpConfigType.DPCONFIG_DISTRIBUTION_INFO,
+        _driver: finalManagerNumber
+      };
+
+      console.log(`Setting address config for ${dpName}:`);
+      console.log(`  Connection: ${normalizedConnection}`);
+      console.log(`  Reference: ${reference}`);
+      console.log(`  Datatype: ${datatype}`);
+      console.log(`  Direction: ${direction}`);
+      console.log(`  Manager: ${finalManagerNumber}`);
+
+      // 9. Set _address config
+      const addressSuccess = await this.setAddressConfig(dpName, addressConfig);
+      if (!addressSuccess) {
+        throw new Error('Failed to set _address configuration');
+      }
+
+      // 10. Set _distrib config
+      const distribSuccess = await this.setDistribConfig(dpName, distribConfig);
+      if (!distribSuccess) {
+        throw new Error(
+          '_address config was set successfully, but _distrib config failed. ' +
+          'The address may be incomplete.'
+        );
+      }
+
+      // 11. Set _active separately if requested
+      if (active) {
+        await this.winccoa.dpSet(`${dpName}:_address.._active`, true);
+        console.log(`Address activated for ${dpName}`);
+      } else {
+        console.log(`Address created but not activated for ${dpName}`);
+      }
+
+      console.log(`✓ Successfully configured OPC UA address for ${dpName}`);
+      return true;
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`✗ Error configuring OPC UA address for ${dpName}:`, errorMessage);
+      throw error; // Re-throw for detailed error in MCP Tool
     }
   }
 

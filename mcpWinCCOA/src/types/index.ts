@@ -11,6 +11,7 @@ export * from './mcp/responses.js';
 // WinCC OA Types
 export * from './winccoa/datapoint.js';
 export * from './winccoa/manager.js';
+export * from './winccoa/constants.js';
 
 // Driver Types
 export * from './drivers/connection.js';
