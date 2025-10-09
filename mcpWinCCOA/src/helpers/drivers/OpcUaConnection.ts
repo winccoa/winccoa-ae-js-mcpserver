@@ -100,6 +100,49 @@ export class OpcUaConnection extends BaseConnection {
   }
 
   /**
+   * Add server to running OPC UA driver using AddServer command
+   * This allows the connection to be available immediately without driver restart
+   * @param managerNumber - Manager number
+   * @param connectionName - Connection name (WITHOUT leading underscore)
+   * @returns true on success, false on failure (but logs warning only)
+   */
+  private async addServerToRunningDriver(
+    managerNumber: number,
+    connectionName: string
+  ): Promise<boolean> {
+    try {
+      const managerDpName = `_OPCUA${managerNumber}`;
+      const cmdAddServer = `${managerDpName}.Cmd.AddServer`;
+
+      // Connection name without leading underscore
+      const nameWithoutUnderscore = connectionName.startsWith('_')
+        ? connectionName.substring(1)
+        : connectionName;
+
+      // Check if the Cmd.AddServer datapoint element exists
+      if (!this.checkDpExists(managerDpName)) {
+        console.warn(`Manager datapoint ${managerDpName} does not exist, skipping AddServer command`);
+        return false;
+      }
+
+      console.log(`Triggering AddServer command for connection ${nameWithoutUnderscore} on running driver ${managerDpName}`);
+      
+      // Trigger AddServer command with connection name
+      // This command adds the server to the running driver without restart
+      await this.winccoa.dpSetWait(cmdAddServer, nameWithoutUnderscore);
+
+      console.log(`✓ Successfully triggered AddServer command for ${nameWithoutUnderscore}`);
+      return true;
+    } catch (error) {
+      // Don't fail the entire operation if AddServer command fails
+      // The connection is already registered in Config.Servers, so it will work after driver restart
+      console.warn(`Warning: Could not trigger AddServer command (driver may not be running or command not available):`, error);
+      console.warn(`Connection will be available after driver restart`);
+      return false;
+    }
+  }
+
+  /**
    * Register the connection with the OPC UA manager
    * @param managerNumber - Manager number
    * @param connectionName - Connection name (WITHOUT leading underscore)
@@ -134,6 +177,11 @@ export class OpcUaConnection extends BaseConnection {
       await this.winccoa.dpSetWait(`${managerDpName}.Config.Servers`, currentServers);
 
       console.log(`Successfully registered connection ${nameWithoutUnderscore}`);
+      
+      // Trigger AddServer command to add server to running driver (if available)
+      // This eliminates the need for driver restart
+      await this.addServerToRunningDriver(managerNumber, nameWithoutUnderscore);
+
       return true;
     } catch (error) {
       console.error(`Error registering connection with manager:`, error);

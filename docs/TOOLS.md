@@ -28,19 +28,42 @@ The MCP server provides tools that AI assistants can use to interact with WinCC 
 **`datapoints/dp_type_create`** - Create new datapoint types
 - `dp-type-create` - Create datapoint types (DPT) with complete structure definitions
 
+### OPC UA Tools
+
+**`opcua/opcua_connection`** - OPC UA connection management
+- `opcua-add-connection` - Create and configure OPC UA client connections
+  - Automatically registers connection with running driver (no restart required)
+  - Uses `AddServer` command to dynamically add connection to running OPC UA driver
+  - Creates necessary manager datapoints (_OPCUA{num})
+  - Configures connection parameters (URL, security, authentication)
+- `opcua-browse` - Browse OPC UA server address space
+  - Navigate through server node hierarchy
+  - Explore variables, objects, and properties
+
+**`opcua/opcua_address`** - OPC UA address configuration
+- `opcua-add-address-config` - Configure OPC UA addresses for datapoint elements
+  - Links datapoint elements to OPC UA server variables
+  - Auto-detects manager number from connection
+  - Creates poll groups automatically
+
+**Note:** When a new OPC UA connection is created using `opcua-add-connection`, the tool automatically triggers the `AddServer` command on the running OPC UA driver. This means the connection becomes immediately available without requiring a driver restart, making the workflow more seamless and automated.
+
 ## Tool Configuration
 
 ### Basic Configuration
 
 ```env
 # Load all available tools
-TOOLS=datapoints/dp_basic,datapoints/dp_create,datapoints/dp_set,datapoints/dp_types,datapoints/dp_type_create
+TOOLS=datapoints/dp_basic,datapoints/dp_create,datapoints/dp_set,datapoints/dp_types,datapoints/dp_type_create,opcua/opcua_connection,opcua/opcua_address
 
 # Load only basic datapoint operations
 TOOLS=datapoints/dp_basic,datapoints/dp_set
 
 # Load only creation and type tools
 TOOLS=datapoints/dp_create,datapoints/dp_types,datapoints/dp_type_create
+
+# Load OPC UA tools only
+TOOLS=opcua/opcua_connection,opcua/opcua_address
 ```
 
 ### Error Handling
