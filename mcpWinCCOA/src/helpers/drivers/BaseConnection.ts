@@ -199,7 +199,9 @@ export abstract class BaseConnection {
       console.log(`║ _address config:                                               ║`);
       console.log(`  - Type: ${addressConfig._type}`);
       console.log(`  - Driver: ${addressConfig._drv_ident}`);
-      console.log(`  - Connection: ${addressConfig._connection}`);
+      if (addressConfig._connection !== undefined) {
+        console.log(`  - Connection: ${addressConfig._connection}`);
+      }
       console.log(`  - Reference: ${addressConfig._reference}`);
       console.log(`  - Datatype: ${addressConfig._datatype} ⚠️  CRITICAL FIELD!`);
       console.log(`  - Direction: ${addressConfig._direction}`);

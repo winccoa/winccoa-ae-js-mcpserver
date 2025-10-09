@@ -17,7 +17,7 @@ export type { WinccoaManager } from 'winccoa-manager';
 export interface DpAddressConfig {
   _type: number;
   _drv_ident: string;
-  _connection: string;
+  _connection?: string;    // Optional - OPC UA doesn't use it!
   _reference: string;
   _internal: boolean;
   _direction: number;

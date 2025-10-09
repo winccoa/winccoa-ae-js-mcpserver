@@ -646,13 +646,13 @@ export class OpcUaConnection extends BaseConnection {
       const addressConfig: DpAddressConfig = {
         _type: DpConfigType.DPCONFIG_PERIPH_ADDR_MAIN,
         _drv_ident: "OPCUA",
-        _connection: normalizedConnection,
-        _reference: fullReference,  // Full reference (double $$ format)
+        // NOTE: _connection is intentionally NOT set for OPC UA (based on working config)
+        _reference: fullReference,  // Full reference (single $ separators)
         _direction: direction,
         _datatype: datatype,        // CRITICAL: Transformation type
         _subindex: 0,               // Always 0 for OPC UA
         _internal: false,
-        _lowlevel: false,           // No low-level comparison by default
+        _lowlevel: true,
         _offset: 0,                 // No offset by default
         _poll_group: normalizedSubscription,  // Poll group name (used for both polling and spontaneous modes)
         _active: active             // Set active in the initial config
