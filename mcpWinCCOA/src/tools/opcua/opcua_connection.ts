@@ -25,6 +25,10 @@ export function registerTools(server: any, context: ServerContext): number {
 
     This tool establishes a connection to an OPC UA server by creating the necessary WinCC OA datapoints,
     configuring the connection parameters, and registering it with the specified OPC UA manager.
+    
+    The connection is automatically added to the running OPC UA driver using the AddServer command,
+    eliminating the need for a driver restart in most cases. If the driver is not running or the command
+    fails, the connection will be available after the next driver start.
 
     Required parameters:
     - ipAddress: IP address or hostname of the OPC UA server
