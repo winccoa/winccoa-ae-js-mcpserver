@@ -25,19 +25,22 @@ The MCP server provides tools that AI assistants can use to interact with WinCC 
 - `dp-type-get` - Get structure of a datapoint type as tree
 - `dp-type-name` - Get datapoint type for a given datapoint name
 
+**`datapoints/dp_type_create`** - Create new datapoint types
+- `dp-type-create` - Create datapoint types (DPT) with complete structure definitions
+
 ## Tool Configuration
 
 ### Basic Configuration
 
 ```env
 # Load all available tools
-TOOLS=datapoints/dp_basic,datapoints/dp_create,datapoints/dp_set,datapoints/dp_types
+TOOLS=datapoints/dp_basic,datapoints/dp_create,datapoints/dp_set,datapoints/dp_types,datapoints/dp_type_create
 
 # Load only basic datapoint operations
 TOOLS=datapoints/dp_basic,datapoints/dp_set
 
 # Load only creation and type tools
-TOOLS=datapoints/dp_create,datapoints/dp_types
+TOOLS=datapoints/dp_create,datapoints/dp_types,datapoints/dp_type_create
 ```
 
 ### Error Handling
