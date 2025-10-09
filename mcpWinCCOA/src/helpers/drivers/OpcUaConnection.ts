@@ -94,6 +94,11 @@ export class OpcUaConnection extends BaseConnection {
     if (config.reconnectTimer !== undefined && config.reconnectTimer <= 0) {
       throw new Error('Reconnect timer must be positive');
     }
+
+    // Validate connection name format - must start with underscore for OPC-UA
+    if (config.connectionName !== undefined && !config.connectionName.startsWith('_')) {
+      throw new Error(`Invalid connection name: '${config.connectionName}'. OPC-UA connection names must start with underscore (e.g., '_TestConnection')`);
+    }
   }
 
   /**

@@ -32,7 +32,7 @@ export function registerTools(server: any, context: ServerContext): number {
     - managerNumber: WinCC OA manager number (1-99) for this connection (e.g., 4 for _OPCUA4)
 
     Optional parameters:
-    - connectionName: Custom name for the connection (auto-generated if not specified)
+    - connectionName: Custom name for the connection (MUST start with underscore, e.g., "_TestConnection"). Auto-generated if not specified.
     - reconnectTimer: Seconds before reconnection attempt (default: 10)
     - securityPolicy: Security policy enum (0=None, 2=Basic128Rsa15, 3=Basic256, 4=Basic256Sha256, 5=Aes128Sha256RsaOaep, 6=Aes256Sha256RsaPss)
     - messageSecurityMode: Message security mode (0=None, 1=Sign, 2=SignAndEncrypt)
@@ -47,7 +47,7 @@ export function registerTools(server: any, context: ServerContext): number {
       ipAddress: z.string().describe('IP address or hostname of the OPC UA server'),
       port: z.number().min(1).max(65535).describe('Port number of the OPC UA server'),
       managerNumber: z.number().min(1).max(99).describe('WinCC OA manager number (1-99)'),
-      connectionName: z.string().optional().describe('Custom connection name (auto-generated if not specified)'),
+      connectionName: z.string().optional().describe('Custom connection name (MUST start with underscore, e.g., "_TestConnection"). Auto-generated if not specified'),
       reconnectTimer: z.number().positive().optional().describe('Reconnect timer in seconds (default: 10)'),
       securityPolicy: z
         .number()
