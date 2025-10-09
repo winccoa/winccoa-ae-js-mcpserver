@@ -28,19 +28,30 @@ The MCP server provides tools that AI assistants can use to interact with WinCC 
 **`datapoints/dp_type_create`** - Create new datapoint types
 - `dp-type-create` - Create datapoint types (DPT) with complete structure definitions
 
+### OPC-UA Tools
+
+**`opcua/opcua_connection`** - OPC-UA connection management
+- `opcua-add-connection` - Create and configure OPC-UA client connections
+  - **IMPORTANT**: Connection names MUST start with underscore (e.g., `_TestConnection`)
+  - Auto-generates connection names like `_OpcUAConnection1` if not specified
+- `opcua-browse` - Browse OPC-UA address space hierarchy
+
 ## Tool Configuration
 
 ### Basic Configuration
 
 ```env
 # Load all available tools
-TOOLS=datapoints/dp_basic,datapoints/dp_create,datapoints/dp_set,datapoints/dp_types,datapoints/dp_type_create
+TOOLS=datapoints/dp_basic,datapoints/dp_create,datapoints/dp_set,datapoints/dp_types,datapoints/dp_type_create,opcua/opcua_connection
 
 # Load only basic datapoint operations
 TOOLS=datapoints/dp_basic,datapoints/dp_set
 
 # Load only creation and type tools
 TOOLS=datapoints/dp_create,datapoints/dp_types,datapoints/dp_type_create
+
+# Load datapoint and OPC-UA tools
+TOOLS=datapoints/dp_basic,datapoints/dp_set,opcua/opcua_connection
 ```
 
 ### Error Handling
