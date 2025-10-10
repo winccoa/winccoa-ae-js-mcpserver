@@ -146,6 +146,7 @@ This method uses `cmd` to properly handle paths with spaces in Windows.
 - **[⚙️ Configuration](docs/CONFIGURATION.md)** - All .env options and server modes  
 - **[🔧 Tools](docs/TOOLS.md)** - Available tools and custom development
 - **[📝 Instructions](docs/INSTRUCTIONS.md)** - Industry templates and project customization
+- **[🔌 OPC UA Address Config](docs/OPCUA_ADDRESS_CONFIG.md)** - Step-by-step guide for OPC UA configuration
 - **[🔍 Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and limitations
 
 ## Features

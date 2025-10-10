@@ -168,3 +168,4 @@ Expected response: JSON with server capabilities.
 - **[Configuration](CONFIGURATION.md)** - Detailed .env options
 - **[Tools](TOOLS.md)** - Available tools and customization
 - **[Instructions](INSTRUCTIONS.md)** - Industry templates and project rules
+- **[OPC UA Address Config](OPCUA_ADDRESS_CONFIG.md)** - Configure OPC UA connections
