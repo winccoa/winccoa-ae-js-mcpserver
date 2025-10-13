@@ -151,9 +151,9 @@ export function registerTools(server: any, context: ServerContext): number {
 Creates a complete datapoint type tree structure with elements and optional nested structures.
 
 Parameters:
-- typeName: Name of the datapoint type to be created (required)
+- typeName: Name of the datapoint type to be created (required); never starts with "_", "_mp_"
 - structure: JSON object defining the type structure (required)
-  - name: Element name (string, required)
+  - name: Element name (string, required); never starts with "_", "_mp_"
   - type: Element type (string, required) - see available types below
   - refName: Reference type name (string, optional, required for Typeref elements)
   - children: Array of child elements (array, optional, for Struct types)

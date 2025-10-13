@@ -29,7 +29,7 @@ export function registerTools(server: any, context: ServerContext): number {
     Required parameters:
     - dpName: Full datapoint element name (e.g., 'MyDP.Value')
     - connectionName: Name of the OPC UA connection (e.g., '_OpcUAConnection1' or 'OpcUAConnection1')
-    - reference: OPC UA node ID (e.g., 'ns=2;s=MyVariable' or 'ns=0;i=2258')
+    - reference: OPC UA node ID (e.g., 'ns=2;s=MyVariable' or 'ns=0;i=2258'); has to be the node ID from the OPC UA Server item/tag
 
     Optional parameters:
     - datatype: OPC UA datatype transformation (default: 750 = automatic detection)
