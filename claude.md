@@ -68,3 +68,16 @@ The individual functions of WinCC OA run in so-called **managers**. Relevant man
 - **Script Path**: Use relative paths from the `javascript/` directory (e.g., `mcpServer/index_http.js`)
 - **File Location**: Scripts must be placed in `<OA_ProjPath>/javascript/` or subdirectories
 - **Manager automatically prefixes**: The manager adds the `javascript/` path automatically
+
+---
+
+## Build Instructions
+
+**IMPORTANT**: When building this project, use `npx tsc` instead of `npm run build`.
+
+**Reason**: The `npm run build` script may include additional steps that are not always necessary or appropriate for the current development workflow.
+
+**Command to use**:
+```bash
+npx tsc
+```
