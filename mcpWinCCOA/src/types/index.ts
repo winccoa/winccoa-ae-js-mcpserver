@@ -23,3 +23,9 @@ export * from './server/config.js';
 
 // Tool Types
 export * from './tools/index.js';
+
+// Dashboard Types
+export * from './dashboards/schema.js';
+export * from './dashboards/layout.js';
+export * from './dashboards/widgets.js';
+export * from './dashboards/dashboard.js';
