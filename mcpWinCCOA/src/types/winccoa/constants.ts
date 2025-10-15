@@ -10,10 +10,18 @@
 export enum DpConfigType {
   /** No config */
   DPCONFIG_NONE = 0,
+  /** Binary signal alert */
+  DPCONFIG_ALERT_BINARYSIGNAL = 12,
+  /** Non-binary signal alert */
+  DPCONFIG_ALERT_NONBINARYSIGNAL = 13,
+  /** Alert class */
+  DPCONFIG_ALERT_CLASS = 14,
   /** Peripheral address config */
   DPCONFIG_PERIPH_ADDR_MAIN = 16,
   /** Distribution/manager allocation config */
-  DPCONFIG_DISTRIBUTION_INFO = 56
+  DPCONFIG_DISTRIBUTION_INFO = 56,
+  /** Sum alert */
+  DPCONFIG_SUM_ALERT = 59
 }
 
 /**
@@ -100,4 +108,115 @@ export enum OpcUaDatatype {
   NODEID = 767,
   /** Localized Text */
   LOCALIZEDTEXT = 768
+}
+
+/**
+ * Datapoint Element Types (from WinCC OA Documentation)
+ * See: https://winccoa.cope-it.at - "Data types for DPEs"
+ */
+export enum DpeType {
+  /** Structure */
+  DPEL_STRUCT = 1,
+  /** Dynamic character array */
+  DPEL_DYN_CHAR = 3,
+  /** Dynamic unsigned array */
+  DPEL_DYN_UINT = 4,
+  /** Dynamic integer array */
+  DPEL_DYN_INT = 5,
+  /** Dynamic float array */
+  DPEL_DYN_FLOAT = 6,
+  /** Dynamic bit array */
+  DPEL_DYN_BOOL = 7,
+  /** Dynamic bit pattern array */
+  DPEL_DYN_BIT32 = 8,
+  /** Dynamic text array */
+  DPEL_DYN_STRING = 9,
+  /** Dynamic time array */
+  DPEL_DYN_TIME = 10,
+  /** Character structure */
+  DPEL_CHAR_STRUCT = 11,
+  /** Unsigned integer structure */
+  DPEL_UINT_STRUCT = 12,
+  /** Integer structure */
+  DPEL_INT_STRUCT = 13,
+  /** Float structure */
+  DPEL_FLOAT_STRUCT = 14,
+  /** Bit structure */
+  DPEL_BOOL_STRUCT = 15,
+  /** Bit pattern structure */
+  DPEL_BIT32_STRUCT = 16,
+  /** Text structure */
+  DPEL_STRING_STRUCT = 17,
+  /** Time structure */
+  DPEL_TIME_STRUCT = 18,
+  /** Character */
+  DPEL_CHAR = 19,
+  /** Unsigned integer */
+  DPEL_UINT = 20,
+  /** Integer */
+  DPEL_INT = 21,
+  /** Floating point */
+  DPEL_FLOAT = 22,
+  /** Boolean/Bit */
+  DPEL_BOOL = 23,
+  /** Bit pattern */
+  DPEL_BIT32 = 24,
+  /** Text/String */
+  DPEL_STRING = 25,
+  /** Time */
+  DPEL_TIME = 26,
+  /** DP Identifier */
+  DPEL_DPID = 27,
+  /** Dynamic DP Identifier */
+  DPEL_DYN_DPID = 29,
+  /** Type reference */
+  DPEL_TYPEREF = 41,
+  /** Multilingual text */
+  DPEL_LANGSTRING = 42,
+  /** Multilingual text structure */
+  DPEL_LANGSTRING_STRUCT = 43,
+  /** Dynamic description array */
+  DPEL_DYN_LANGSTRING = 44,
+  /** Blob (binary large object) */
+  DPEL_BLOB = 46,
+  /** Blob structure */
+  DPEL_BLOB_STRUCT = 47,
+  /** Bit pattern 64 */
+  DPEL_BIT64 = 50,
+  /** Dynamic bit64 array */
+  DPEL_DYN_BIT64 = 51,
+  /** Bit64 structure */
+  DPEL_BIT64_STRUCT = 52,
+  /** Long integer (64 bit) */
+  DPEL_LONG = 54,
+  /** Dynamic long array */
+  DPEL_DYN_LONG = 55,
+  /** Long structure */
+  DPEL_LONG_STRUCT = 56,
+  /** Unsigned long (64 bit) */
+  DPEL_ULONG = 58,
+  /** Dynamic unsigned long array */
+  DPEL_DYN_ULONG = 59,
+  /** Unsigned long structure */
+  DPEL_ULONG_STRUCT = 60
+}
+
+/**
+ * Alert Acknowledge Types
+ */
+export enum DpAlertAckType {
+  /** Single acknowledge */
+  DPATTR_ACKTYPE_SINGLE = 1
+}
+
+/**
+ * Alert Range Types
+ */
+export enum DpAlertRangeType {
+  /** No range type */
+  DPDETAIL_RANGETYPE_NONE = 0,
+  /** Min/Max range */
+  DPDETAIL_RANGETYPE_MINMAX = 4,
+  /** Match range (for discrete alerts) */
+  DPDETAIL_RANGETYPE_MATCH = 5
 }
