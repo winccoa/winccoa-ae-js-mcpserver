@@ -10,6 +10,8 @@
 export enum DpConfigType {
   /** No config */
   DPCONFIG_NONE = 0,
+  /** Archive config */
+  DPCONFIG_DB_ARCHIVEINFO = 4,
   /** Binary signal alert */
   DPCONFIG_ALERT_BINARYSIGNAL = 12,
   /** Non-binary signal alert */
@@ -219,4 +221,42 @@ export enum DpAlertRangeType {
   DPDETAIL_RANGETYPE_MINMAX = 4,
   /** Match range (for discrete alerts) */
   DPDETAIL_RANGETYPE_MATCH = 5
+}
+
+/**
+ * Archive Process Types
+ */
+export enum DpArchiveProcessType {
+  /** No archiving */
+  DPATTR_ARCH_PROC_NONE = 0,
+  /** Delete old values */
+  DPATTR_ARCH_PROC_DEL = 1,
+  /** Move to another archive */
+  DPATTR_ARCH_PROC_MOVE = 2,
+  /** Simple smoothing */
+  DPATTR_ARCH_PROC_SIMPLESM = 3,
+  /** Simple smoothing and move */
+  DPATTR_ARCH_PROC_SIMPLESM_AND_MOVE = 4,
+  /** Derivative smoothing */
+  DPATTR_ARCH_PROC_DERIVSM = 5,
+  /** Derivative smoothing and move */
+  DPATTR_ARCH_PROC_DERIVSM_AND_MOVE = 6,
+  /** Decimation */
+  DPATTR_ARCH_PROC_DEC = 7,
+  /** Decimation and move */
+  DPATTR_ARCH_PROC_DEC_AND_MOVE = 8,
+  /** Average value */
+  DPATTR_ARCH_PROC_AVG_VAL = 9,
+  /** Average value and move */
+  DPATTR_ARCH_PROC_AVG_VAL_AND_MOVE = 10,
+  /** Average at time T0 */
+  DPATTR_ARCH_PROC_AVG_T0 = 11,
+  /** Average at time T0 and move */
+  DPATTR_ARCH_PROC_AVG_T0_AND_MOVE = 12,
+  /** Average at time T1 */
+  DPATTR_ARCH_PROC_AVG_T1 = 13,
+  /** Average at time T1 and move */
+  DPATTR_ARCH_PROC_AVG_T1_AND_MOVE = 14,
+  /** Value archiving (standard archiving) */
+  DPATTR_ARCH_PROC_VALARCH = 15
 }
