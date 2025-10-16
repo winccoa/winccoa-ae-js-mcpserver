@@ -112,14 +112,14 @@ export class OpcUaConnection extends BaseConnection {
   ): Promise<boolean> {
     try {
       const managerDpName = `_OPCUA${managerNumber}`;
-      const cmdAddServer = `${managerDpName}.Cmd.AddServer`;
+      const cmdAddServer = `${managerDpName}.Command.AddServer`;
 
       // Connection name without leading underscore
       const nameWithoutUnderscore = connectionName.startsWith('_')
         ? connectionName.substring(1)
         : connectionName;
 
-      // Check if the Cmd.AddServer datapoint element exists
+      // Check if the Command.AddServer datapoint element exists
       if (!this.checkDpExists(managerDpName)) {
         console.warn(`Manager datapoint ${managerDpName} does not exist, skipping AddServer command`);
         return false;
