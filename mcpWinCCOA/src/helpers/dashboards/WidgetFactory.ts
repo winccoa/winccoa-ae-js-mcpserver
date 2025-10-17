@@ -227,145 +227,137 @@ export class WidgetFactory {
 
   /**
    * Create Trend widget
-   * Supports single or multiple datapoints
+   * Supports single or multiple datapoints with custom y-axis per series
    */
   private createTrend(config: TrendConfig, dimensions: WidgetDimensions): WidgetInstance {
-    const { dataPoint, dataPoints, title } = config;
+    const {
+      dataPoint,
+      dataPoints,
+      series,
+      title,
+      timeRange = 'now/h', // Default to current hour
+      legendType = 'scroll',
+      legendOrientation = 'horizontal',
+      legendVerticalPosition = 'top',
+      legendHorizontalPosition = 'center',
+      showLegend = true,
+      showXAxisGrid = false,
+      showYAxisGrid = true,
+      showRangePicker = true,
+      showTooltip = true,
+      yAxisColor = '',
+      zoom = 1
+    } = config;
     const { x, y, cols, rows, minCols, minRows } = dimensions;
 
-    // Determine data array (single or multiple datapoints)
-    const dpArray = dataPoints && dataPoints.length > 0 ? dataPoints : [dataPoint!];
+    // Build series array based on priority: series > dataPoints > dataPoint
+    let seriesArray: any[];
 
-    // Build data array - no longer needed, using datapoint-context in series
+    if (series && series.length > 0) {
+      // Use detailed series configuration
+      seriesArray = series.map((s) => {
+        const seriesConfig: any = {
+          datapoint: {
+            context: 'data-point',
+            config: {
+              definedConfigs: [
+                'datapoint',
+                'value',
+                'name',
+                'unit',
+                'format',
+                'color',
+                'min',
+                'max',
+                'alertColor'
+              ],
+              dpName: s.dataPoint,
+              fetchMethod: 'historic',
+              compress: true,
+              historic: {
+                sTimeRange: '${sTimeRange}'
+              },
+              customAlertColor: true,
+              alertColor: ''
+            }
+          },
+          lineStyle: createStaticContext(s.lineStyle || 'solid')
+        };
 
-    // Build series array with datapoint-context
-    const seriesArray = dpArray.map((dp) =>
-      createGroupContext({
-        name: createGroupContext({
-          name: createStaticContext(null),
-          queryName: createStaticContext(true),
-          nameSource: createStaticContext('description'),
-          nameDataPath: createStaticContext(dp)
-        }),
-        type: createStaticContext('line'),
-        symbol: createStaticContext('none'),
-        yAxis: createGroupContext({
-          show: createStaticContext(true),
-          use: createStaticContext(-1),
-          position: createStaticContext('left'),
-          rangeSettings: createStaticContext({
-            type: 'auto',
-            max: '100',
-            min: '0'
-          })
-        }),
-        areaStyle: createGroupContext({
-          area: createStaticContext(false)
-        }),
-        dpe: {
-          context: 'data-point',
-          config: {
-            dpName: dp,
-            definedConfigs: [
-              'datapoint',
-              'value',
-              'name',
-              'unit',
-              'format',
-              'color',
-              'min',
-              'max',
-              'alertColor'
-            ],
-            customAlertColor: true,
-            alertColor: ''
-          }
-        },
-        transition: createStaticContext('step'),
-        confidence: createStaticContext(false),
-        compress: createStaticContext(true),
-        lineStyle: createGroupContext({
-          type: createStaticContext('solid'),
-          width: createStaticContext(2),
-          color: createStaticContext({
-            color: '#235461',
-            useDifferentColors: false,
-            darkModeColor: '#235461'
-          })
-        }),
-        formatSettings: createStaticContext({ value: '', type: 'oa' }),
-        unitSettings: createStaticContext({
-          type: 'oa',
-          value: { 'en_US.utf8': '' }
+        // Add custom y-axis if requested
+        if (s.showCustomYAxis) {
+          seriesConfig.showCustomYAxis = createStaticContext(true);
+          // Default to 'right' for custom y-axis (since main axis is on left)
+          seriesConfig.yAxisPosition = createStaticContext(s.yAxisPosition || 'right');
+        }
+
+        return createGroupContext(seriesConfig);
+      });
+    } else {
+      // Use simple dataPoint(s) array
+      const dpArray = dataPoints && dataPoints.length > 0 ? dataPoints : [dataPoint!];
+      seriesArray = dpArray.map((dp) =>
+        createGroupContext({
+          datapoint: {
+            context: 'data-point',
+            config: {
+              definedConfigs: [
+                'datapoint',
+                'value',
+                'name',
+                'unit',
+                'format',
+                'color',
+                'min',
+                'max',
+                'alertColor'
+              ],
+              dpName: dp,
+              fetchMethod: 'historic',
+              compress: true,
+              historic: {
+                sTimeRange: '${sTimeRange}'
+              },
+              customAlertColor: true,
+              alertColor: ''
+            }
+          },
+          lineStyle: createStaticContext('solid')
         })
-      })
-    );
+      );
+    }
 
     const settings: StructuredSettings = {
-      jsonFileName: 'linechart',
+      jsonFileName: 'StandardLibrary/Charts/linechart.widget',
       config: createGroupContext({
-        type: createStaticContext('trend'),
-        chartOptions: createGroupContext({
-          rangeSelector: createStaticContext({ show: true, default: '60min' }),
-          stacked: createStaticContext(false),
-          xAxis: createGroupContext({
-            axisLabel: createStaticContext({ interval: 2, rotate: 30 }),
-            type: createStaticContext('time'),
-            splitLine: createStaticContext({ show: true })
-          }),
-          legend: createStaticContext({ show: true, position: 'bottomright' }),
-          tooltip: createStaticContext({ show: true }),
-          series: createArrayContext(seriesArray as any),
-          yAxis: createGroupContext({
-            type: createStaticContext('value'),
-            splitLine: createStaticContext({ show: true }),
-            rangeSource: createStaticContext('auto'),
-            valueFrom: createStaticContext(null),
-            valueTo: createStaticContext(null)
-          }),
-          grid: createStaticContext({ top: '40', bottom: '60' }),
-          dataZoom: createArrayContext([
-            createGroupContext({
-              type: createStaticContext('insidex'),
-              start: createStaticContext(0),
-              end: createStaticContext(100)
-            }) as any,
-            createGroupContext({
-              type: createStaticContext(''),
-              start: createStaticContext(0),
-              end: createStaticContext(100)
-            }) as any
-          ])
-        })
+        legendType: createStaticContext(legendType),
+        series: createArrayContext(seriesArray as any),
+        showLegend: createStaticContext(showLegend),
+        zoom: createStaticContext(zoom),
+        legendOrientation: createStaticContext(legendOrientation),
+        showYAxisGrid: createStaticContext(showYAxisGrid),
+        showXAxisGrid: createStaticContext(showXAxisGrid),
+        legendVerticalPosition: createStaticContext(legendVerticalPosition),
+        legendHorizontalPosition: createStaticContext(legendHorizontalPosition),
+        yAxisColor: createStaticContext(yAxisColor),
+        showRangePicker: createStaticContext(showRangePicker),
+        showTooltip: createStaticContext(showTooltip)
       }),
       general: createGroupContext({
-        title: createGroupContext({
-          name: createStaticContext({ 'en_US.utf8': title }),
-          queryName: createStaticContext(false),
-          nameSource: createStaticContext('manual')
-        }),
-        subtitle: createGroupContext({
-          name: createStaticContext(null),
-          queryName: createStaticContext(false),
-          nameSource: createStaticContext('manual')
-        }),
-        background: createGroupContext({
-          customBackground: createStaticContext(false),
-          backgroundColor: createStaticContext({
-            color: '',
-            useDifferentColors: false,
-            darkModeColor: ''
-          })
-        })
+        titleAlignment: createStaticContext('center'),
+        subtitleAlignment: createStaticContext('center')
+      }),
+      variables: createGroupContext({
+        sTimeRange: createStaticContext(timeRange)
       })
     };
 
     const component: ComponentMeta = {
-      tagname: 'wui-trend',
-      scripts: [],
+      tagname: 'wui-widget-trend',
+      scripts: ['trend'],
       styles: [],
-      jsonSchema: {},
-      uiSchema: {}
+      jsonSchema: 'StandardLibrary/Charts/linechart-json-schema',
+      uiSchema: 'StandardLibrary/Charts/linechart-ui-schema'
     };
 
     return {

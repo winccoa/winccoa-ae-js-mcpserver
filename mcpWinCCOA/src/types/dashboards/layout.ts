@@ -59,7 +59,7 @@ export type WidgetPresets = {
  */
 export const DASHBOARD_GRID = {
   /** Total columns in dashboard grid */
-  TOTAL_COLUMNS: 24,
+  TOTAL_COLUMNS: 50,
   /** Default widget spacing */
   SPACING: 0,
   /** Minimum widget size */

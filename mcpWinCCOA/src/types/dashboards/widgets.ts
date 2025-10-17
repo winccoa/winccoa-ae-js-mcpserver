@@ -100,6 +100,16 @@ export interface LabelConfig extends BaseWidgetConfig {
 }
 
 /**
+ * Trend series configuration for individual datapoints
+ */
+export interface TrendSeriesConfig {
+  dataPoint: string;
+  lineStyle?: 'solid' | 'dashed' | 'dotted'; // default: 'solid'
+  showCustomYAxis?: boolean; // default: false - creates separate y-axis for this series
+  yAxisPosition?: 'left' | 'right'; // default: 'right' when showCustomYAxis is true
+}
+
+/**
  * Trend widget configuration
  * Supports single datapoint or multiple datapoints
  */
@@ -107,17 +117,25 @@ export interface TrendConfig extends BaseWidgetConfig {
   type: 'trend';
   dataPoint?: string; // Single datapoint
   dataPoints?: string[]; // Multiple datapoints (alternative to single)
+  series?: TrendSeriesConfig[]; // Detailed series configuration with custom y-axis
   // Optional chart configuration
+  timeRange?: string; // e.g. "now/h", "now/d" - default: "now/h" (current hour)
   rangeSelectorDefault?: string; // e.g. "60min", "24h"
   stacked?: boolean;
-  legendPosition?: LegendPosition;
+  legendType?: 'scroll' | 'plain'; // default: 'scroll'
+  legendOrientation?: 'horizontal' | 'vertical'; // default: 'horizontal'
+  legendVerticalPosition?: 'top' | 'middle' | 'bottom'; // default: 'top'
+  legendHorizontalPosition?: 'left' | 'center' | 'right'; // default: 'center'
+  showLegend?: boolean; // default: true
   yAxisRangeSource?: 'auto' | 'manual';
   yAxisMin?: number;
   yAxisMax?: number;
+  yAxisColor?: string; // default: ''
   showXAxisGrid?: boolean; // default: false
-  showYAxisGrid?: boolean; // default: false
-  showRangePicker?: boolean; // default: false
+  showYAxisGrid?: boolean; // default: true
+  showRangePicker?: boolean; // default: true
   showTooltip?: boolean; // default: true
+  zoom?: number; // default: 1
 }
 
 /**
