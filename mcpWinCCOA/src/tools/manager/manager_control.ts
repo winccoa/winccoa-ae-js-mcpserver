@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import { createSuccessResponse, createErrorResponse } from '../../utils/helpers.js';
 import { PmonClient } from '../../helpers/pmon/PmonClient.js';
+import { getOwnManagerNumberCached } from '../../utils/managerInfo.js';
 import type { ServerContext } from '../../types/index.js';
 
 /**
@@ -114,6 +115,9 @@ Example:
 
         const pmonClient = new PmonClient();
 
+        // Get own manager number for safety check via PID matching
+        const ownManagerNumber = await getOwnManagerNumberCached();
+
         // Get manager name for better feedback
         let managerName = `index ${managerIndex}`;
         try {
@@ -125,7 +129,7 @@ Example:
           // Ignore errors in getting name
         }
 
-        const result = await pmonClient.stopManager(managerIndex);
+        const result = await pmonClient.stopManager(managerIndex, ownManagerNumber);
 
         if (!result.success) {
           return createErrorResponse(
@@ -189,6 +193,9 @@ Example:
 
         const pmonClient = new PmonClient();
 
+        // Get own manager number for safety check via PID matching
+        const ownManagerNumber = await getOwnManagerNumberCached();
+
         // Get manager name for better feedback
         let managerName = `index ${managerIndex}`;
         try {
@@ -200,7 +207,7 @@ Example:
           // Ignore errors in getting name
         }
 
-        const result = await pmonClient.killManager(managerIndex);
+        const result = await pmonClient.killManager(managerIndex, ownManagerNumber);
 
         if (!result.success) {
           return createErrorResponse(

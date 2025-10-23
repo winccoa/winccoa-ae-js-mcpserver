@@ -229,12 +229,37 @@ export class PmonClient {
   /**
    * Stop a manager (sends SIGTERM)
    * @param index - Manager index to stop (1-based)
+   * @param ownManagerNumber - Optional: Own manager number to prevent self-stop
    * @returns Promise with operation result
    */
-  async stopManager(index: number): Promise<PmonResponse> {
+  async stopManager(index: number, ownManagerNumber?: number | null): Promise<PmonResponse> {
     try {
       if (index < 1) {
         throw new Error('Manager index must be at least 1');
+      }
+
+      // Safety check: prevent stopping own manager
+      if (ownManagerNumber !== undefined && ownManagerNumber !== null) {
+        try {
+          console.log(`🔒 [DEBUG] stopManager: Safety check - ownManagerNumber=${ownManagerNumber}, targetIndex=${index}`);
+          const managerStatus = await this.getManagerStatus();
+
+          // Find the manager by its index field, not array position
+          const targetManager = managerStatus.managers.find(m => m.index === index);
+          console.log(`🔒 [DEBUG] stopManager: Target manager found:`, targetManager ? `index=${targetManager.index}, manNum=${targetManager.manNum}, pid=${targetManager.pid}` : 'NOT FOUND');
+
+          if (targetManager && targetManager.manNum === ownManagerNumber) {
+            console.log(`🚫 [DEBUG] stopManager: BLOCKED! Attempt to stop own manager detected!`);
+            return {
+              success: false,
+              error: `Cannot stop own manager (index ${index}, manager number ${ownManagerNumber}). This would terminate the MCP server and prevent any response.`
+            };
+          }
+          console.log(`✅ [DEBUG] stopManager: Safety check passed, different manager`);
+        } catch (checkError) {
+          // If we can't verify, log warning but continue (better safe than sorry approach)
+          console.warn('Could not verify manager identity for safety check:', checkError);
+        }
       }
 
       const command = `SINGLE_MGR:STOP ${index}`;
@@ -256,12 +281,37 @@ export class PmonClient {
   /**
    * Kill a manager (sends SIGKILL)
    * @param index - Manager index to kill (1-based)
+   * @param ownManagerNumber - Optional: Own manager number to prevent self-kill
    * @returns Promise with operation result
    */
-  async killManager(index: number): Promise<PmonResponse> {
+  async killManager(index: number, ownManagerNumber?: number | null): Promise<PmonResponse> {
     try {
       if (index < 1) {
         throw new Error('Manager index must be at least 1');
+      }
+
+      // Safety check: prevent killing own manager
+      if (ownManagerNumber !== undefined && ownManagerNumber !== null) {
+        try {
+          console.log(`🔒 [DEBUG] killManager: Safety check - ownManagerNumber=${ownManagerNumber}, targetIndex=${index}`);
+          const managerStatus = await this.getManagerStatus();
+
+          // Find the manager by its index field, not array position
+          const targetManager = managerStatus.managers.find(m => m.index === index);
+          console.log(`🔒 [DEBUG] killManager: Target manager found:`, targetManager ? `index=${targetManager.index}, manNum=${targetManager.manNum}, pid=${targetManager.pid}` : 'NOT FOUND');
+
+          if (targetManager && targetManager.manNum === ownManagerNumber) {
+            console.log(`🚫 [DEBUG] killManager: BLOCKED! Attempt to kill own manager detected!`);
+            return {
+              success: false,
+              error: `Cannot kill own manager (index ${index}, manager number ${ownManagerNumber}). This would terminate the MCP server and prevent any response.`
+            };
+          }
+          console.log(`✅ [DEBUG] killManager: Safety check passed, different manager`);
+        } catch (checkError) {
+          // If we can't verify, log warning but continue (better safe than sorry approach)
+          console.warn('Could not verify manager identity for safety check:', checkError);
+        }
       }
 
       const command = `SINGLE_MGR:KILL ${index}`;
