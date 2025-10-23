@@ -12,16 +12,31 @@ import type { WidgetConfig } from '../../types/dashboards/widgets.js';
 
 /**
  * Layout schema for Zod validation
+ * Preprocesses string inputs by parsing JSON (Claude AI sometimes sends objects as strings)
  */
-const layoutSchema = z.union([
-  z.enum(['auto', 'small', 'medium', 'large', 'fullwidth']),
-  z.object({
-    x: z.number(),
-    y: z.number(),
-    cols: z.number(),
-    rows: z.number()
-  })
-]);
+const layoutSchema = z.preprocess(
+  (val) => {
+    // If it's a string, try to parse it as JSON
+    if (typeof val === 'string' && val.startsWith('{')) {
+      try {
+        return JSON.parse(val);
+      } catch (e) {
+        // If parsing fails, return as-is (might be a preset like "auto")
+        return val;
+      }
+    }
+    return val;
+  },
+  z.union([
+    z.enum(['auto', 'small', 'medium', 'large', 'fullwidth']),
+    z.object({
+      x: z.number(),
+      y: z.number(),
+      cols: z.number(),
+      rows: z.number()
+    })
+  ])
+);
 
 /**
  * Widget identifier schema
@@ -38,6 +53,16 @@ const rangeSettingsSchema = z.object({
   type: z.enum(['manual', 'oa']),
   min: z.number().optional(),
   max: z.number().optional()
+});
+
+/**
+ * Trend series configuration schema
+ */
+const trendSeriesSchema = z.object({
+  dataPoint: z.string().min(1, 'Datapoint is required'),
+  lineStyle: z.enum(['solid', 'dashed', 'dotted']).optional(),
+  showCustomYAxis: z.boolean().optional(),
+  yAxisPosition: z.enum(['left', 'right']).optional()
 });
 
 /**
@@ -64,13 +89,22 @@ Parameters:
 - dataPoint: Datapoint path (required for gauge, label, trend with single datapoint)
 - dataPoints: Array of datapoint paths (required for pie, optional for trend)
 - dataPointsDescriptions: Array of descriptions for pie slices (required for pie, must match dataPoints length)
+- series: Array of detailed series configurations for trend (optional, takes precedence over dataPoints)
+  - dataPoint: Datapoint path (required)
+  - lineStyle: "solid", "dashed", or "dotted" (optional, default: "solid")
+  - showCustomYAxis: true/false (optional, default: false) - shows separate y-axis for this series
+  - yAxisPosition: "left" or "right" (optional, default: "right" when showCustomYAxis is true)
 - rangeSettings: Range configuration for gauge (optional)
   - type: "manual" or "oa" (from datapoint config)
   - min: Minimum value (for manual type)
   - max: Maximum value (for manual type)
+- timeRange: Time range for trend widget (optional, default: "now/h" for current hour)
+  - Current periods: "now/h" (current hour), "now/d" (today), "now/w" (this week), "now/M" (this month)
+  - Relative periods: "now-1h/h" (previous hour), "now-1d/d" (yesterday), "now-7d/d" (7 days ago)
 - layout: Widget positioning (optional, defaults to "auto")
-  - Preset: "auto", "small", "medium", "large", "fullwidth"
-  - Explicit: {x: number, y: number, cols: number, rows: number}
+  - Preset string: "auto", "small", "medium", "large", or "fullwidth"
+  - Explicit object: Use a JSON object (NOT a string) with x, y, cols, rows properties
+    IMPORTANT: Pass as object {"x": 12, "y": 0, "cols": 12, "rows": 8}, NOT as string "{\"x\": 12, ...}"
 
 Returns: Widget ID (UUID)
 
@@ -93,14 +127,23 @@ Example - Trend (single):
   "layout": "large"
 }
 
-Example - Trend (multiple):
+Example - Trend (multiple with custom y-axis and explicit positioning):
 {
   "dashboardId": "_Dashboard_000001",
   "type": "trend",
   "title": "Multi Sensor Trend",
-  "dataPoints": ["Sensor1.temperature.", "Sensor2.temperature."],
-  "layout": "fullwidth"
+  "dataPoints": ["Sensor1.temperature.", "Sensor2.pressure.", "Sensor3.humidity."],
+  "series": [
+    {"dataPoint": "Sensor1.temperature.", "lineStyle": "solid"},
+    {"dataPoint": "Sensor2.pressure.", "lineStyle": "solid", "showCustomYAxis": true, "yAxisPosition": "right"}
+  ],
+  "timeRange": "now/d",
+  "layout": {"x": 25, "y": 0, "cols": 25, "rows": 13}
 }
+
+NOTE: Dashboard grid is 50 columns wide. x:25, cols:25 places widget in right half.
+
+NOTE: When using 'series' parameter, you must also provide 'dataPoints' or 'dataPoint' parameter.
 
 Example - Pie:
 {
@@ -120,7 +163,9 @@ Example - Pie:
       dataPoint: z.string().optional(),
       dataPoints: z.array(z.string()).optional(),
       dataPointsDescriptions: z.array(z.string()).optional(),
+      series: z.array(trendSeriesSchema).optional(),
       rangeSettings: rangeSettingsSchema.optional(),
+      timeRange: z.string().optional(),
       layout: layoutSchema.optional()
     },
     async (params: {
@@ -130,11 +175,13 @@ Example - Pie:
       dataPoint?: string;
       dataPoints?: string[];
       dataPointsDescriptions?: string[];
+      series?: Array<{ dataPoint: string; lineStyle?: 'solid' | 'dashed' | 'dotted'; showCustomYAxis?: boolean; yAxisPosition?: 'left' | 'right' }>;
       rangeSettings?: { type: 'manual' | 'oa'; min?: number; max?: number };
+      timeRange?: string;
       layout?: any;
     }) => {
       try {
-        const { dashboardId, type, title, dataPoint, dataPoints, dataPointsDescriptions, rangeSettings, layout } = params;
+        const { dashboardId, type, title, dataPoint, dataPoints, dataPointsDescriptions, series, rangeSettings, timeRange, layout } = params;
 
         console.log(`Adding ${type} widget to dashboard ${dashboardId}`);
 
@@ -168,14 +215,16 @@ Example - Pie:
             break;
 
           case 'trend':
-            if (!dataPoint && !dataPoints) {
-              return createErrorResponse('Trend widget requires either dataPoint or dataPoints parameter');
+            if (!dataPoint && !dataPoints && !series) {
+              return createErrorResponse('Trend widget requires either dataPoint, dataPoints, or series parameter');
             }
             widgetConfig = {
               type: 'trend',
               title,
               dataPoint,
               dataPoints,
+              series,
+              timeRange,
               layout
             };
             break;
@@ -253,10 +302,19 @@ Example:
       layout?: any;
     }) => {
       try {
-        const { dashboardId, widgetIdentifier, title, layout } = params;
+        let { dashboardId, widgetIdentifier, title, layout } = params;
 
         if (!title && !layout) {
           return createErrorResponse('At least one of title or layout must be provided');
+        }
+
+        // Fix: Parse layout if it's a JSON string (Claude AI sometimes sends it as string)
+        if (typeof layout === 'string') {
+          try {
+            layout = JSON.parse(layout);
+          } catch (e) {
+            // If parsing fails, leave it as string (might be a preset like "auto")
+          }
         }
 
         console.log(`Editing widget on dashboard ${dashboardId}`);
