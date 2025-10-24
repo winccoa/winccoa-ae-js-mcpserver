@@ -178,7 +178,7 @@ export class LayoutHelper {
    * @param w2 - Second widget
    * @returns true if widgets overlap
    */
-  private widgetsOverlap(
+  widgetsOverlap(
     w1: { x: number; y: number; cols: number; rows: number },
     w2: { x: number; y: number; cols: number; rows: number }
   ): boolean {

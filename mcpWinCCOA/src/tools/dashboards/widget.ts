@@ -143,8 +143,10 @@ Parameters:
   - Absolute: "2025-10-23T14:00:00.000/2025-10-23T15:00:00.000"
   NOTE: "now/h" shows data from start of current hour and grows with time (e.g., 16:00-16:05 at 16:05) - perfect for live monitoring
 - layout: Widget positioning (optional, defaults to "auto")
-  - Preset: "auto", "small", "medium", "large", "fullwidth"
+  - Preset (RECOMMENDED): "auto", "small", "medium", "large", "fullwidth"
+    → "auto" automatically finds free space and PREVENTS OVERLAPS
   - Explicit: {"x": 12, "y": 0, "cols": 12, "rows": 8}
+    → Use only if you need precise positioning. Check existing widgets first to avoid overlaps!
 
 Returns: Widget ID (UUID)
 
@@ -373,7 +375,11 @@ Example 14 - Bar Chart with STACKED BARS:
   "layout": "large"
 }
 
-NOTE: Dashboard grid is 50 columns wide. Explicit layout example: {"x": 25, "y": 0, "cols": 25, "rows": 13} places widget in right half.`,
+IMPORTANT LAYOUT GUIDELINES:
+- **ALWAYS use "auto" layout** when creating multiple widgets to prevent overlaps
+- Dashboard grid is 50 columns wide
+- Only use explicit coordinates if you have a specific layout design and verify no overlaps exist
+- Example explicit layout: {"x": 25, "y": 0, "cols": 25, "rows": 13} places widget in right half`,
     {
       dashboardId: z.string().min(1, 'Dashboard ID is required'),
       type: z.enum(['gauge', 'label', 'trend', 'pie', 'progressbar', 'barchart'], {

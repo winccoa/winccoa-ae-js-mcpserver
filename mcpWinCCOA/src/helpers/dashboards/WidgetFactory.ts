@@ -568,8 +568,8 @@ export class WidgetFactory {
     };
 
     const component: ComponentMeta = {
-      tagname: 'wui-widget-progressbar',
-      scripts: ['progressbar'],
+      tagname: 'wui-widget-progress-bar',
+      scripts: ['progress-bar'],
       styles: [],
       jsonSchema: 'StandardLibrary/Charts/progressbar-json-schema',
       uiSchema: 'StandardLibrary/Charts/progressbar-ui-schema'

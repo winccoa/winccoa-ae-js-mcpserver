@@ -220,6 +220,22 @@ export class DashboardManager {
       existingWidgets
     );
 
+    // Validate no overlaps (safety check for explicit layouts)
+    const wouldOverlap = existingWidgets.some((existing) => {
+      return this.layoutHelper.widgetsOverlap(
+        { x: dimensions.x, y: dimensions.y, cols: dimensions.cols, rows: dimensions.rows },
+        existing
+      );
+    });
+
+    if (wouldOverlap) {
+      console.warn(
+        `Warning: Widget at position (${dimensions.x}, ${dimensions.y}) may overlap with existing widgets. Consider using layout: "auto" instead.`
+      );
+      // Note: We don't throw an error to allow intentional overlaps if needed,
+      // but the warning will help debug unintentional overlaps
+    }
+
     // Create widget instance
     const widget = this.widgetFactory.createWidget(config, dimensions);
 
