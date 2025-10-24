@@ -12,6 +12,7 @@ import type { WidgetInstance } from './schema.js';
 export interface DashboardConfig {
   name: string;
   description: string;
+  createdBy: string; // Username of dashboard creator (required for dashboard modification)
 }
 
 /**

@@ -62,7 +62,35 @@ const trendSeriesSchema = z.object({
   dataPoint: z.string().min(1, 'Datapoint is required'),
   lineStyle: z.enum(['solid', 'dashed', 'dotted']).optional(),
   showCustomYAxis: z.boolean().optional(),
-  yAxisPosition: z.enum(['left', 'right']).optional()
+  yAxisPosition: z.enum(['left', 'right']).optional(),
+  // Visual customization
+  showArea: z.boolean().optional(),
+  showConfidenceBand: z.boolean().optional(),
+  color: z.string().optional(),
+  // Data formatting
+  unit: z.string().optional(),
+  format: z.string().optional(),
+  name: z.string().optional(),
+  // Custom Y-axis range
+  min: z.number().optional(),
+  max: z.number().optional()
+});
+
+/**
+ * Progress bar alert range schema
+ */
+const alertRangeSchema = z.object({
+  min: z.number(),
+  max: z.number(),
+  color: z.string()
+});
+
+/**
+ * Y-axis range schema for bar chart
+ */
+const yAxisRangeSchema = z.object({
+  min: z.number().nullable(),
+  max: z.number().nullable()
 });
 
 /**
@@ -80,72 +108,109 @@ export function registerTools(server: any, context: ServerContext): number {
     'add-widget',
     `Add a widget to a dashboard.
 
-Creates a new widget with the specified configuration and adds it to the dashboard. Supports gauge, label, trend, and pie widgets.
+Creates a new widget with the specified configuration and adds it to the dashboard. Supports gauge, label, trend, pie, progressbar, and barchart widgets.
 
 Parameters:
 - dashboardId: Dashboard datapoint name (e.g., "_Dashboard_000001") (required)
-- type: Widget type - "gauge", "label", "trend", or "pie" (required)
+- type: Widget type - "gauge", "label", "trend", "pie", "progressbar", or "barchart" (required)
 - title: Widget title (required)
-- dataPoint: Datapoint path (required for gauge, label, trend with single datapoint)
-- dataPoints: Array of datapoint paths (required for pie, optional for trend)
+- dataPoint: Single datapoint path (required for gauge, label, progressbar, single-series trend)
+- dataPoints: Array of datapoint paths or objects (required for pie, barchart, optional for trend)
+
+  **SIMPLE USAGE (all series on same Y-axis):**
+  dataPoints: ["DP1.element1.", "DP2.element2."]
+
+  **ADVANCED USAGE (with second Y-axis):**
+  dataPoints: [
+    "DP1.element1.",  // String = default Y-axis (left)
+    {
+      "dataPoint": "DP1.element2.",
+      "showCustomYAxis": true,
+      "yAxisPosition": "right",  // optional, defaults to "right"
+      "lineStyle": "solid"  // optional: "solid", "dashed", "dotted"
+    }
+  ]
+
 - dataPointsDescriptions: Array of descriptions for pie slices (required for pie, must match dataPoints length)
-- series: Array of detailed series configurations for trend (optional, takes precedence over dataPoints)
-  - dataPoint: Datapoint path (required)
-  - lineStyle: "solid", "dashed", or "dotted" (optional, default: "solid")
-  - showCustomYAxis: true/false (optional, default: false) - shows separate y-axis for this series
-  - yAxisPosition: "left" or "right" (optional, default: "right" when showCustomYAxis is true)
 - rangeSettings: Range configuration for gauge (optional)
   - type: "manual" or "oa" (from datapoint config)
   - min: Minimum value (for manual type)
   - max: Maximum value (for manual type)
-- timeRange: Time range for trend widget (optional, default: "now/h" for current hour)
-  - Current periods: "now/h" (current hour), "now/d" (today), "now/w" (this week), "now/M" (this month)
-  - Relative periods: "now-1h/h" (previous hour), "now-1d/d" (yesterday), "now-7d/d" (7 days ago)
+- timeRange: Time range for trend widget (optional, default: "now/h" = current hour)
+  - Last periods: "1h" (last hour), "8h" (last 8 hours), "24h" (last 24 hours)
+  - Current periods: "now/h" (current hour from XX:00), "now/d" (current day), "now/w" (current week), "now/M" (current month)
+  - Previous periods: "1d/d" (yesterday), "1w/w" (last week), "1M/M" (last month)
+  - Absolute: "2025-10-23T14:00:00.000/2025-10-23T15:00:00.000"
+  NOTE: "now/h" shows data from start of current hour and grows with time (e.g., 16:00-16:05 at 16:05) - perfect for live monitoring
 - layout: Widget positioning (optional, defaults to "auto")
-  - Preset string: "auto", "small", "medium", "large", or "fullwidth"
-  - Explicit object: Use a JSON object (NOT a string) with x, y, cols, rows properties
-    IMPORTANT: Pass as object {"x": 12, "y": 0, "cols": 12, "rows": 8}, NOT as string "{\"x\": 12, ...}"
+  - Preset: "auto", "small", "medium", "large", "fullwidth"
+  - Explicit: {"x": 12, "y": 0, "cols": 12, "rows": 8}
 
 Returns: Widget ID (UUID)
 
-Example - Gauge:
+---
+
+Example 1 - Gauge with manual range:
 {
   "dashboardId": "_Dashboard_000001",
   "type": "gauge",
-  "title": "Temperature",
-  "dataPoint": "Sensor1.temperature.",
-  "rangeSettings": {"type": "manual", "min": 0, "max": 100},
+  "title": "Light Density Inside",
+  "dataPoint": "System1:S1LGH1.actualValue.lightDensityInside",
+  "rangeSettings": {"type": "manual", "min": 0, "max": 1000},
   "layout": "medium"
 }
 
-Example - Trend (single):
+Example 2 - Simple Trend (all series on one Y-axis):
 {
   "dashboardId": "_Dashboard_000001",
   "type": "trend",
-  "title": "Temperature Trend",
-  "dataPoint": "Sensor1.temperature.",
+  "title": "Temperature Comparison",
+  "dataPoints": ["Sensor1.temperature.", "Sensor2.temperature.", "Sensor3.temperature."],
+  "timeRange": "now/h",
   "layout": "large"
 }
 
-Example - Trend (multiple with custom y-axis and explicit positioning):
+Example 3 - Trend with SECOND Y-AXIS (COMMON: multiple elements of ONE datapoint):
 {
   "dashboardId": "_Dashboard_000001",
   "type": "trend",
-  "title": "Multi Sensor Trend",
-  "dataPoints": ["Sensor1.temperature.", "Sensor2.pressure.", "Sensor3.humidity."],
-  "series": [
-    {"dataPoint": "Sensor1.temperature.", "lineStyle": "solid"},
-    {"dataPoint": "Sensor2.pressure.", "lineStyle": "solid", "showCustomYAxis": true, "yAxisPosition": "right"}
+  "title": "S1LGH1 - Multi-Parameter Monitoring",
+  "dataPoints": [
+    "System1:S1LGH1.actualValue.actualLevel",
+    {
+      "dataPoint": "System1:S1LGH1.actualValue.illuminationLevel",
+      "showCustomYAxis": true,
+      "yAxisPosition": "right"
+    },
+    {
+      "dataPoint": "System1:S1LGH1.actualValue.actualPower",
+      "showCustomYAxis": true,
+      "yAxisPosition": "right"
+    }
   ],
-  "timeRange": "now/d",
-  "layout": {"x": 25, "y": 0, "cols": 25, "rows": 13}
+  "timeRange": "now/h",
+  "layout": "fullwidth"
 }
 
-NOTE: Dashboard grid is 50 columns wide. x:25, cols:25 places widget in right half.
+Example 4 - Trend with SECOND Y-AXIS (multiple datapoints):
+{
+  "dashboardId": "_Dashboard_000001",
+  "type": "trend",
+  "title": "Temperature vs Pressure",
+  "dataPoints": [
+    "Reactor1.temperature.",
+    {
+      "dataPoint": "Reactor1.pressure.",
+      "showCustomYAxis": true,
+      "yAxisPosition": "right",
+      "lineStyle": "dashed"
+    }
+  ],
+  "timeRange": "now/d",
+  "layout": "large"
+}
 
-NOTE: When using 'series' parameter, you must also provide 'dataPoints' or 'dataPoint' parameter.
-
-Example - Pie:
+Example 5 - Pie Chart:
 {
   "dashboardId": "_Dashboard_000001",
   "type": "pie",
@@ -153,35 +218,236 @@ Example - Pie:
   "dataPoints": ["Motor1.power.", "Motor2.power.", "Motor3.power."],
   "dataPointsDescriptions": ["Motor 1", "Motor 2", "Motor 3"],
   "layout": "medium"
-}`,
+}
+
+---
+## ADVANCED FEATURES (Trend Widget)
+
+The trend widget supports powerful visualization features for enhanced data analysis:
+
+**Available Features:**
+- showConfidenceBand: Show min/max confidence band (PERFECT for outlier detection!)
+- showArea: Fill area under line
+- color: Custom hex color (e.g., "#ff6b6b", "#4ecdc4")
+- name: Custom series name in legend
+- unit: Display unit (e.g., "°C", "bar", "kW")
+- format: Number format (e.g., "%0.2f" for 2 decimals, "%.1f" for 1 decimal)
+- lineStyle: "solid", "dashed", or "dotted"
+- min/max: Custom Y-axis range (when showCustomYAxis: true)
+
+Example 6 - Trend with CONFIDENCE BANDS (outlier detection):
+{
+  "dashboardId": "_Dashboard_000001",
+  "type": "trend",
+  "title": "Temperature Monitoring with Outlier Detection",
+  "dataPoints": [
+    {
+      "dataPoint": "Reactor1.temperature.",
+      "showConfidenceBand": true,
+      "color": "#ff6b6b",
+      "name": "Reactor Temperature",
+      "unit": "°C",
+      "format": "%0.1f"
+    }
+  ],
+  "timeRange": "24h",
+  "layout": "large"
+}
+
+Example 7 - Multi-Series with CUSTOM COLORS and FORMATTING:
+{
+  "dashboardId": "_Dashboard_000001",
+  "type": "trend",
+  "title": "Production Line Metrics",
+  "dataPoints": [
+    {
+      "dataPoint": "Line1.speed.",
+      "color": "#4ecdc4",
+      "name": "Line Speed",
+      "unit": "m/min",
+      "format": "%0.1f",
+      "lineStyle": "solid"
+    },
+    {
+      "dataPoint": "Line1.efficiency.",
+      "color": "#95e1d3",
+      "name": "Efficiency",
+      "unit": "%",
+      "format": "%0.0f",
+      "lineStyle": "dashed"
+    },
+    {
+      "dataPoint": "Line1.quality.",
+      "color": "#f38181",
+      "name": "Quality Score",
+      "format": "%0.2f",
+      "showArea": true
+    }
+  ],
+  "timeRange": "now/d",
+  "layout": "fullwidth"
+}
+
+Example 8 - Trend with SECOND Y-AXIS + CUSTOM RANGE + FORMATTING:
+{
+  "dashboardId": "_Dashboard_000001",
+  "type": "trend",
+  "title": "Pressure & Temperature (Different Scales)",
+  "dataPoints": [
+    {
+      "dataPoint": "Vessel1.temperature.",
+      "color": "#ff6b6b",
+      "name": "Temperature",
+      "unit": "°C",
+      "format": "%0.1f"
+    },
+    {
+      "dataPoint": "Vessel1.pressure.",
+      "showCustomYAxis": true,
+      "yAxisPosition": "right",
+      "min": 0,
+      "max": 100,
+      "color": "#4ecdc4",
+      "name": "Pressure",
+      "unit": "bar",
+      "format": "%0.2f",
+      "lineStyle": "dashed"
+    }
+  ],
+  "timeRange": "now/h",
+  "layout": "large"
+}
+
+Example 9 - Gauge with FORMATTING and CUSTOM COLORS:
+{
+  "dashboardId": "_Dashboard_000001",
+  "type": "gauge",
+  "title": "Tank Level",
+  "dataPoint": "Tank1.level.",
+  "rangeSettings": {"type": "manual", "min": 0, "max": 100},
+  "layout": "medium"
+}
+
+Example 10 - Label with ICON and FORMATTING:
+{
+  "dashboardId": "_Dashboard_000001",
+  "type": "label",
+  "title": "Current Power Consumption",
+  "dataPoint": "Plant.totalPower.",
+  "layout": "small"
+}
+
+Example 11 - Progress Bar (simple):
+{
+  "dashboardId": "_Dashboard_000001",
+  "type": "progressbar",
+  "title": "Tank Fill Level",
+  "dataPoint": "Tank1.fillLevel.",
+  "layout": "medium"
+}
+
+Example 12 - Progress Bar with ALERT RANGES (color-coded zones):
+{
+  "dashboardId": "_Dashboard_000001",
+  "type": "progressbar",
+  "title": "System Load",
+  "dataPoint": "System1.cpuLoad.",
+  "layout": "medium"
+}
+
+Example 13 - Bar Chart (comparison):
+{
+  "dashboardId": "_Dashboard_000001",
+  "type": "barchart",
+  "title": "Energy Consumption by Department",
+  "dataPoints": ["Dept1.energy.", "Dept2.energy.", "Dept3.energy.", "Dept4.energy."],
+  "layout": "large"
+}
+
+Example 14 - Bar Chart with STACKED BARS:
+{
+  "dashboardId": "_Dashboard_000001",
+  "type": "barchart",
+  "title": "Monthly Production by Line",
+  "dataPoints": ["Line1.output.", "Line2.output.", "Line3.output."],
+  "layout": "large"
+}
+
+NOTE: Dashboard grid is 50 columns wide. Explicit layout example: {"x": 25, "y": 0, "cols": 25, "rows": 13} places widget in right half.`,
     {
       dashboardId: z.string().min(1, 'Dashboard ID is required'),
-      type: z.enum(['gauge', 'label', 'trend', 'pie'], {
-        errorMap: () => ({ message: 'Widget type must be gauge, label, trend, or pie' })
+      type: z.enum(['gauge', 'label', 'trend', 'pie', 'progressbar', 'barchart'], {
+        errorMap: () => ({ message: 'Widget type must be gauge, label, trend, pie, progressbar, or barchart' })
       }),
       title: z.string().min(1, 'Widget title is required'),
       dataPoint: z.string().optional(),
-      dataPoints: z.array(z.string()).optional(),
+      dataPoints: z.array(z.union([z.string(), trendSeriesSchema])).optional(),
       dataPointsDescriptions: z.array(z.string()).optional(),
-      series: z.array(trendSeriesSchema).optional(),
       rangeSettings: rangeSettingsSchema.optional(),
       timeRange: z.string().optional(),
-      layout: layoutSchema.optional()
+      layout: layoutSchema.optional(),
+      // Progress bar specific
+      color: z.string().optional(),
+      size: z.enum(['1.5em', '2.25em', '3em']).optional(),
+      unit: z.string().optional(),
+      format: z.string().optional(),
+      min: z.number().optional(),
+      max: z.number().optional(),
+      showRange: z.boolean().optional(),
+      isAbsolute: z.boolean().optional(),
+      alertRanges: z.array(alertRangeSchema).optional(),
+      // Bar chart specific
+      yAxisName: z.string().optional(),
+      yAxisUnit: z.string().optional(),
+      yAxisColor: z.string().optional(),
+      range: yAxisRangeSchema.optional(),
+      isStacked: z.boolean().optional(),
+      isHorizontal: z.boolean().optional(),
+      showTooltip: z.boolean().optional(),
+      showLegend: z.boolean().optional(),
+      legendPosition: z.enum(['topleft', 'topright', 'bottomleft', 'bottomright']).optional()
     },
     async (params: {
       dashboardId: string;
-      type: 'gauge' | 'label' | 'trend' | 'pie';
+      type: 'gauge' | 'label' | 'trend' | 'pie' | 'progressbar' | 'barchart';
       title: string;
       dataPoint?: string;
-      dataPoints?: string[];
+      dataPoints?: (string | { dataPoint: string; lineStyle?: 'solid' | 'dashed' | 'dotted'; showCustomYAxis?: boolean; yAxisPosition?: 'left' | 'right' })[];
       dataPointsDescriptions?: string[];
-      series?: Array<{ dataPoint: string; lineStyle?: 'solid' | 'dashed' | 'dotted'; showCustomYAxis?: boolean; yAxisPosition?: 'left' | 'right' }>;
       rangeSettings?: { type: 'manual' | 'oa'; min?: number; max?: number };
       timeRange?: string;
       layout?: any;
+      // Progress bar specific
+      color?: string;
+      size?: '1.5em' | '2.25em' | '3em';
+      unit?: string;
+      format?: string;
+      min?: number;
+      max?: number;
+      showRange?: boolean;
+      isAbsolute?: boolean;
+      alertRanges?: Array<{ min: number; max: number; color: string }>;
+      // Bar chart specific
+      yAxisName?: string;
+      yAxisUnit?: string;
+      yAxisColor?: string;
+      range?: { min: number | null; max: number | null };
+      isStacked?: boolean;
+      isHorizontal?: boolean;
+      showTooltip?: boolean;
+      showLegend?: boolean;
+      legendPosition?: 'topleft' | 'topright' | 'bottomleft' | 'bottomright';
     }) => {
       try {
-        const { dashboardId, type, title, dataPoint, dataPoints, dataPointsDescriptions, series, rangeSettings, timeRange, layout } = params;
+        const {
+          dashboardId, type, title, dataPoint, dataPoints, dataPointsDescriptions,
+          rangeSettings, timeRange, layout,
+          // Progress bar
+          color, size, unit, format, min, max, showRange, isAbsolute, alertRanges,
+          // Bar chart
+          yAxisName, yAxisUnit, yAxisColor, range, isStacked, isHorizontal,
+          showTooltip, showLegend, legendPosition
+        } = params;
 
         console.log(`Adding ${type} widget to dashboard ${dashboardId}`);
 
@@ -215,15 +481,14 @@ Example - Pie:
             break;
 
           case 'trend':
-            if (!dataPoint && !dataPoints && !series) {
-              return createErrorResponse('Trend widget requires either dataPoint, dataPoints, or series parameter');
+            if (!dataPoint && !dataPoints) {
+              return createErrorResponse('Trend widget requires either dataPoint or dataPoints parameter');
             }
             widgetConfig = {
               type: 'trend',
               title,
               dataPoint,
               dataPoints,
-              series,
               timeRange,
               layout
             };
@@ -233,14 +498,60 @@ Example - Pie:
             if (!dataPoints || !dataPointsDescriptions) {
               return createErrorResponse('Pie widget requires both dataPoints and dataPointsDescriptions parameters');
             }
-            if (dataPoints.length !== dataPointsDescriptions.length) {
+            // Pie charts only support string arrays, extract strings from objects if needed
+            const pieDataPoints = dataPoints.map(dp => typeof dp === 'string' ? dp : dp.dataPoint);
+            if (pieDataPoints.length !== dataPointsDescriptions.length) {
               return createErrorResponse('dataPoints and dataPointsDescriptions must have the same length');
             }
             widgetConfig = {
               type: 'pie',
               title,
-              dataPoints,
+              dataPoints: pieDataPoints,
               dataPointsDescriptions,
+              layout
+            };
+            break;
+
+          case 'progressbar':
+            if (!dataPoint) {
+              return createErrorResponse('Progress bar widget requires dataPoint parameter');
+            }
+            widgetConfig = {
+              type: 'progressbar',
+              title,
+              dataPoint,
+              color,
+              size,
+              unit,
+              format,
+              min,
+              max,
+              showRange,
+              isAbsolute,
+              alertRanges,
+              layout
+            };
+            break;
+
+          case 'barchart':
+            if (!dataPoints || dataPoints.length === 0) {
+              return createErrorResponse('Bar chart widget requires dataPoints parameter with at least one datapoint');
+            }
+            // Bar charts only support string arrays, extract strings from objects if needed
+            const barDataPoints = dataPoints.map(dp => typeof dp === 'string' ? dp : dp.dataPoint);
+            widgetConfig = {
+              type: 'barchart',
+              title,
+              dataPoints: barDataPoints,
+              yAxisName,
+              yAxisUnit,
+              yAxisColor,
+              range,
+              isStacked,
+              isHorizontal,
+              showTooltip,
+              showLegend,
+              legendPosition,
               layout
             };
             break;

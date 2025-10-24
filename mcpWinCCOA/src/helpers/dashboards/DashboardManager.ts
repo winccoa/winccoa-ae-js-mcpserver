@@ -58,10 +58,23 @@ export class DashboardManager {
 
   /**
    * Create a new dashboard
-   * @param config - Dashboard configuration (name, description)
+   * @param config - Dashboard configuration (name, description, createdBy)
    * @returns Dashboard datapoint name (e.g. "_Dashboard_000001")
    */
   async createDashboard(config: DashboardConfig): Promise<string> {
+    // Lookup user and get userId
+    const userNames = await this.winccoa.dpGet('_Users.UserName');
+    const userIndex = userNames.findIndex((name: string) => name === config.createdBy);
+
+    if (userIndex === -1) {
+      throw new Error(
+        `User not found: ${config.createdBy}. Dashboard cannot be created without valid creator.`
+      );
+    }
+
+    const userIds = await this.winccoa.dpGet('_Users.UserId');
+    const userId = userIds[userIndex];
+
     // Get next available dashboard number
     const dashboardNumber = await this.getNextDashboardNumber();
     const dpName = getDashboardDpName(dashboardNumber);
@@ -85,8 +98,9 @@ export class DashboardManager {
     this.winccoa.dpSet(`${dpName}.id`, dashboardNumber);
     this.winccoa.dpSet(`${dpName}.settings`, settingsJson);
     this.winccoa.dpSet(`${dpName}.widgets`, []); // Empty widget array
+    this.winccoa.dpSet(`${dpName}.createdBy`, userId); // Set creator userId
 
-    console.log(`✅ Created dashboard: ${dpName}`);
+    console.log(`✅ Created dashboard: ${dpName} (created by user: ${config.createdBy})`);
     return dpName;
   }
 
@@ -396,7 +410,14 @@ export class DashboardManager {
     }
 
     if ('dataPoints' in config && config.dataPoints) {
-      datapoints.push(...config.dataPoints);
+      // Handle both string and object formats in dataPoints
+      for (const dp of config.dataPoints) {
+        if (typeof dp === 'string') {
+          datapoints.push(dp);
+        } else {
+          datapoints.push(dp.dataPoint);
+        }
+      }
     }
 
     for (const dp of datapoints) {

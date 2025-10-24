@@ -157,46 +157,6 @@ export function isStructuredSettings(settings: WidgetSettings): settings is Stru
 }
 
 /**
- * Helper to create a static context
- */
-export function createStaticContext(value: any): StaticContext {
-  return {
-    context: 'static',
-    config: value
-  };
-}
-
-/**
- * Helper to create a datapoint context
- */
-export function createDataPointContext(
-  dataPath: string,
-  dataType: string = 'float',
-  isCnsNode: boolean = false,
-  additional?: Record<string, any>
-): DataPointContext {
-  return {
-    context: 'data-point',
-    config: {
-      dataPath,
-      dataType,
-      isCnsNode,
-      ...additional
-    }
-  };
-}
-
-/**
- * Helper to create a group context
- */
-export function createGroupContext(config: Record<string, any>): GroupContext {
-  return {
-    context: 'group',
-    config
-  };
-}
-
-/**
  * Helper to create an array context
  */
 export function createArrayContext(items: Array<GroupContext | GenericContext>): ArrayContext {
@@ -204,4 +164,58 @@ export function createArrayContext(items: Array<GroupContext | GenericContext>):
     context: 'array',
     config: items
   };
+}
+
+/**
+ * Helper to create a simplified group context (without wrapping static values)
+ * The framework will automatically wrap simple values in static contexts
+ */
+export function createSimpleGroupContext(config: Record<string, any>): GroupContext {
+  return {
+    context: 'group',
+    config: unwrapStaticValues(config)
+  };
+}
+
+/**
+ * Unwrap static context wrappers from config object
+ * Keeps data-point contexts wrapped (they need backend queries)
+ */
+function unwrapStaticValues(config: Record<string, any>): Record<string, any> {
+  const unwrapped: Record<string, any> = {};
+
+  for (const [key, value] of Object.entries(config)) {
+    if (value && typeof value === 'object') {
+      // Keep data-point contexts wrapped (they're dynamic)
+      if (value.context === 'data-point') {
+        unwrapped[key] = value;
+      }
+      // Keep array contexts but unwrap their items
+      else if (value.context === 'array') {
+        unwrapped[key] = {
+          context: 'array',
+          config: value.config.map((item: any) =>
+            item.context === 'group' ? createSimpleGroupContext(item.config) : item
+          )
+        };
+      }
+      // Keep group contexts but unwrap their config
+      else if (value.context === 'group') {
+        unwrapped[key] = createSimpleGroupContext(value.config);
+      }
+      // Unwrap static contexts to simple values
+      else if (value.context === 'static') {
+        unwrapped[key] = value.config;
+      }
+      // Keep other objects as-is
+      else {
+        unwrapped[key] = value;
+      }
+    } else {
+      // Primitive values stay as-is
+      unwrapped[key] = value;
+    }
+  }
+
+  return unwrapped;
 }

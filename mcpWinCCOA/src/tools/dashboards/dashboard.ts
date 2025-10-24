@@ -24,30 +24,36 @@ export function registerTools(server: any, context: ServerContext): number {
     'create-dashboard',
     `Create a new dashboard in WinCC OA.
 
-Creates a dashboard with the specified name and description. The dashboard will be automatically assigned a unique ID (e.g., _Dashboard_000001).
+Creates a dashboard with the specified name, description, and creator. The dashboard will be automatically assigned a unique ID (e.g., _Dashboard_000001).
+
+IMPORTANT: The createdBy parameter is REQUIRED. It must be a valid username from the WinCC OA user system. Dashboards without a valid creator cannot be modified later.
 
 Parameters:
 - name: Dashboard name (required)
 - description: Dashboard description (required)
+- createdBy: Username of the dashboard creator (required, must exist in _Users.UserName)
 
 Returns: Dashboard datapoint name (e.g., "_Dashboard_000001")
 
 Example:
 {
   "name": "Production Overview",
-  "description": "Main production line monitoring dashboard"
+  "description": "Main production line monitoring dashboard",
+  "createdBy": "admin"
 }`,
     {
       name: z.string().min(1, 'Dashboard name is required'),
-      description: z.string().min(1, 'Dashboard description is required')
+      description: z.string().min(1, 'Dashboard description is required'),
+      createdBy: z.string().min(1, 'Creator username is required')
     },
-    async ({ name, description }: { name: string; description: string }) => {
+    async ({ name, description, createdBy }: { name: string; description: string; createdBy: string }) => {
       try {
-        console.log(`Creating dashboard: ${name}`);
+        console.log(`Creating dashboard: ${name} (creator: ${createdBy})`);
 
         const dashboardId = await dashboardManager.createDashboard({
           name,
-          description
+          description,
+          createdBy
         });
 
         return createSuccessResponse({

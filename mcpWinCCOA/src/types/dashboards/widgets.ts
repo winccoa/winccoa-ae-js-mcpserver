@@ -9,7 +9,7 @@ import type { LayoutConfig } from './layout.js';
 /**
  * Widget types (extensible)
  */
-export type WidgetType = 'gauge' | 'label' | 'trend' | 'pie' | string;
+export type WidgetType = 'gauge' | 'label' | 'trend' | 'pie' | 'progressbar' | 'barchart' | string;
 
 /**
  * Range settings for widgets with value ranges
@@ -61,6 +61,12 @@ export interface BaseWidgetConfig {
   type: WidgetType;
   title: string;
   layout?: LayoutConfig;
+  // Global appearance settings (for ECharts widgets)
+  animation?: boolean; // Enable animations (default: false)
+  font?: string; // Font family (default: "Siemens Sans", Arial, Helvetica, sans-serif)
+  renderer?: 'svg' | 'canvas'; // Renderer type (default: 'canvas')
+  theme?: string; // Theme name (default: auto from system)
+  backgroundColor?: string; // Background color (default: 'transparent')
 }
 
 /**
@@ -75,9 +81,15 @@ export interface GaugeConfig extends BaseWidgetConfig {
   type: 'gauge';
   dataPoint: string;
   rangeSettings?: RangeSettings;
-  // Optional parameters with defaults in factory
-  formatValue?: string; // e.g. "%0.2f"
-  unit?: string;
+  // Visual customization
+  color?: string; // Pointer/progress color
+  // Data formatting
+  format?: string; // Value format (e.g. "%0.2f")
+  unit?: string; // Value unit
+  name?: string; // Gauge name/title
+  // Display mode
+  isRelative?: boolean; // Display as percentage (default: false)
+  // Chart configuration
   chartType?: GaugeChartType; // default: 'classic'
   showTooltip?: boolean; // default: true
 }
@@ -88,12 +100,19 @@ export interface GaugeConfig extends BaseWidgetConfig {
 export interface LabelConfig extends BaseWidgetConfig {
   type: 'label';
   dataPoint: string;
-  // Optional styling parameters
+  // Visual customization
+  color?: string; // Font color
   icon?: string;
   iconPosition?: IconPosition; // default: 'left'
   iconSizeFactor?: IconSize; // default: 'medium'
+  // Data formatting
+  format?: string; // Value format (e.g. "%0.2f")
+  unit?: string; // Value unit
+  name?: string; // Prefix text before value
+  // Font configuration
   fontSizeFactor?: FontSize; // default: 'small'
   unitFontSizeFactor?: FontSize; // default: 'small'
+  // Legacy/advanced options
   valuePrefix?: string | null;
   valuePostfix?: string | null;
   fontColor?: ColorConfig;
@@ -107,6 +126,17 @@ export interface TrendSeriesConfig {
   lineStyle?: 'solid' | 'dashed' | 'dotted'; // default: 'solid'
   showCustomYAxis?: boolean; // default: false - creates separate y-axis for this series
   yAxisPosition?: 'left' | 'right'; // default: 'right' when showCustomYAxis is true
+  // Visual customization
+  showArea?: boolean; // Fill area under line (default: false)
+  showConfidenceBand?: boolean; // Show min/max confidence band (default: false)
+  color?: string; // Custom series color (hex or CSS variable)
+  // Data formatting
+  unit?: string; // Display unit (e.g., "°C", "bar")
+  format?: string; // Number format (e.g., "%0.2f", "%.1f")
+  name?: string; // Custom series name for legend (overrides datapoint name)
+  // Custom Y-axis range (when showCustomYAxis is true)
+  min?: number; // Y-axis minimum value
+  max?: number; // Y-axis maximum value
 }
 
 /**
@@ -116,26 +146,32 @@ export interface TrendSeriesConfig {
 export interface TrendConfig extends BaseWidgetConfig {
   type: 'trend';
   dataPoint?: string; // Single datapoint
-  dataPoints?: string[]; // Multiple datapoints (alternative to single)
-  series?: TrendSeriesConfig[]; // Detailed series configuration with custom y-axis
-  // Optional chart configuration
-  timeRange?: string; // e.g. "now/h", "now/d" - default: "now/h" (current hour)
+  dataPoints?: (string | TrendSeriesConfig)[]; // Multiple datapoints: strings for default Y-axis, objects for custom Y-axis
+  // Time range configuration
+  timeRange?: string; // e.g. "1h", "now/h", "now/d", "1d/d" - default: "now/h" (current hour from XX:00)
   rangeSelectorDefault?: string; // e.g. "60min", "24h"
-  stacked?: boolean;
-  legendType?: 'scroll' | 'plain'; // default: 'scroll'
-  legendOrientation?: 'horizontal' | 'vertical'; // default: 'horizontal'
-  legendVerticalPosition?: 'top' | 'middle' | 'bottom'; // default: 'top'
-  legendHorizontalPosition?: 'left' | 'center' | 'right'; // default: 'center'
-  showLegend?: boolean; // default: true
+  // Main Y-axis configuration
+  yAxisName?: string; // Main Y-axis title (default: '')
+  yAxisUnit?: string; // Main Y-axis unit (e.g., "°C", "bar")
+  yAxisColor?: string; // Main Y-axis color
+  range?: { min: number | null; max: number | null }; // Main Y-axis range (default: auto)
+  // Legacy Y-axis config (deprecated - use range instead)
   yAxisRangeSource?: 'auto' | 'manual';
   yAxisMin?: number;
   yAxisMax?: number;
-  yAxisColor?: string; // default: ''
+  // Chart configuration
+  stacked?: boolean;
   showXAxisGrid?: boolean; // default: false
   showYAxisGrid?: boolean; // default: true
   showRangePicker?: boolean; // default: true
   showTooltip?: boolean; // default: true
   zoom?: number; // default: 1
+  // Legend configuration
+  legendType?: 'scroll' | 'plain'; // default: 'scroll'
+  legendOrientation?: 'horizontal' | 'vertical'; // default: 'horizontal'
+  legendVerticalPosition?: 'top' | 'middle' | 'bottom'; // default: 'top'
+  legendHorizontalPosition?: 'left' | 'center' | 'right'; // default: 'center'
+  showLegend?: boolean; // default: true
 }
 
 /**
@@ -163,9 +199,64 @@ export interface PieConfig extends BaseWidgetConfig {
 }
 
 /**
+ * Progress bar size types
+ */
+export type ProgressBarSize = '1.5em' | '2.25em' | '3em';
+
+/**
+ * Alert range for progress bar
+ */
+export interface AlertRange {
+  min: number;
+  max: number;
+  color: string;
+}
+
+/**
+ * Progress bar widget configuration
+ */
+export interface ProgressBarConfig extends BaseWidgetConfig {
+  type: 'progressbar';
+  dataPoint: string;
+  // Visual customization
+  color?: string; // Progress bar color
+  size?: ProgressBarSize; // Bar height (default: '2.25em')
+  // Data configuration
+  unit?: string; // Display unit (e.g., "%", "bar")
+  format?: string; // Number format (e.g., "%0.2f")
+  min?: number; // Minimum value (default: from datapoint config)
+  max?: number; // Maximum value (default: from datapoint config)
+  // Display options
+  showRange?: boolean; // Show min/max range labels (default: true)
+  isAbsolute?: boolean; // Show absolute value instead of percentage (default: false)
+  // Alert configuration
+  alertRanges?: AlertRange[]; // Color ranges for different value zones
+}
+
+/**
+ * Bar chart widget configuration
+ */
+export interface BarChartConfig extends BaseWidgetConfig {
+  type: 'barchart';
+  dataPoints: string[]; // Array of datapoint paths
+  // Y-axis configuration
+  yAxisName?: string; // Y-axis title (default: '')
+  yAxisUnit?: string; // Y-axis unit (e.g., "kW", "°C")
+  yAxisColor?: string; // Y-axis color
+  range?: { min: number | null; max: number | null }; // Y-axis range (default: auto)
+  // Chart configuration
+  isStacked?: boolean; // Stack bars (default: false)
+  isHorizontal?: boolean; // Horizontal bars (default: false)
+  showTooltip?: boolean; // Show tooltip on hover (default: true)
+  // Legend configuration
+  showLegend?: boolean; // default: true
+  legendPosition?: LegendPosition; // default: 'topright'
+}
+
+/**
  * Union of all widget configurations
  */
-export type WidgetConfig = GaugeConfig | LabelConfig | TrendConfig | PieConfig;
+export type WidgetConfig = GaugeConfig | LabelConfig | TrendConfig | PieConfig | ProgressBarConfig | BarChartConfig;
 
 /**
  * Type guard for Gauge config
@@ -196,6 +287,20 @@ export function isPieConfig(config: WidgetConfig): config is PieConfig {
 }
 
 /**
+ * Type guard for ProgressBar config
+ */
+export function isProgressBarConfig(config: WidgetConfig): config is ProgressBarConfig {
+  return config.type === 'progressbar';
+}
+
+/**
+ * Type guard for BarChart config
+ */
+export function isBarChartConfig(config: WidgetConfig): config is BarChartConfig {
+  return config.type === 'barchart';
+}
+
+/**
  * Validate trend config has either dataPoint or dataPoints
  */
 export function validateTrendConfig(config: TrendConfig): boolean {
@@ -210,4 +315,11 @@ export function validatePieConfig(config: PieConfig): boolean {
     config.dataPoints.length > 0 &&
     config.dataPoints.length === config.dataPointsDescriptions.length
   );
+}
+
+/**
+ * Validate bar chart config has dataPoints
+ */
+export function validateBarChartConfig(config: BarChartConfig): boolean {
+  return config.dataPoints.length > 0;
 }
