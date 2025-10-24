@@ -587,7 +587,7 @@ IMPORTANT LAYOUT GUIDELINES:
     'edit-widget',
     `Edit a widget on a dashboard.
 
-Updates widget properties. Currently supports updating title and layout.
+Updates widget properties including title, layout, and appearance settings (header, footer, icons, colors).
 
 Parameters:
 - dashboardId: Dashboard datapoint name (required)
@@ -597,32 +597,126 @@ Parameters:
 - title: New widget title (optional)
 - layout: New widget layout (optional)
 
-At least one of title or layout must be provided.
+APPEARANCE SETTINGS (optional but recommanded):
+Header/Footer:(recommanded to be used for mor clarity on the dashboard)
+- titleIcon: Header icon name (e.g., "align-center-vertically", "trending-up")
+- headerTitle: Header title text
+- titleAlignment: Header text alignment - "left", "center", or "right"
+- subtitleIcon: Footer icon name
+- footerTitle: Footer text
+- subtitleAlignment: Footer text alignment - "left", "center", or "right"
 
-Example:
+Colors:
+- backgroundColor: Background color (CSS variable like "var(--theme-color-ghost--selected-active)" or hex like "#ffffff")
+- borderColor: Border color (CSS variable like "var(--theme-color-critical)" or hex)
+
+Controls:
+- showFullscreenButton: Show fullscreen button (true/false)
+
+Links:
+- linkTitle: Link text
+- linkOpenInNewTab: Open link in new tab (true/false)
+
+At least one parameter (title, layout, or appearance setting) must be provided.
+
+Example 1 - Update title and layout:
 {
   "dashboardId": "_Dashboard_000001",
   "widgetIdentifier": {"id": "550e8400-e29b-41d4-a716-446655440000"},
   "title": "Updated Temperature",
   "layout": "large"
+}
+
+Example 2 - Add header and footer with icons:
+{
+  "dashboardId": "_Dashboard_000001",
+  "widgetIdentifier": {"index": 0},
+  "titleIcon": "trending-up",
+  "headerTitle": "Production Trend",
+  "titleAlignment": "center",
+  "subtitleIcon": "info",
+  "footerTitle": "Last 24 hours",
+  "subtitleAlignment": "left"
+}
+
+Example 3 - Customize colors and controls:
+{
+  "dashboardId": "_Dashboard_000001",
+  "widgetIdentifier": {"id": "550e8400-e29b-41d4-a716-446655440000"},
+  "backgroundColor": "var(--theme-color-ghost--selected-active)",
+  "borderColor": "var(--theme-color-critical)",
+  "showFullscreenButton": true
+}
+
+Example 4 - Complete appearance configuration:
+{
+  "dashboardId": "_Dashboard_000001",
+  "widgetIdentifier": {"index": 2},
+  "titleIcon": "align-center-vertically",
+  "headerTitle": "Temperature Monitor",
+  "titleAlignment": "right",
+  "backgroundColor": "var(--theme-color-ghost--selected-active)",
+  "subtitleIcon": "align-objects-horizontally",
+  "footerTitle": "Reactor 1",
+  "borderColor": "var(--theme-color-critical)",
+  "subtitleAlignment": "left",
+  "showFullscreenButton": true,
+  "linkTitle": "View Details",
+  "linkOpenInNewTab": true
 }`,
     {
       dashboardId: z.string().min(1, 'Dashboard ID is required'),
       widgetIdentifier: widgetIdentifierSchema,
       title: z.string().min(1).optional(),
-      layout: layoutSchema.optional()
+      layout: layoutSchema.optional(),
+      // Appearance settings
+      titleIcon: z.string().optional(),
+      headerTitle: z.string().optional(),
+      titleAlignment: z.enum(['left', 'center', 'right']).optional(),
+      subtitleIcon: z.string().optional(),
+      footerTitle: z.string().optional(),
+      subtitleAlignment: z.enum(['left', 'center', 'right']).optional(),
+      backgroundColor: z.string().optional(),
+      borderColor: z.string().optional(),
+      showFullscreenButton: z.boolean().optional(),
+      linkTitle: z.string().optional(),
+      linkOpenInNewTab: z.boolean().optional()
     },
     async (params: {
       dashboardId: string;
       widgetIdentifier: { id: string } | { index: number };
       title?: string;
       layout?: any;
+      // Appearance
+      titleIcon?: string;
+      headerTitle?: string;
+      titleAlignment?: 'left' | 'center' | 'right';
+      subtitleIcon?: string;
+      footerTitle?: string;
+      subtitleAlignment?: 'left' | 'center' | 'right';
+      backgroundColor?: string;
+      borderColor?: string;
+      showFullscreenButton?: boolean;
+      linkTitle?: string;
+      linkOpenInNewTab?: boolean;
     }) => {
       try {
-        let { dashboardId, widgetIdentifier, title, layout } = params;
+        let { dashboardId, widgetIdentifier, title, layout,
+              titleIcon, headerTitle, titleAlignment,
+              subtitleIcon, footerTitle, subtitleAlignment,
+              backgroundColor, borderColor, showFullscreenButton,
+              linkTitle, linkOpenInNewTab } = params;
 
-        if (!title && !layout) {
-          return createErrorResponse('At least one of title or layout must be provided');
+        // Check if at least one parameter is provided
+        const hasAppearanceUpdate = titleIcon !== undefined || headerTitle !== undefined ||
+                                     titleAlignment !== undefined || subtitleIcon !== undefined ||
+                                     footerTitle !== undefined || subtitleAlignment !== undefined ||
+                                     backgroundColor !== undefined || borderColor !== undefined ||
+                                     showFullscreenButton !== undefined || linkTitle !== undefined ||
+                                     linkOpenInNewTab !== undefined;
+
+        if (!title && !layout && !hasAppearanceUpdate) {
+          return createErrorResponse('At least one parameter (title, layout, or appearance setting) must be provided');
         }
 
         // Fix: Parse layout if it's a JSON string (Claude AI sometimes sends it as string)
@@ -636,10 +730,26 @@ Example:
 
         console.log(`Editing widget on dashboard ${dashboardId}`);
 
+        // Build appearance object if any appearance settings provided
+        const appearance = hasAppearanceUpdate ? {
+          titleIcon,
+          title: headerTitle,
+          titleAlignment,
+          subtitleIcon,
+          subtitle: footerTitle,
+          subtitleAlignment,
+          backgroundColor,
+          borderColor,
+          showFullscreenButton,
+          linkTitle,
+          linkOpenInNewTab
+        } : undefined;
+
         await dashboardManager.editWidget(dashboardId, widgetIdentifier, {
           type: 'gauge', // Type is not changed during edit
           title: title || '',
-          layout
+          layout,
+          appearance
         } as any);
 
         return createSuccessResponse({

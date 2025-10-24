@@ -55,12 +55,54 @@ export type LegendPosition = 'topleft' | 'topright' | 'bottomleft' | 'bottomrigh
 export type LabelPosition = 'inside' | 'outside';
 
 /**
+ * Multilingual text configuration
+ */
+export interface MultilingualText {
+  'en_US.utf8': string;
+  'de_AT.utf8'?: string;
+}
+
+/**
+ * Text alignment types
+ */
+export type TextAlignment = 'left' | 'center' | 'right';
+
+/**
+ * Widget appearance configuration (header, footer, icons, colors)
+ * Stored in settings.general.config
+ */
+export interface WidgetAppearance {
+  // Header configuration
+  titleIcon?: string; // Icon name (e.g., 'align-center-vertically')
+  title?: string; // Header title text (will be converted to multilingual format)
+  titleAlignment?: TextAlignment; // Header text alignment
+
+  // Footer configuration
+  subtitleIcon?: string; // Footer icon name
+  subtitle?: string; // Footer text (will be converted to multilingual format)
+  subtitleAlignment?: TextAlignment; // Footer text alignment
+
+  // Colors
+  backgroundColor?: string; // CSS variable or hex color
+  borderColor?: string; // CSS variable or hex color
+
+  // Controls
+  showFullscreenButton?: boolean; // Show fullscreen button
+
+  // Link configuration
+  linkTitle?: string; // Link text (will be converted to multilingual format)
+  linkOpenInNewTab?: boolean; // Open link in new tab
+}
+
+/**
  * Base widget configuration (common to all widgets)
  */
 export interface BaseWidgetConfig {
   type: WidgetType;
   title: string;
   layout?: LayoutConfig;
+  // Appearance settings (header, footer, icons, colors)
+  appearance?: WidgetAppearance;
   // Global appearance settings (for ECharts widgets)
   animation?: boolean; // Enable animations (default: false)
   font?: string; // Font family (default: "Siemens Sans", Arial, Helvetica, sans-serif)
