@@ -100,10 +100,21 @@ export function registerTools(server: any, context: ServerContext): number {
   // Tool 2: Browse OPC UA Address Space
   server.tool(
     "opcua-browse",
-    `Browses the OPC UA address space of an existing connection and returns the child nodes.
+    `Browses the OPC UA address space of an existing connection and returns nodes.
 
     This tool allows you to navigate through the OPC UA server's address space hierarchy,
     exploring available nodes, variables, objects, and their properties.
+
+    The depth parameter determines how many levels of nodes are returned:
+    - If depth is not specified, only 1 level (direct children) is returned
+    - depth=0: Unlimited recursive browsing - browses the entire subtree without limit
+    - depth=1: Returns 1 level (direct children only)
+    - depth=2: Returns 2 levels (children and their children)
+    - depth=3: Returns 3 levels, etc.
+    - depth=25: Maximum depth limit (recommended for bounded recursive browsing)
+
+    When depth > 1, nodes will include a 'children' array with nested nodes, allowing
+    recursive browsing of the address space in a single request.
 
     Parameters:
     - connectionName: Name of the OPC UA connection (e.g., "_OpcUAConnection1" or "OpcUAConnection1")
@@ -112,6 +123,14 @@ export function registerTools(server: any, context: ServerContext): number {
       - 0 = Value nodes (variables with values)
       - 1 = Event nodes
       - 2 = Alarm & Condition nodes
+    - depth: Number of levels to browse (optional, default: 1, 0=unlimited, max: 25)
+      - 0 = Unlimited recursive browsing (entire subtree)
+      - 1-25 = Specific number of levels to return
+    - useCache: Use cached results if available (optional, default: true)
+      Cached results are instant (0ms) vs 2-5 seconds for fresh requests
+      Cache TTL is 5 minutes
+    - refreshCache: Force refresh cached data (optional, default: false)
+      Set to true to ignore cache and fetch fresh data from server
 
     Common parent node IDs:
     - "ns=0;i=85" - Objects folder (default, contains most server data)
@@ -125,7 +144,13 @@ export function registerTools(server: any, context: ServerContext): number {
     - nodeId: Unique OPC UA node identifier
     - dataType: Data type of the node (if applicable)
     - valueRank: Value rank (scalar, array, etc.)
-    - nodeClass: Node class (Variable, Object, Method, etc.)`,
+    - nodeClass: Node class (Variable, Object, Method, etc.)
+    - children: Array of child nodes (present when depth > 1)
+
+    Performance Tips:
+    - Use depth=2 or depth=3 to explore hierarchies faster (1 request vs N requests)
+    - Repeated browsing is cached for 5 minutes (instant response)
+    - Use refreshCache=true only when you need the latest data`,
     {
       connectionName: z.string().describe('Name of the OPC UA connection'),
       parentNodeId: z.string().optional().describe('Parent node ID to browse from (default: "ns=0;i=85" for Objects folder)'),
@@ -133,23 +158,68 @@ export function registerTools(server: any, context: ServerContext): number {
         .enum(['0', '1', '2'])
         .or(z.number().min(0).max(2))
         .optional()
-        .describe('Event source type: 0=Value, 1=Event, 2=Alarm&Condition')
+        .describe('Event source type: 0=Value, 1=Event, 2=Alarm&Condition'),
+      depth: z
+        .number()
+        .int()
+        .min(0)
+        .max(25)
+        .optional()
+        .describe('Number of levels to browse (default: 1, 0=unlimited, max: 25). Determines how many levels of nodes are returned.'),
+      useCache: z
+        .boolean()
+        .optional()
+        .describe('Use cached results if available (default: true). Cache TTL: 5 minutes.'),
+      refreshCache: z
+        .boolean()
+        .optional()
+        .describe('Force refresh cached data (default: false)')
     },
-    async ({ connectionName, parentNodeId, eventSource }: { connectionName: string; parentNodeId?: string; eventSource?: '0' | '1' | '2' | number }) => {
+    async ({
+      connectionName,
+      parentNodeId,
+      eventSource,
+      depth,
+      useCache,
+      refreshCache
+    }: {
+      connectionName: string;
+      parentNodeId?: string;
+      eventSource?: '0' | '1' | '2' | number;
+      depth?: number;
+      useCache?: boolean;
+      refreshCache?: boolean;
+    }) => {
       try {
-        console.log('Browsing OPC UA connection:', { connectionName, parentNodeId, eventSource });
+        console.log('Browsing OPC UA connection:', {
+          connectionName,
+          parentNodeId,
+          eventSource,
+          depth: depth ?? 1,
+          useCache: useCache ?? true,
+          refreshCache: refreshCache ?? false
+        });
 
         // Convert eventSource to number if it's a string
         const eventSourceNum = eventSource !== undefined ? (typeof eventSource === 'string' ? parseInt(eventSource) : eventSource) : 0;
 
-        // Call the browse method
-        const nodes = await opcua.browse(connectionName, parentNodeId, eventSourceNum as 0 | 1 | 2);
+        // Call the browse method with new parameters
+        const nodes = await opcua.browse(
+          connectionName,
+          parentNodeId,
+          eventSourceNum as 0 | 1 | 2,
+          depth ?? 1,
+          useCache ?? true,
+          refreshCache ?? false
+        );
 
         console.log(`Found ${nodes.length} nodes in OPC UA address space`);
         return createSuccessResponse({
           connectionName,
           parentNodeId: parentNodeId || 'ns=0;i=85',
+          depth: depth ?? 1,
           nodeCount: nodes.length,
+          cached: useCache && !refreshCache ? 'possibly from cache' : 'fresh data',
           nodes
         });
       } catch (error) {

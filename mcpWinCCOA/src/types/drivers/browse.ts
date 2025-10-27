@@ -26,6 +26,9 @@ export interface BrowseNode {
 
   /** Node class (Variable, Object, Method, etc.) */
   nodeClass?: string;
+
+  /** Child nodes (populated when browsing with depth > 1) */
+  children?: BrowseNode[];
 }
 
 /**

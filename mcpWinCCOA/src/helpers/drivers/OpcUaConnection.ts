@@ -21,17 +21,129 @@ import { DpConfigType, OpcUaDatatype, DpAddressDirection } from '../../types/ind
 export { SecurityPolicy, MessageSecurityMode, OPCUA_DEFAULTS } from '../../types/index.js';
 
 /**
+ * Cache entry for browse results
+ */
+interface BrowseCacheEntry {
+  nodes: BrowseNode[];
+  timestamp: number;
+  ttl: number;
+}
+
+/**
  * OPC UA Connection Manager Class
  *
  * Extends BaseConnection with OPC UA-specific functionality.
  */
 export class OpcUaConnection extends BaseConnection {
   /**
+   * Cache for browse results
+   * Key format: `${connectionName}:${nodeId}:${eventSource}:${depth}`
+   */
+  private browseCache: Map<string, BrowseCacheEntry> = new Map();
+
+  /**
+   * Default TTL for cache entries (5 minutes in milliseconds)
+   */
+  private readonly DEFAULT_CACHE_TTL = 5 * 60 * 1000;
+
+  /**
    * Generate a unique browse request ID
    * @returns Unique request ID
    */
   private generateBrowseRequestId(): string {
     return `browse_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Generate cache key for browse results
+   * @param connectionName - Connection name
+   * @param nodeId - Node ID
+   * @param eventSource - Event source type
+   * @param depth - Browse depth
+   * @returns Cache key
+   */
+  private generateBrowseCacheKey(
+    connectionName: string,
+    nodeId: string,
+    eventSource: BrowseEventSource,
+    depth: number
+  ): string {
+    return `${connectionName}:${nodeId}:${eventSource}:${depth}`;
+  }
+
+  /**
+   * Get cached browse results if available and not expired
+   * @param key - Cache key
+   * @returns Cached nodes or undefined
+   */
+  private getCachedBrowseResults(key: string): BrowseNode[] | undefined {
+    const entry = this.browseCache.get(key);
+    if (!entry) {
+      return undefined;
+    }
+
+    const now = Date.now();
+    if (now - entry.timestamp > entry.ttl) {
+      // Entry expired, remove it
+      this.browseCache.delete(key);
+      return undefined;
+    }
+
+    console.log(`✓ Cache HIT for ${key}`);
+    return entry.nodes;
+  }
+
+  /**
+   * Cache browse results
+   * @param key - Cache key
+   * @param nodes - Browse nodes to cache
+   * @param ttl - Time to live in milliseconds (optional, defaults to DEFAULT_CACHE_TTL)
+   */
+  private cacheBrowseResults(key: string, nodes: BrowseNode[], ttl?: number): void {
+    this.browseCache.set(key, {
+      nodes,
+      timestamp: Date.now(),
+      ttl: ttl ?? this.DEFAULT_CACHE_TTL
+    });
+    console.log(`✓ Cached ${nodes.length} nodes for ${key} (TTL: ${ttl ?? this.DEFAULT_CACHE_TTL}ms)`);
+  }
+
+  /**
+   * Clear expired cache entries (automatic cleanup)
+   */
+  private cleanupExpiredCache(): void {
+    const now = Date.now();
+    let removedCount = 0;
+
+    for (const [key, entry] of this.browseCache.entries()) {
+      if (now - entry.timestamp > entry.ttl) {
+        this.browseCache.delete(key);
+        removedCount++;
+      }
+    }
+
+    if (removedCount > 0) {
+      console.log(`✓ Cleaned up ${removedCount} expired cache entries`);
+    }
+  }
+
+  /**
+   * Clear all cache entries for a specific connection
+   * @param connectionName - Connection name
+   */
+  private clearConnectionCache(connectionName: string): void {
+    let removedCount = 0;
+
+    for (const key of this.browseCache.keys()) {
+      if (key.startsWith(`${connectionName}:`)) {
+        this.browseCache.delete(key);
+        removedCount++;
+      }
+    }
+
+    if (removedCount > 0) {
+      console.log(`✓ Cleared ${removedCount} cache entries for connection ${connectionName}`);
+    }
   }
 
   /**
@@ -256,14 +368,20 @@ export class OpcUaConnection extends BaseConnection {
    * Browse the OPC UA address space
    *
    * @param connectionName - Name of the connection (e.g., '_OpcUAConnection1')
-   * @param parentNodeId - Node ID of the parent node (optional, default: "ns=0;i=85" for Root)
+   * @param parentNodeId - Node ID of the parent node (optional, default: "ns=0;i=85" for Objects folder)
    * @param eventSource - 0=Value (default), 1=Event, 2=Alarm&Condition
+   * @param depth - Number of levels to browse (default: 1). Determines how many levels of nodes are returned.
+   * @param useCache - Use cached results if available (default: true)
+   * @param refreshCache - Force refresh cache (default: false)
    * @returns Promise with array of browse nodes
    */
   async browse(
     connectionName: string,
     parentNodeId?: string,
-    eventSource: BrowseEventSource = 0
+    eventSource: BrowseEventSource = 0,
+    depth: number = 1,
+    useCache: boolean = true,
+    refreshCache: boolean = false
   ): Promise<BrowseNode[]> {
     try {
       // Ensure connection name has leading underscore
@@ -271,23 +389,38 @@ export class OpcUaConnection extends BaseConnection {
 
       // Default to Objects folder if no parent specified
       const startNode = parentNodeId || 'ns=0;i=85';
-      const level = 1; // Only direct children
+
+      // Validate depth (0 = unlimited recursive browsing, 1-25 = specific levels)
+      if (depth < 0) {
+        throw new Error(`Invalid depth ${depth}. Depth must be at least 0 (0=unlimited, 1-25=specific levels).`);
+      }
+
+      // Cleanup expired cache entries periodically
+      this.cleanupExpiredCache();
+
+      // Generate cache key
+      const cacheKey = this.generateBrowseCacheKey(connDp, startNode, eventSource, depth);
+
+      // Check cache if enabled and not refreshing
+      if (useCache && !refreshCache) {
+        const cachedResults = this.getCachedBrowseResults(cacheKey);
+        if (cachedResults) {
+          return cachedResults;
+        }
+        console.log(`Cache MISS for ${cacheKey}`);
+      }
+
+      console.log(`Browsing ${depth} level(s) for node ${startNode}`);
 
       // Generate unique request ID
       const requestId = this.generateBrowseRequestId();
 
-      console.log(`Starting browse on ${connDp}, node: ${startNode}, eventSource: ${eventSource}`);
-
-      // Create promise to wait for browse result
-      return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error(`Browse timeout after 30 seconds for connection ${connDp}`));
-        }, 30000);
-
+      // Perform browse operation with specified depth
+      const nodes = await new Promise<BrowseNode[]>((resolve, reject) => {
         // Callback function for dpConnect
         const browseCallback = async (dpes: string[]) => {
           try {
-            console.log(`Browse callback triggered!`);
+            console.log(`Browse callback triggered`);
 
             // Read all values at once with a single dpGet call
             const values = await this.winccoa.dpGet([
@@ -308,8 +441,6 @@ export class OpcUaConnection extends BaseConnection {
             const valueRanks = values[5] as string[] | undefined;
             const nodeClasses = values[6] as string[] | undefined;
 
-            console.log(`Returned RequestId: ${returnedRequestId}, Expected: ${requestId}`);
-
             // Check if this is our request
             if (returnedRequestId !== requestId) {
               console.log(`RequestId mismatch, ignoring callback`);
@@ -317,7 +448,6 @@ export class OpcUaConnection extends BaseConnection {
             }
 
             console.log(`RequestId matches, processing ${displayNames.length} nodes`);
-            clearTimeout(timeout);
 
             // Build result array
             const results: BrowseNode[] = [];
@@ -364,11 +494,19 @@ export class OpcUaConnection extends BaseConnection {
           false // Don't send initial values
         );
 
-        // Trigger browse request
+        // Trigger browse request - pass depth directly to WinCC OA
         this.winccoa
-          .dpSetWait(`${connDp}.Browse.GetBranch:_original.._value`, [requestId, startNode, level, eventSource])
+          .dpSetWait(`${connDp}.Browse.GetBranch:_original.._value`, [requestId, startNode, depth, eventSource])
           .catch(reject);
       });
+
+      // Cache results
+      if (useCache) {
+        const cacheKey = this.generateBrowseCacheKey(connDp, startNode, eventSource, depth);
+        this.cacheBrowseResults(cacheKey, nodes);
+      }
+
+      return nodes;
     } catch (error) {
       console.error(`Error browsing OPC UA connection:`, error);
       throw error;
