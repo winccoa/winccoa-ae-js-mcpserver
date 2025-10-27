@@ -212,168 +212,7 @@ Example 4 - Trend with SECOND Y-AXIS (multiple datapoints):
   "layout": "large"
 }
 
-Example 5 - Pie Chart:
-{
-  "dashboardId": "_Dashboard_000001",
-  "type": "pie",
-  "title": "Energy Distribution",
-  "dataPoints": ["Motor1.power.", "Motor2.power.", "Motor3.power."],
-  "dataPointsDescriptions": ["Motor 1", "Motor 2", "Motor 3"],
-  "layout": "medium"
-}
-
 ---
-## ADVANCED FEATURES (Trend Widget)
-
-The trend widget supports powerful visualization features for enhanced data analysis:
-
-**Available Features:**
-- showConfidenceBand: Show min/max confidence band (PERFECT for outlier detection!)
-- showArea: Fill area under line
-- color: Custom hex color (e.g., "#ff6b6b", "#4ecdc4")
-- name: Custom series name in legend
-- unit: Display unit (e.g., "°C", "bar", "kW")
-- format: Number format (e.g., "%0.2f" for 2 decimals, "%.1f" for 1 decimal)
-- lineStyle: "solid", "dashed", or "dotted"
-- min/max: Custom Y-axis range (when showCustomYAxis: true)
-
-Example 6 - Trend with CONFIDENCE BANDS (outlier detection):
-{
-  "dashboardId": "_Dashboard_000001",
-  "type": "trend",
-  "title": "Temperature Monitoring with Outlier Detection",
-  "dataPoints": [
-    {
-      "dataPoint": "Reactor1.temperature.",
-      "showConfidenceBand": true,
-      "color": "#ff6b6b",
-      "name": "Reactor Temperature",
-      "unit": "°C",
-      "format": "%0.1f"
-    }
-  ],
-  "timeRange": "24h",
-  "layout": "large"
-}
-
-Example 7 - Multi-Series with CUSTOM COLORS and FORMATTING:
-{
-  "dashboardId": "_Dashboard_000001",
-  "type": "trend",
-  "title": "Production Line Metrics",
-  "dataPoints": [
-    {
-      "dataPoint": "Line1.speed.",
-      "color": "#4ecdc4",
-      "name": "Line Speed",
-      "unit": "m/min",
-      "format": "%0.1f",
-      "lineStyle": "solid"
-    },
-    {
-      "dataPoint": "Line1.efficiency.",
-      "color": "#95e1d3",
-      "name": "Efficiency",
-      "unit": "%",
-      "format": "%0.0f",
-      "lineStyle": "dashed"
-    },
-    {
-      "dataPoint": "Line1.quality.",
-      "color": "#f38181",
-      "name": "Quality Score",
-      "format": "%0.2f",
-      "showArea": true
-    }
-  ],
-  "timeRange": "now/d",
-  "layout": "fullwidth"
-}
-
-Example 8 - Trend with SECOND Y-AXIS + CUSTOM RANGE + FORMATTING:
-{
-  "dashboardId": "_Dashboard_000001",
-  "type": "trend",
-  "title": "Pressure & Temperature (Different Scales)",
-  "dataPoints": [
-    {
-      "dataPoint": "Vessel1.temperature.",
-      "color": "#ff6b6b",
-      "name": "Temperature",
-      "unit": "°C",
-      "format": "%0.1f"
-    },
-    {
-      "dataPoint": "Vessel1.pressure.",
-      "showCustomYAxis": true,
-      "yAxisPosition": "right",
-      "min": 0,
-      "max": 100,
-      "color": "#4ecdc4",
-      "name": "Pressure",
-      "unit": "bar",
-      "format": "%0.2f",
-      "lineStyle": "dashed"
-    }
-  ],
-  "timeRange": "now/h",
-  "layout": "large"
-}
-
-Example 9 - Gauge with FORMATTING and CUSTOM COLORS:
-{
-  "dashboardId": "_Dashboard_000001",
-  "type": "gauge",
-  "title": "Tank Level",
-  "dataPoint": "Tank1.level.",
-  "rangeSettings": {"type": "manual", "min": 0, "max": 100},
-  "layout": "medium"
-}
-
-Example 10 - Label with ICON and FORMATTING:
-{
-  "dashboardId": "_Dashboard_000001",
-  "type": "label",
-  "title": "Current Power Consumption",
-  "dataPoint": "Plant.totalPower.",
-  "layout": "small"
-}
-
-Example 11 - Progress Bar (simple):
-{
-  "dashboardId": "_Dashboard_000001",
-  "type": "progressbar",
-  "title": "Tank Fill Level",
-  "dataPoint": "Tank1.fillLevel.",
-  "layout": "medium"
-}
-
-Example 12 - Progress Bar with ALERT RANGES (color-coded zones):
-{
-  "dashboardId": "_Dashboard_000001",
-  "type": "progressbar",
-  "title": "System Load",
-  "dataPoint": "System1.cpuLoad.",
-  "layout": "medium"
-}
-
-Example 13 - Bar Chart (comparison):
-{
-  "dashboardId": "_Dashboard_000001",
-  "type": "barchart",
-  "title": "Energy Consumption by Department",
-  "dataPoints": ["Dept1.energy.", "Dept2.energy.", "Dept3.energy.", "Dept4.energy."],
-  "layout": "large"
-}
-
-Example 14 - Bar Chart with STACKED BARS:
-{
-  "dashboardId": "_Dashboard_000001",
-  "type": "barchart",
-  "title": "Monthly Production by Line",
-  "dataPoints": ["Line1.output.", "Line2.output.", "Line3.output."],
-  "layout": "large"
-}
 
 IMPORTANT LAYOUT GUIDELINES:
 - **ALWAYS use "auto" layout** when creating multiple widgets to prevent overlaps
@@ -597,14 +436,28 @@ Parameters:
 - title: New widget title (optional)
 - layout: New widget layout (optional)
 
-APPEARANCE SETTINGS (optional but recommanded):
-Header/Footer:(recommanded to be used for mor clarity on the dashboard)
-- titleIcon: Header icon name (e.g., "align-center-vertically", "trending-up")
+APPEARANCE SETTINGS (optional but recommended):
+Header/Footer: (recommended to be used for more clarity on the dashboard)
+- titleIcon: Header icon (see ICON OPTIONS below)
 - headerTitle: Header title text
 - titleAlignment: Header text alignment - "left", "center", or "right"
-- subtitleIcon: Footer icon name
+- subtitleIcon: Footer icon (see ICON OPTIONS below)
 - footerTitle: Footer text
 - subtitleAlignment: Footer text alignment - "left", "center", or "right"
+
+ICON OPTIONS:
+You have two options for icons:
+1. Built-in Siemens IX icons (1,407 available - use list-ix-icons tool to search)
+   - Examples: "trend-upward", "info", "warning", "chart-curve-spline"
+   - Use exact icon names from Siemens IX library
+2. Custom SVG icons (if IX icons don't fit your needs)
+   - Create with: create-custom-icon tool (types: trend, gauge, alert, simple, custom)
+   - Use path: "/data/WebUI/icons/your-icon.svg"
+
+RECOMMENDED WORKFLOW:
+1. Search IX icons first: Use list-ix-icons with keyword (e.g., {"search": "trend"})
+2. If no suitable icon found: Create custom icon with create-custom-icon
+3. Use icon in widget: Set titleIcon or subtitleIcon parameter
 
 Colors:
 - backgroundColor: Background color (CSS variable like "var(--theme-color-ghost--selected-active)" or hex like "#ffffff")
@@ -631,38 +484,12 @@ Example 2 - Add header and footer with icons:
 {
   "dashboardId": "_Dashboard_000001",
   "widgetIdentifier": {"index": 0},
-  "titleIcon": "trending-up",
+  "titleIcon": "trend-upward",
   "headerTitle": "Production Trend",
   "titleAlignment": "center",
   "subtitleIcon": "info",
   "footerTitle": "Last 24 hours",
   "subtitleAlignment": "left"
-}
-
-Example 3 - Customize colors and controls:
-{
-  "dashboardId": "_Dashboard_000001",
-  "widgetIdentifier": {"id": "550e8400-e29b-41d4-a716-446655440000"},
-  "backgroundColor": "var(--theme-color-ghost--selected-active)",
-  "borderColor": "var(--theme-color-critical)",
-  "showFullscreenButton": true
-}
-
-Example 4 - Complete appearance configuration:
-{
-  "dashboardId": "_Dashboard_000001",
-  "widgetIdentifier": {"index": 2},
-  "titleIcon": "align-center-vertically",
-  "headerTitle": "Temperature Monitor",
-  "titleAlignment": "right",
-  "backgroundColor": "var(--theme-color-ghost--selected-active)",
-  "subtitleIcon": "align-objects-horizontally",
-  "footerTitle": "Reactor 1",
-  "borderColor": "var(--theme-color-critical)",
-  "subtitleAlignment": "left",
-  "showFullscreenButton": true,
-  "linkTitle": "View Details",
-  "linkOpenInNewTab": true
 }`,
     {
       dashboardId: z.string().min(1, 'Dashboard ID is required'),
