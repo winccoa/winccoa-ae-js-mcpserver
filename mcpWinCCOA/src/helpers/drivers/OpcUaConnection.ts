@@ -331,7 +331,76 @@ export class OpcUaConnection extends BaseConnection {
         };
       }
 
-      // 3. Search for OPC UA driver with the correct manager number
+      // 3. First, check if the requested manager number is already in use by ANY driver
+      const usedManagerNumbers = new Set<number>();
+
+      for (let i = 0; i < status.managers.length; i++) {
+        const mgr = status.managers[i];
+        if (!mgr) continue;
+
+        const mgrDetails = managerList[mgr.index];
+        if (!mgrDetails) continue;
+
+        const commandLineStr = mgrDetails.commandlineOptions || '';
+
+        // Extract -num parameter, default to 1 if not specified
+        const numMatch = commandLineStr.match(/-num\s+(\d+)/);
+        const configuredNum = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) : 1;
+
+        usedManagerNumbers.add(configuredNum);
+      }
+
+      console.log(`Currently used manager numbers: ${Array.from(usedManagerNumbers).sort((a, b) => a - b).join(', ')}`);
+
+      // Check if requested manager number is already taken
+      if (usedManagerNumbers.has(managerNumber)) {
+        // Find which driver is using this number
+        let conflictingDriver: string | null = null;
+
+        for (let i = 0; i < status.managers.length; i++) {
+          const mgr = status.managers[i];
+          if (!mgr) continue;
+
+          const mgrDetails = managerList[mgr.index];
+          if (!mgrDetails) continue;
+
+          const commandLineStr = mgrDetails.commandlineOptions || '';
+          const numMatch = commandLineStr.match(/-num\s+(\d+)/);
+          const configuredNum = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) : 1;
+
+          if (configuredNum === managerNumber) {
+            const managerNameStr = mgrDetails.manager || 'unknown';
+            const isOpcUaDriver =
+              managerNameStr.toLowerCase().includes('opcua') ||
+              managerNameStr.toLowerCase().includes('opc-ua');
+
+            if (isOpcUaDriver) {
+              // It's an OPC UA driver - we can use it!
+              conflictingDriver = null;
+              break;
+            } else {
+              // It's a different driver type
+              conflictingDriver = managerNameStr;
+              if (!numMatch) {
+                conflictingDriver += ' (running without -num parameter, implicitly uses -num 1)';
+              }
+            }
+          }
+        }
+
+        if (conflictingDriver) {
+          console.error(`❌ Manager number ${managerNumber} is already in use by: ${conflictingDriver}`);
+          return {
+            valid: false,
+            error:
+              `Manager number ${managerNumber} is already in use by another driver: ${conflictingDriver}.\n\n` +
+              `Currently used manager numbers: ${Array.from(usedManagerNumbers).sort((a, b) => a - b).join(', ')}\n\n` +
+              `Please choose a different manager number (1-99) that is not already in use.`
+          };
+        }
+      }
+
+      // 4. Search for OPC UA driver with the correct manager number
       let driverFound = false;
       let driverRunning = false;
       let driverIndex: number | null = null;
@@ -355,22 +424,28 @@ export class OpcUaConnection extends BaseConnection {
           console.log(`  Found OPC UA manager: ${managerNameStr}, options: "${commandLineStr}"`);
 
           // Check if the manager number matches (look for "-num X" in command line options)
+          // IMPORTANT: Drivers without -num parameter implicitly run as -num 1
           const numMatch = commandLineStr.match(/-num\s+(\d+)/);
-          const configuredNum = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) : null;
+          const configuredNum = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) : 1; // Default to 1 if no -num specified
 
           if (configuredNum === managerNumber) {
             driverFound = true;
             driverIndex = mgr.index;
             driverName = managerNameStr;
             driverRunning = (mgr.state === ManagerState.Running);
-            console.log(`✓ Found matching OPC UA driver '${driverName}' at index ${driverIndex} with -num ${managerNumber}`);
+
+            if (numMatch) {
+              console.log(`✓ Found matching OPC UA driver '${driverName}' at index ${driverIndex} with -num ${managerNumber}`);
+            } else {
+              console.log(`✓ Found matching OPC UA driver '${driverName}' at index ${driverIndex} (running as -num 1 by default, no -num specified)`);
+            }
             console.log(`  Driver state: ${driverRunning ? 'RUNNING' : 'NOT RUNNING'} (state code: ${mgr.state})`);
             break;
           }
         }
       }
 
-      // 4. Evaluate results and auto-create driver if missing
+      // 5. Evaluate results and auto-create driver if missing
       if (!driverFound) {
         console.log(`❌ No OPC UA driver with '-num ${managerNumber}' found`);
         console.log(`🔧 Attempting to automatically create OPC UA driver...`);
@@ -2492,8 +2567,9 @@ export class OpcUaConnection extends BaseConnection {
                 mgrDetails.manager?.toLowerCase().includes('opc-ua');
 
               if (isOpcUaDriver) {
+                // IMPORTANT: Drivers without -num parameter implicitly run as -num 1
                 const numMatch = mgrDetails.commandlineOptions?.match(/-num\s+(\d+)/);
-                const configuredNum = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) : null;
+                const configuredNum = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) : 1; // Default to 1 if no -num specified
 
                 if (configuredNum === finalManagerNumber) {
                   driverIndex = mgr.index;
@@ -2648,8 +2724,9 @@ export class OpcUaConnection extends BaseConnection {
                     mgrDetails.manager?.toLowerCase().includes('opc-ua');
 
                   if (isOpcUaDriver) {
+                    // IMPORTANT: Drivers without -num parameter implicitly run as -num 1
                     const numMatch = mgrDetails.commandlineOptions?.match(/-num\s+(\d+)/);
-                    const configuredNum = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) : null;
+                    const configuredNum = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) : 1; // Default to 1 if no -num specified
 
                     if (configuredNum === managerNum) {
                       foundDriverIndex = mgr.index;
