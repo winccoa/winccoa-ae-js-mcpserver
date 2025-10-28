@@ -194,29 +194,185 @@ export class OpcUaConnection extends BaseConnection {
         }
       }
 
-      // 4. Evaluate results
+      // 4. Evaluate results and auto-create driver if missing
       if (!driverFound) {
         console.log(`❌ No OPC UA driver with '-num ${managerNumber}' found`);
-        return {
-          valid: false,
-          error:
-            `No OPC UA driver with '-num ${managerNumber}' found in Pmon configuration.\n\n` +
-            `To fix this, add an OPC UA driver using the 'add-manager' tool:\n` +
-            `  - managerName: "WCCOAopcua" (or "WCCOAopcuadrv" depending on your WinCC OA version)\n` +
-            `  - options: "-num ${managerNumber}"\n` +
-            `  - startMode: "always"\n\n` +
-            `Example: add-manager with managerName="WCCOAopcua", position=5, startMode="always", options="-num ${managerNumber}"`
-        };
+        console.log(`🔧 Attempting to automatically create OPC UA driver...`);
+
+        try {
+          // Try different manager names for different WinCC OA versions
+          const managerNames = ['WCCOAopcua', 'WCCOAopcuadrv'];
+          let addedSuccessfully = false;
+          let usedManagerName = '';
+          let usedPosition = 0;
+
+          for (const managerName of managerNames) {
+            // Find a free position for the new manager (after existing managers)
+            // Try to find the highest index and add after it
+            let maxIndex = 0;
+            for (const mgr of status.managers) {
+              if (mgr && mgr.index > maxIndex) {
+                maxIndex = mgr.index;
+              }
+            }
+            const nextPosition = maxIndex + 1;
+
+            console.log(`🔧 Trying to add manager '${managerName}' at position ${nextPosition}...`);
+
+            // Add the OPC UA driver using PmonClient
+            const addResult = await pmonClient.addManager(
+              nextPosition,
+              managerName,
+              'always',
+              30,
+              3,
+              5,
+              `-num ${managerNumber}`
+            );
+
+            if (addResult.success) {
+              console.log(`✅ Successfully added OPC UA driver '${managerName}' at position ${nextPosition}`);
+              addedSuccessfully = true;
+              usedManagerName = managerName;
+              usedPosition = nextPosition;
+              break;
+            } else {
+              console.warn(`⚠️  Failed to add manager '${managerName}': ${addResult.error}`);
+              // Try next manager name
+            }
+          }
+
+          if (!addedSuccessfully) {
+            console.error(`❌ Failed to add OPC UA driver with any manager name`);
+            return {
+              valid: false,
+              error:
+                `No OPC UA driver with '-num ${managerNumber}' found and automatic creation failed.\n\n` +
+                `Tried manager names: ${managerNames.join(', ')}\n\n` +
+                `Please add the driver manually via WinCC OA Console:\n` +
+                `  1. Open Console and go to Para -> Distributed Systems -> Managers\n` +
+                `  2. Add new manager: ${managerNames[0]}\n` +
+                `  3. Options: -num ${managerNumber}\n` +
+                `  4. Start mode: always\n` +
+                `  5. Apply and start the manager`
+            };
+          }
+
+          console.log(`✅ Manager '${usedManagerName}' added to Pmon at position ${usedPosition}`);
+
+          // Wait a moment for Pmon to process
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          // Verify the manager was actually added by refreshing the status
+          console.log(`🔍 Verifying manager was added to Pmon...`);
+          const verifyStatus = await pmonClient.getManagerStatus();
+          const verifyList = await pmonClient.getManagerList();
+
+          let verified = false;
+          for (let i = 0; i < verifyStatus.managers.length; i++) {
+            const mgr = verifyStatus.managers[i];
+            if (!mgr) continue;
+
+            const mgrDetails = verifyList[mgr.index];
+            if (!mgrDetails) continue;
+
+            if (mgrDetails.manager === usedManagerName &&
+                mgrDetails.commandlineOptions?.includes(`-num ${managerNumber}`)) {
+              verified = true;
+              usedPosition = mgr.index;
+              console.log(`✅ Verified: Manager '${usedManagerName}' is in Pmon at index ${usedPosition}`);
+              break;
+            }
+          }
+
+          if (!verified) {
+            console.error(`❌ Manager was reported as added but cannot be found in Pmon`);
+            warnings.push(
+              `OPC UA driver '${usedManagerName}' was added to Pmon configuration but verification failed. ` +
+              `Please check WinCC OA Console to verify the manager exists and start it manually if needed.`
+            );
+            return {
+              valid: true,
+              warnings
+            };
+          }
+
+          // Try to start the newly created driver
+          console.log(`🔧 Attempting to start the OPC UA driver at index ${usedPosition}...`);
+          const startResult = await pmonClient.startManager(usedPosition);
+
+          if (startResult.success) {
+            console.log(`✅ Successfully started OPC UA driver '${usedManagerName}' at index ${usedPosition}`);
+            warnings.push(
+              `OPC UA driver '${usedManagerName}' was automatically created and started at position ${usedPosition}. ` +
+              `The driver is now running and ready for connections.`
+            );
+          } else {
+            console.warn(`⚠️  Driver created but failed to start: ${startResult.error}`);
+            warnings.push(
+              `OPC UA driver '${usedManagerName}' was automatically created at position ${usedPosition} but could not be started. ` +
+              `Error: ${startResult.error}. ` +
+              `Please start it manually using WinCC OA Console. ` +
+              `The connection will work after starting the driver.`
+            );
+          }
+
+          // Driver was created, continue with success
+          return {
+            valid: true,
+            warnings: warnings.length > 0 ? warnings : undefined
+          };
+
+        } catch (createError) {
+          const createErrorMsg = createError instanceof Error ? createError.message : String(createError);
+          console.error(`❌ Error creating OPC UA driver:`, createErrorMsg);
+          return {
+            valid: false,
+            error:
+              `No OPC UA driver with '-num ${managerNumber}' found and automatic creation failed.\n\n` +
+              `Error: ${createErrorMsg}\n\n` +
+              `Please add the driver manually:\n` +
+              `  1. Open WinCC OA Console -> Para -> Distributed Systems -> Managers\n` +
+              `  2. Add manager: WCCOAopcua (or WCCOAopcuadrv)\n` +
+              `  3. Options: -num ${managerNumber}\n` +
+              `  4. Start mode: always\n` +
+              `  5. Apply and start the driver`
+          };
+        }
       }
 
       if (!driverRunning) {
         console.log(`⚠️  Driver found but not running (index ${driverIndex})`);
-        warnings.push(
-          `OPC UA driver '${driverName}' (index ${driverIndex}) exists with '-num ${managerNumber}' ` +
-          `but is currently not running. ` +
-          `The connection will be created but will only work after starting the driver. ` +
-          `Use 'start-manager' tool with managerIndex=${driverIndex} to start it.`
-        );
+        console.log(`🔧 Attempting to start the OPC UA driver...`);
+
+        try {
+          const startResult = await pmonClient.startManager(driverIndex!);
+
+          if (startResult.success) {
+            console.log(`✅ Successfully started OPC UA driver '${driverName}' at index ${driverIndex}`);
+            warnings.push(
+              `OPC UA driver '${driverName}' (index ${driverIndex}) was not running and has been automatically started. ` +
+              `The driver is now ready for connections.`
+            );
+          } else {
+            console.warn(`⚠️  Failed to start driver: ${startResult.error}`);
+            warnings.push(
+              `OPC UA driver '${driverName}' (index ${driverIndex}) exists with '-num ${managerNumber}' ` +
+              `but is not running and could not be started automatically. ` +
+              `Error: ${startResult.error}. ` +
+              `Please start it manually using WinCC OA Console. ` +
+              `The connection will work after starting the driver.`
+            );
+          }
+        } catch (startError) {
+          const startErrorMsg = startError instanceof Error ? startError.message : String(startError);
+          console.error(`❌ Error starting driver:`, startErrorMsg);
+          warnings.push(
+            `OPC UA driver '${driverName}' (index ${driverIndex}) exists but is not running. ` +
+            `Automatic start failed: ${startErrorMsg}. ` +
+            `Please start it manually using WinCC OA Console.`
+          );
+        }
       }
 
       console.log(`✓ OPC UA driver validation completed successfully`);
