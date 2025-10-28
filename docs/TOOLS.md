@@ -32,15 +32,18 @@ The MCP server provides tools that AI assistants can use to interact with WinCC 
 
 **`opcua/opcua_connection`** - OPC UA connection management
 - `opcua-add-connection` - Create and configure OPC UA client connections
+  - **Connection naming:** Auto-generates sequential names (_OpcUAConnection1, _OpcUAConnection2, etc.)
   - Automatically registers connection with running driver (no restart required)
   - Uses `AddServer` command to dynamically add connection to running OPC UA driver
   - Creates necessary manager datapoints (_OPCUA{num})
   - Configures connection parameters (URL, security, authentication)
+  - Returns the auto-generated connection name for use with other tools
 - `opcua-browse` - Browse OPC UA server address space with **full recursive exploration**
   - **Prerequisites:**
-    - Connection must be established (ConnState=3)
+    - Connection must be established (Common.State.ConnState >= 256)
     - Automatically validates connection status before browsing
     - Returns clear error if connection is not active (with current state and troubleshooting guidance)
+    - Uses unified WinCC OA driver state: < 256 = not connected, >= 256 = connected
   - **Smart Auto-Depth Browsing (OMIT depth parameter - RECOMMENDED):**
     - **Root nodes** (Objects folder): Conservative, tries depth=2 → depth=1 if needed
     - **Specific branches**: FULL RECURSIVE EXPLORATION to all leaf nodes

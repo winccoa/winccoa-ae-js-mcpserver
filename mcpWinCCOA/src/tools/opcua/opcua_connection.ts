@@ -25,10 +25,14 @@ export function registerTools(server: any, context: ServerContext): number {
 
     This tool establishes a connection to an OPC UA server by creating the necessary WinCC OA datapoints,
     configuring the connection parameters, and registering it with the specified OPC UA manager.
-    
+
     The connection is automatically added to the running OPC UA driver using the AddServer command,
     eliminating the need for a driver restart in most cases. If the driver is not running or the command
     fails, the connection will be available after the next driver start.
+
+    Connection Naming:
+    Connection names are automatically generated in sequential format: _OpcUAConnection1, _OpcUAConnection2, etc.
+    The system ensures uniqueness by checking existing datapoints.
 
     Required parameters:
     - ipAddress: IP address or hostname of the OPC UA server
@@ -36,7 +40,6 @@ export function registerTools(server: any, context: ServerContext): number {
     - managerNumber: WinCC OA manager number (1-99) for this connection (e.g., 4 for _OPCUA4)
 
     Optional parameters:
-    - connectionName: Custom name for the connection (auto-generated if not specified)
     - reconnectTimer: Seconds before reconnection attempt (default: 10)
     - securityPolicy: Security policy enum (0=None, 2=Basic128Rsa15, 3=Basic256, 4=Basic256Sha256, 5=Aes128Sha256RsaOaep, 6=Aes256Sha256RsaPss)
     - messageSecurityMode: Message security mode (0=None, 1=Sign, 2=SignAndEncrypt)
@@ -46,12 +49,11 @@ export function registerTools(server: any, context: ServerContext): number {
     - separator: Separator for display names (default: ".")
     - enableConnection: Enable connection immediately (default: true)
 
-    Returns: The connection name (e.g., "_OpcUAConnection1") on success.`,
+    Returns: The auto-generated connection name (e.g., "_OpcUAConnection1") on success.`,
     {
       ipAddress: z.string().describe('IP address or hostname of the OPC UA server'),
       port: z.number().min(1).max(65535).describe('Port number of the OPC UA server'),
       managerNumber: z.number().min(1).max(99).describe('WinCC OA manager number (1-99)'),
-      connectionName: z.string().optional().describe('Custom connection name (auto-generated if not specified)'),
       reconnectTimer: z.number().positive().optional().describe('Reconnect timer in seconds (default: 10)'),
       securityPolicy: z
         .number()
@@ -106,9 +108,10 @@ export function registerTools(server: any, context: ServerContext): number {
     automatically optimizing depth based on address space size to stay within the 800-node limit.
 
     PREREQUISITES:
-    - OPC UA connection must be established (ConnState=3)
+    - OPC UA connection must be established (Common.State.ConnState >= 256)
     - If connection is not active, browse will fail with descriptive error showing current state
     - Use 'opcua-add-connection' tool to create connections if needed
+    - Note: Common.State.ConnState uses unified driver state (< 256 = not connected, >= 256 = connected)
 
     SMART AUTO-DEPTH BEHAVIOR (when depth not specified):
 
