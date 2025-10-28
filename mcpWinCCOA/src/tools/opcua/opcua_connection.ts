@@ -354,5 +354,68 @@ export function registerTools(server: any, context: ServerContext): number {
     }
   );
 
-  return 2; // Number of tools registered
+  // Tool 3: Delete OPC UA Connection
+  server.tool(
+    "opcua-delete-connection",
+    `Completely deletes an existing OPC UA client connection from WinCC OA.
+
+    This tool removes an OPC UA connection by:
+    1. Removing the connection from the manager's server list (_OPCUA{num}.Config.Servers)
+    2. Permanently deleting the connection datapoint (_OpcUAConnection{X})
+    3. If no connections remain on the driver:
+       - Stops the OPC UA driver
+       - Removes the driver from Pmon
+       - Deletes the _OPCUA{num} manager datapoint
+    4. Cleans up any other unused _OPCUA{num} datapoints (those with empty server lists)
+
+    This provides complete automatic cleanup - if you delete the last connection on a driver,
+    the entire OPC UA infrastructure (driver + manager datapoint) will be automatically removed.
+    Additionally, any orphaned manager datapoints with no connections will also be cleaned up.
+
+    Note: The OPC UA driver may need to be restarted for the changes to take full effect,
+    or will reload automatically if configured to do so.
+
+    Required parameters:
+    - connectionName: Name of the connection to delete (e.g., "_OpcUAConnection1" or "OpcUAConnection1")
+
+    Optional parameters:
+    - managerNumber: Manager number (1-99). If not specified, will be auto-detected from the connection's registration.
+
+    Returns: Success message with deleted connection details.
+
+    CAUTION: This operation permanently deletes the connection and cannot be undone.
+    If this is the last connection, the entire OPC UA infrastructure will be removed.
+    All unused manager datapoints will also be cleaned up.
+    Make sure you really want to delete this connection.`,
+    {
+      connectionName: z.string().describe('Name of the OPC UA connection to delete (with or without _ prefix)'),
+      managerNumber: z.number().min(1).max(99).optional().describe('WinCC OA manager number (1-99), auto-detected if not specified')
+    },
+    async ({ connectionName, managerNumber }: { connectionName: string; managerNumber?: number }) => {
+      try {
+        console.log('Deleting OPC UA connection:', { connectionName, managerNumber });
+
+        // Call the deleteConnection method
+        await opcua.deleteConnection(connectionName, managerNumber);
+
+        console.log(`Successfully deleted OPC UA connection: ${connectionName}`);
+        return createSuccessResponse({
+          connectionName,
+          managerNumber: managerNumber || 'auto-detected',
+          message: 'OPC UA connection deleted successfully'
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : undefined;
+        console.error('Error deleting OPC UA connection:', error);
+        return createErrorResponse(`Failed to delete OPC UA connection: ${errorMessage}`, {
+          connectionName,
+          details: errorMessage,
+          stack: errorStack
+        });
+      }
+    }
+  );
+
+  return 3; // Number of tools registered
 }

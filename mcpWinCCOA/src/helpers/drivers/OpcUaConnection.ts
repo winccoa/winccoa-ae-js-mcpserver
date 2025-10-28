@@ -19,9 +19,20 @@ import type {
   DpDistribConfig
 } from '../../types/index.js';
 import { DpConfigType, OpcUaDatatype, DpAddressDirection } from '../../types/index.js';
+import { PmonClient } from '../pmon/PmonClient.js';
+import { ManagerState } from '../../types/pmon/protocol.js';
 
 // Re-export enums and constants for backward compatibility
 export { SecurityPolicy, MessageSecurityMode, OPCUA_DEFAULTS } from '../../types/index.js';
+
+/**
+ * Interface for driver validation results
+ */
+interface DriverValidationResult {
+  valid: boolean;
+  error?: string;
+  warnings?: string[];
+}
 
 /**
  * Cache entry for browse results
@@ -230,6 +241,336 @@ export class OpcUaConnection extends BaseConnection {
     // Validate reconnect timer
     if (config.reconnectTimer !== undefined && config.reconnectTimer <= 0) {
       throw new Error('Reconnect timer must be positive');
+    }
+  }
+
+  /**
+   * Validate that the OPC UA driver exists, is running, and has the correct manager number configured
+   * @param managerNumber - The manager number to validate (e.g., 4 for _OPCUA4)
+   * @returns Validation result with status, optional error message, and optional warnings
+   */
+  private async validateOpcUaDriver(managerNumber: number): Promise<DriverValidationResult> {
+    const warnings: string[] = [];
+
+    try {
+      console.log(`🔍 Validating OPC UA driver for manager number ${managerNumber}...`);
+
+      // 1. Ensure the manager datapoint exists (create if necessary)
+      const managerDp = `_OPCUA${managerNumber}`;
+      if (!this.checkDpExists(managerDp)) {
+        console.log(`⚠️  Manager datapoint ${managerDp} does not exist`);
+        console.log(`🔧 Creating manager datapoint ${managerDp}...`);
+
+        try {
+          const created = await this.winccoa.dpCreate(managerDp, '_OPCUA');
+          if (!created) {
+            console.error(`❌ Failed to create manager datapoint ${managerDp}`);
+            return {
+              valid: false,
+              error: `OPC UA Manager datapoint ${managerDp} does not exist and could not be created automatically. Please create it manually using dpCreate("${managerDp}", "_OPCUA").`
+            };
+          }
+          console.log(`✅ Successfully created manager datapoint ${managerDp}`);
+          warnings.push(`Manager datapoint ${managerDp} was automatically created.`);
+        } catch (createError) {
+          const errorMsg = createError instanceof Error ? createError.message : String(createError);
+          console.error(`❌ Error creating manager datapoint: ${errorMsg}`);
+          return {
+            valid: false,
+            error: `Failed to create manager datapoint ${managerDp}: ${errorMsg}. Please create it manually.`
+          };
+        }
+      } else {
+        console.log(`✓ Manager datapoint ${managerDp} exists`);
+      }
+
+
+      // 1b. Ensure the _Driver{num} datapoint exists (required by WinCC OA driver infrastructure)
+      const driverDp = `_Driver${managerNumber}`;
+      if (!this.checkDpExists(driverDp)) {
+        console.log(`🔧 Creating driver common datapoint ${driverDp}...`);
+
+        try {
+          const createdDriver = await this.winccoa.dpCreate(driverDp, '_DriverCommon');
+          if (!createdDriver) {
+            console.warn(`⚠️  Failed to create driver common datapoint ${driverDp}`);
+            warnings.push(`Could not create driver common datapoint ${driverDp}.`);
+          } else {
+            console.log(`✅ Successfully created driver common datapoint ${driverDp}`);
+            warnings.push(`Driver common datapoint ${driverDp} was automatically created.`);
+          }
+        } catch (createDriverError) {
+          const errorMsg = createDriverError instanceof Error ? createDriverError.message : String(createDriverError);
+          console.warn(`⚠️  Error creating driver common datapoint: ${errorMsg}`);
+          warnings.push(`Could not create driver common datapoint ${driverDp}: ${errorMsg}`);
+        }
+      } else {
+        console.log(`✓ Driver common datapoint ${driverDp} exists`);
+      }
+
+      // 2. Connect to Pmon and get manager status
+      const pmonClient = new PmonClient();
+      let status;
+      let managerList;
+
+      try {
+        status = await pmonClient.getManagerStatus();
+        managerList = await pmonClient.getManagerList();
+        console.log(`✓ Connected to Pmon, found ${status.managers.length} managers`);
+      } catch (pmonError) {
+        const errorMsg = pmonError instanceof Error ? pmonError.message : String(pmonError);
+        console.warn(`⚠️  Could not connect to Pmon: ${errorMsg}`);
+        warnings.push(
+          `Could not verify driver status via Pmon: ${errorMsg}. ` +
+          `Connection may fail if driver is not running. ` +
+          `Please ensure the OPC UA driver with '-num ${managerNumber}' is configured and running.`
+        );
+        return {
+          valid: true,
+          warnings
+        };
+      }
+
+      // 3. Search for OPC UA driver with the correct manager number
+      let driverFound = false;
+      let driverRunning = false;
+      let driverIndex: number | null = null;
+      let driverName: string = '';
+
+      for (let i = 0; i < status.managers.length; i++) {
+        const mgr = status.managers[i];
+        if (!mgr) continue;
+
+        const mgrDetails = managerList[mgr.index];
+        if (!mgrDetails) continue;
+
+        // Check if this is an OPC UA driver (look for OPCUA in the manager name)
+        const isOpcUaDriver =
+          mgrDetails.manager?.toLowerCase().includes('opcua') ||
+          mgrDetails.manager?.toLowerCase().includes('opc-ua');
+
+        if (isOpcUaDriver) {
+          const managerNameStr = mgrDetails.manager || 'unknown';
+          const commandLineStr = mgrDetails.commandlineOptions || '';
+          console.log(`  Found OPC UA manager: ${managerNameStr}, options: "${commandLineStr}"`);
+
+          // Check if the manager number matches (look for "-num X" in command line options)
+          const numMatch = commandLineStr.match(/-num\s+(\d+)/);
+          const configuredNum = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) : null;
+
+          if (configuredNum === managerNumber) {
+            driverFound = true;
+            driverIndex = mgr.index;
+            driverName = managerNameStr;
+            driverRunning = (mgr.state === ManagerState.Running);
+            console.log(`✓ Found matching OPC UA driver '${driverName}' at index ${driverIndex} with -num ${managerNumber}`);
+            console.log(`  Driver state: ${driverRunning ? 'RUNNING' : 'NOT RUNNING'} (state code: ${mgr.state})`);
+            break;
+          }
+        }
+      }
+
+      // 4. Evaluate results and auto-create driver if missing
+      if (!driverFound) {
+        console.log(`❌ No OPC UA driver with '-num ${managerNumber}' found`);
+        console.log(`🔧 Attempting to automatically create OPC UA driver...`);
+
+        try {
+          // Try different manager names for different WinCC OA versions
+          const managerNames = ['WCCOAopcua', 'WCCOAopcuadrv'];
+          let addedSuccessfully = false;
+          let usedManagerName = '';
+          let usedPosition = 0;
+
+          for (const managerName of managerNames) {
+            // Find a free position for the new manager (after existing managers)
+            // Try to find the highest index and add after it
+            let maxIndex = 0;
+            for (const mgr of status.managers) {
+              if (mgr && mgr.index > maxIndex) {
+                maxIndex = mgr.index;
+              }
+            }
+            const nextPosition = maxIndex + 1;
+
+            console.log(`🔧 Trying to add manager '${managerName}' at position ${nextPosition}...`);
+
+            // Add the OPC UA driver using PmonClient with 'once' start option
+            const addResult = await pmonClient.addManager(
+              nextPosition,
+              managerName,
+              'once',
+              30,
+              3,
+              5,
+              `-num ${managerNumber}`
+            );
+
+            if (addResult.success) {
+              console.log(`✅ Successfully added OPC UA driver '${managerName}' at position ${nextPosition}`);
+              addedSuccessfully = true;
+              usedManagerName = managerName;
+              usedPosition = nextPosition;
+              break;
+            } else {
+              console.warn(`⚠️  Failed to add manager '${managerName}': ${addResult.error}`);
+              // Try next manager name
+            }
+          }
+
+          if (!addedSuccessfully) {
+            console.error(`❌ Failed to add OPC UA driver with any manager name`);
+            return {
+              valid: false,
+              error:
+                `No OPC UA driver with '-num ${managerNumber}' found and automatic creation failed.\n\n` +
+                `Tried manager names: ${managerNames.join(', ')}\n\n` +
+                `Please add the driver manually via WinCC OA Console:\n` +
+                `  1. Open Console and go to Para -> Distributed Systems -> Managers\n` +
+                `  2. Add new manager: ${managerNames[0]}\n` +
+                `  3. Options: -num ${managerNumber}\n` +
+                `  4. Start mode: always\n` +
+                `  5. Apply and start the manager`
+            };
+          }
+
+          console.log(`✅ Manager '${usedManagerName}' added to Pmon at position ${usedPosition}`);
+
+          // Wait a moment for Pmon to process
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          // Verify the manager was actually added by refreshing the status
+          console.log(`🔍 Verifying manager was added to Pmon...`);
+          const verifyStatus = await pmonClient.getManagerStatus();
+          const verifyList = await pmonClient.getManagerList();
+
+          let verified = false;
+          for (let i = 0; i < verifyStatus.managers.length; i++) {
+            const mgr = verifyStatus.managers[i];
+            if (!mgr) continue;
+
+            const mgrDetails = verifyList[mgr.index];
+            if (!mgrDetails) continue;
+
+            if (mgrDetails.manager === usedManagerName &&
+                mgrDetails.commandlineOptions?.includes(`-num ${managerNumber}`)) {
+              verified = true;
+              usedPosition = mgr.index;
+              console.log(`✅ Verified: Manager '${usedManagerName}' is in Pmon at index ${usedPosition}`);
+              break;
+            }
+          }
+
+          if (!verified) {
+            console.error(`❌ Manager was reported as added but cannot be found in Pmon`);
+            warnings.push(
+              `OPC UA driver '${usedManagerName}' was added to Pmon configuration but verification failed. ` +
+              `Please check WinCC OA Console to verify the manager exists and start it manually if needed.`
+            );
+            return {
+              valid: true,
+              warnings
+            };
+          }
+
+          // Try to start the newly created driver
+          console.log(`🔧 Attempting to start the OPC UA driver at index ${usedPosition}...`);
+          const startResult = await pmonClient.startManager(usedPosition);
+
+          if (startResult.success) {
+            console.log(`✅ Successfully started OPC UA driver '${usedManagerName}' at index ${usedPosition}`);
+            warnings.push(
+              `OPC UA driver '${usedManagerName}' was automatically created and started at position ${usedPosition}. ` +
+              `The driver is now running and ready for connections.`
+            );
+          } else {
+            console.warn(`⚠️  Driver created but failed to start: ${startResult.error}`);
+            warnings.push(
+              `OPC UA driver '${usedManagerName}' was automatically created at position ${usedPosition} but could not be started. ` +
+              `Error: ${startResult.error}. ` +
+              `Please start it manually using WinCC OA Console. ` +
+              `The connection will work after starting the driver.`
+            );
+          }
+
+          // Driver was created, continue with success
+          return {
+            valid: true,
+            warnings: warnings.length > 0 ? warnings : undefined
+          };
+
+        } catch (createError) {
+          const createErrorMsg = createError instanceof Error ? createError.message : String(createError);
+          console.error(`❌ Error creating OPC UA driver:`, createErrorMsg);
+          return {
+            valid: false,
+            error:
+              `No OPC UA driver with '-num ${managerNumber}' found and automatic creation failed.\n\n` +
+              `Error: ${createErrorMsg}\n\n` +
+              `Please add the driver manually:\n` +
+              `  1. Open WinCC OA Console -> Para -> Distributed Systems -> Managers\n` +
+              `  2. Add manager: WCCOAopcua (or WCCOAopcuadrv)\n` +
+              `  3. Options: -num ${managerNumber}\n` +
+              `  4. Start mode: always\n` +
+              `  5. Apply and start the driver`
+          };
+        }
+      }
+
+      if (!driverRunning) {
+        console.log(`⚠️  Driver found but not running (index ${driverIndex})`);
+        console.log(`🔧 Attempting to start the OPC UA driver...`);
+
+        try {
+          const startResult = await pmonClient.startManager(driverIndex!);
+
+          if (startResult.success) {
+            console.log(`✅ Successfully started OPC UA driver '${driverName}' at index ${driverIndex}`);
+            warnings.push(
+              `OPC UA driver '${driverName}' (index ${driverIndex}) was not running and has been automatically started. ` +
+              `The driver is now ready for connections.`
+            );
+          } else {
+            console.warn(`⚠️  Failed to start driver: ${startResult.error}`);
+            warnings.push(
+              `OPC UA driver '${driverName}' (index ${driverIndex}) exists with '-num ${managerNumber}' ` +
+              `but is not running and could not be started automatically. ` +
+              `Error: ${startResult.error}. ` +
+              `Please start it manually using WinCC OA Console. ` +
+              `The connection will work after starting the driver.`
+            );
+          }
+        } catch (startError) {
+          const startErrorMsg = startError instanceof Error ? startError.message : String(startError);
+          console.error(`❌ Error starting driver:`, startErrorMsg);
+          warnings.push(
+            `OPC UA driver '${driverName}' (index ${driverIndex}) exists but is not running. ` +
+            `Automatic start failed: ${startErrorMsg}. ` +
+            `Please start it manually using WinCC OA Console.`
+          );
+        }
+      }
+
+      console.log(`✓ OPC UA driver validation completed successfully`);
+      return {
+        valid: true,
+        warnings: warnings.length > 0 ? warnings : undefined
+      };
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`❌ Error during driver validation:`, errorMessage);
+
+      // If validation fails due to unexpected error, warn but don't block
+      warnings.push(
+        `Driver validation encountered an error: ${errorMessage}. ` +
+        `Proceeding with connection creation, but please verify the driver configuration manually.`
+      );
+
+      return {
+        valid: true,
+        warnings
+      };
     }
   }
 
@@ -1950,6 +2291,25 @@ export class OpcUaConnection extends BaseConnection {
       this.validateConnectionConfig(config);
       console.log('✓ Configuration validated');
 
+      // Validate OPC UA driver existence and status
+      const driverValidation = await this.validateOpcUaDriver(config.managerNumber);
+
+      if (!driverValidation.valid) {
+        throw new Error(driverValidation.error);
+      }
+
+      if (driverValidation.warnings && driverValidation.warnings.length > 0) {
+        console.log('========================================');
+        console.log('⚠️  Driver Validation Warnings:');
+        console.log('========================================');
+        driverValidation.warnings.forEach(warning => {
+          console.warn(`⚠️  ${warning}`);
+        });
+        console.log('========================================');
+      }
+
+      console.log('✓ OPC UA driver validated');
+
       // Generate connection name if not specified
       const connectionName = config.connectionName || (await this.generateConnectionName());
       console.log(`✓ Connection name: ${connectionName}`);
@@ -1993,6 +2353,384 @@ export class OpcUaConnection extends BaseConnection {
     } catch (error) {
       console.error('========================================');
       console.error('✗ OPC UA Connection Setup Failed');
+      console.error('========================================');
+      console.error(`Error: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an OPC UA connection
+   *
+   * Completely removes an OPC UA connection by:
+   * 1. Removing it from the manager's server list (_OPCUA{num}.Config.Servers)
+   * 2. Deleting the connection datapoint
+   * 3. If no connections remain on the driver:
+   *    - Stops the OPC UA driver
+   *    - Removes the driver from Pmon
+   *    - Deletes the _OPCUA{num} manager datapoint
+   * 4. Cleans up any other unused _OPCUA{num} datapoints (those with empty server lists)
+   *
+   * This provides complete cleanup - the entire OPC UA infrastructure is removed
+   * if no longer needed, including orphaned manager datapoints.
+   *
+   * Note: The driver may need to be restarted for the changes to take full effect,
+   * or will reload automatically if configured to do so.
+   *
+   * @param connectionName - Name of the connection to delete (with or without _ prefix)
+   * @param managerNumber - Optional manager number. If not specified, will be auto-detected.
+   * @returns true on success, throws Error on failure
+   */
+  async deleteConnection(connectionName: string, managerNumber?: number): Promise<boolean> {
+    try {
+      console.log('========================================');
+      console.log('Starting OPC UA Connection Deletion');
+      console.log('========================================');
+
+      // Normalize connection name (ensure _ prefix)
+      const normalizedConnection = connectionName.startsWith('_')
+        ? connectionName
+        : `_${connectionName}`;
+
+      console.log(`Connection to delete: ${normalizedConnection}`);
+
+      // Check if connection exists
+      const connectionExists = this.checkDpExists(normalizedConnection);
+      if (!connectionExists) {
+        console.warn(`⚠️  Connection ${normalizedConnection} does not exist`);
+        console.log(`Available connections: ${this.winccoa.dpNames('_OpcUAConnection*', '_OPCUAServer').join(', ')}`);
+        console.log(`Will proceed with cleanup of unused manager datapoints and drivers...`);
+      }
+
+      // Get manager number if not provided (only if connection exists)
+      let finalManagerNumber: number | undefined;
+      let managerDp: string | undefined;
+
+      if (connectionExists) {
+        if (managerNumber !== undefined) {
+          finalManagerNumber = managerNumber;
+          console.log(`Using provided manager number: ${finalManagerNumber}`);
+        } else {
+          finalManagerNumber = await this.getManagerNumberForConnection(normalizedConnection);
+          console.log(`Auto-detected manager number: ${finalManagerNumber}`);
+        }
+
+        managerDp = `_OPCUA${finalManagerNumber}`;
+
+        // Connection name without leading underscore
+        const nameWithoutUnderscore = normalizedConnection.startsWith('_')
+          ? normalizedConnection.substring(1)
+          : normalizedConnection;
+
+        // 1. Remove connection from manager's server list
+        console.log(`Removing connection from ${managerDp}.Config.Servers...`);
+        try {
+          const currentServersRaw = await this.winccoa.dpGet(`${managerDp}.Config.Servers`);
+          const currentServers: string[] = Array.isArray(currentServersRaw) ? currentServersRaw : [];
+
+          const updatedServers = currentServers.filter(s => s !== nameWithoutUnderscore);
+
+          if (updatedServers.length === currentServers.length) {
+            console.warn(`⚠️  Connection ${nameWithoutUnderscore} was not found in server list`);
+          } else {
+            await this.winccoa.dpSetWait(`${managerDp}.Config.Servers`, updatedServers);
+            console.log(`✓ Removed connection from server list`);
+          }
+        } catch (error) {
+          console.warn(`⚠️  Could not update server list:`, error);
+          // Continue with deletion anyway
+        }
+
+        // 2. Delete the connection datapoint
+        // Note: The connection will be removed from the driver when it's restarted,
+        // or immediately if the driver reloads its configuration automatically
+        console.log(`Deleting connection datapoint ${normalizedConnection}...`);
+        try {
+          const deleted = await this.winccoa.dpDelete(normalizedConnection);
+          if (!deleted) {
+            throw new Error(`dpDelete returned false for ${normalizedConnection}`);
+          }
+          console.log(`✓ Deleted connection datapoint ${normalizedConnection}`);
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          throw new Error(`Failed to delete connection datapoint: ${errorMessage}`);
+        }
+      } else {
+        console.log(`Skipping connection deletion as it does not exist`);
+      }
+
+      // 3. Check if there are any remaining connections on this driver (only if manager was identified)
+      let remainingServers: string[] = [];
+      let driverRemovedSuccessfully = false;
+      if (managerDp && finalManagerNumber !== undefined) {
+        console.log(`Checking for remaining connections on ${managerDp}...`);
+        try {
+          const remainingServersRaw = await this.winccoa.dpGet(`${managerDp}.Config.Servers`);
+          remainingServers = Array.isArray(remainingServersRaw) ? remainingServersRaw : [];
+
+          if (remainingServers.length === 0) {
+            console.log(`⚠️  No more connections on ${managerDp}, removing driver...`);
+
+          // Get the driver's manager index from Pmon
+          const pmonClient = new PmonClient();
+          let driverIndex: number | null = null;
+
+          try {
+            const status = await pmonClient.getManagerStatus();
+            const managerList = await pmonClient.getManagerList();
+
+            for (let i = 0; i < status.managers.length; i++) {
+              const mgr = status.managers[i];
+              if (!mgr) continue;
+
+              const mgrDetails = managerList[mgr.index];
+              if (!mgrDetails) continue;
+
+              // Check if this is the OPC UA driver with the correct number
+              const isOpcUaDriver =
+                mgrDetails.manager?.toLowerCase().includes('opcua') ||
+                mgrDetails.manager?.toLowerCase().includes('opc-ua');
+
+              if (isOpcUaDriver) {
+                const numMatch = mgrDetails.commandlineOptions?.match(/-num\s+(\d+)/);
+                const configuredNum = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) : null;
+
+                if (configuredNum === finalManagerNumber) {
+                  driverIndex = mgr.index;
+                  console.log(`Found driver at Pmon index ${driverIndex}`);
+                  break;
+                }
+              }
+            }
+
+            if (driverIndex !== null) {
+              // Stop the driver first
+              console.log(`🔧 Stopping OPC UA driver at index ${driverIndex}...`);
+              const stopResult = await pmonClient.stopManager(driverIndex);
+              if (stopResult.success) {
+                console.log(`✓ Stopped OPC UA driver`);
+              } else {
+                console.warn(`⚠️  Failed to stop driver: ${stopResult.error}`);
+              }
+
+              // Wait a moment for the driver to stop
+              await new Promise(resolve => setTimeout(resolve, 1000));
+
+              // Remove the driver from Pmon
+              console.log(`🔧 Removing OPC UA driver from Pmon...`);
+              const removeResult = await pmonClient.removeManager(driverIndex);
+              if (removeResult.success) {
+                console.log(`✅ Successfully removed OPC UA driver from Pmon`);
+                driverRemovedSuccessfully = true;
+              } else {
+                console.warn(`⚠️  Failed to remove driver from Pmon: ${removeResult.error}`);
+              }
+
+              // Delete the _OPCUA{num} datapoint
+              console.log(`🔧 Deleting manager datapoint ${managerDp}...`);
+              try {
+                const deletedMgr = await this.winccoa.dpDelete(managerDp);
+                if (deletedMgr) {
+                  console.log(`✅ Successfully deleted manager datapoint ${managerDp}`);
+                } else {
+                  console.warn(`⚠️  Failed to delete manager datapoint ${managerDp}`);
+                }
+              } catch (deleteMgrError) {
+                const deleteMgrErrorMsg = deleteMgrError instanceof Error ? deleteMgrError.message : String(deleteMgrError);
+                console.warn(`⚠️  Error deleting manager datapoint: ${deleteMgrErrorMsg}`);
+              }
+
+              // Delete the _Driver{num} datapoint
+              // IMPORTANT: Never delete _Driver1, _Driver2, _Driver3 - these are reserved for system managers
+              if (finalManagerNumber > 3) {
+                const driverDp = `_Driver${finalManagerNumber}`;
+                console.log(`🔧 Deleting driver common datapoint ${driverDp}...`);
+                try {
+                  if (this.checkDpExists(driverDp)) {
+                    const deletedDriver = await this.winccoa.dpDelete(driverDp);
+                    if (deletedDriver) {
+                      console.log(`✅ Successfully deleted driver common datapoint ${driverDp}`);
+                    } else {
+                      console.warn(`⚠️  Failed to delete driver common datapoint ${driverDp}`);
+                    }
+                  } else {
+                    console.log(`  Driver common datapoint ${driverDp} does not exist, skipping`);
+                  }
+                } catch (deleteDriverError) {
+                  const deleteDriverErrorMsg = deleteDriverError instanceof Error ? deleteDriverError.message : String(deleteDriverError);
+                  console.warn(`⚠️  Error deleting driver common datapoint: ${deleteDriverErrorMsg}`);
+                }
+              } else {
+                console.log(`Skipping _Driver${finalManagerNumber} deletion - reserved for system managers (1-3)`);
+              }
+            } else {
+              console.warn(`⚠️  Could not find driver in Pmon (may already be removed)`);
+            }
+          } catch (pmonError) {
+            const pmonErrorMsg = pmonError instanceof Error ? pmonError.message : String(pmonError);
+            console.warn(`⚠️  Could not remove driver from Pmon: ${pmonErrorMsg}`);
+          }
+          } else {
+            console.log(`✓ Driver has ${remainingServers.length} remaining connection(s), keeping it active`);
+          }
+        } catch (checkError) {
+          console.warn(`⚠️  Could not check for remaining connections:`, checkError);
+          // Continue anyway
+        }
+      } else {
+        console.log(`No specific manager to check, proceeding with general cleanup...`);
+      }
+
+      // 4. Clean up any other unused _OPCUA{num} datapoints (client managers only, not server)
+      console.log(`🔍 Checking for other unused OPC UA client manager datapoints and drivers...`);
+      try {
+        const allOpcuaDps = this.winccoa.dpNames('_OPCUA*', '_OPCUA');
+        let cleanedCount = 0;
+        let cleanedDrivers = 0;
+
+        // Get Pmon information once for all cleanup operations
+        const pmonClient = new PmonClient();
+        let status;
+        let managerList;
+
+        try {
+          status = await pmonClient.getManagerStatus();
+          managerList = await pmonClient.getManagerList();
+        } catch (pmonError) {
+          console.warn(`⚠️  Could not connect to Pmon for driver cleanup:`, pmonError);
+          // Continue with datapoint cleanup only
+        }
+
+        for (const opcuaDp of allOpcuaDps) {
+          // Skip _OPCUAPvssServer - that's for OPC UA Server functionality, not client
+          if (opcuaDp === '_OPCUAPvssServer') {
+            continue;
+          }
+
+          // Skip the one we successfully removed in step 3
+          if (opcuaDp === managerDp && driverRemovedSuccessfully) {
+            console.log(`  Skipping ${opcuaDp} - already processed in step 3`);
+            continue;
+          }
+
+          try {
+            // Check if datapoint still exists (might have been deleted already)
+            if (!this.checkDpExists(opcuaDp)) {
+              console.log(`  Skipping ${opcuaDp} - already deleted`);
+              continue;
+            }
+
+            // Check if this datapoint has any servers configured
+            const serversRaw = await this.winccoa.dpGet(`${opcuaDp}.Config.Servers`);
+            const servers: string[] = Array.isArray(serversRaw) ? serversRaw : [];
+
+            if (servers.length === 0) {
+              console.log(`🔧 Found unused client manager datapoint ${opcuaDp}, cleaning up...`);
+
+              // Extract manager number from datapoint name (e.g., _OPCUA4 -> 4)
+              const managerNumMatch = opcuaDp.match(/_OPCUA(\d+)/);
+              const managerNum = managerNumMatch && managerNumMatch[1] ? parseInt(managerNumMatch[1], 10) : null;
+
+              // Try to find and remove the corresponding driver from Pmon
+              if (managerNum !== null && status && managerList) {
+                let foundDriverIndex: number | null = null;
+
+                for (let i = 0; i < status.managers.length; i++) {
+                  const mgr = status.managers[i];
+                  if (!mgr) continue;
+
+                  const mgrDetails = managerList[mgr.index];
+                  if (!mgrDetails) continue;
+
+                  // Check if this is the OPC UA driver with the correct number
+                  const isOpcUaDriver =
+                    mgrDetails.manager?.toLowerCase().includes('opcua') ||
+                    mgrDetails.manager?.toLowerCase().includes('opc-ua');
+
+                  if (isOpcUaDriver) {
+                    const numMatch = mgrDetails.commandlineOptions?.match(/-num\s+(\d+)/);
+                    const configuredNum = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) : null;
+
+                    if (configuredNum === managerNum) {
+                      foundDriverIndex = mgr.index;
+                      break;
+                    }
+                  }
+                }
+
+                if (foundDriverIndex !== null) {
+                  console.log(`  🔧 Stopping driver at Pmon index ${foundDriverIndex}...`);
+                  try {
+                    await pmonClient.stopManager(foundDriverIndex);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+
+                    console.log(`  🔧 Removing driver from Pmon...`);
+                    const removeResult = await pmonClient.removeManager(foundDriverIndex);
+                    if (removeResult.success) {
+                      console.log(`  ✅ Removed driver for ${opcuaDp}`);
+                      cleanedDrivers++;
+                    }
+                  } catch (removeDriverError) {
+                    console.warn(`  ⚠️  Could not remove driver for ${opcuaDp}:`, removeDriverError);
+                  }
+                }
+              }
+
+              // Delete the datapoint
+              const deleted = await this.winccoa.dpDelete(opcuaDp);
+              if (deleted) {
+                console.log(`  ✅ Deleted unused client manager datapoint ${opcuaDp}`);
+                cleanedCount++;
+              }
+
+              // Also delete the _Driver{num} datapoint if it exists
+              // IMPORTANT: Never delete _Driver1, _Driver2, _Driver3 - these are reserved for system managers
+              if (managerNum !== null && managerNum > 3) {
+                const driverDp = `_Driver${managerNum}`;
+                if (this.checkDpExists(driverDp)) {
+                  console.log(`  🔧 Deleting driver common datapoint ${driverDp}...`);
+                  const deletedDriver = await this.winccoa.dpDelete(driverDp);
+                  if (deletedDriver) {
+                    console.log(`  ✅ Deleted driver common datapoint ${driverDp}`);
+                    cleanedCount++;
+                  }
+                }
+              } else if (managerNum !== null && managerNum <= 3) {
+                console.log(`  Skipping _Driver${managerNum} - reserved for system managers`);
+              }
+            }
+          } catch (checkDpError) {
+            // Datapoint might not exist anymore or have issues, skip it
+            continue;
+          }
+        }
+
+        if (cleanedCount > 0 || cleanedDrivers > 0) {
+          console.log(`✅ Cleaned up ${cleanedCount} unused client manager datapoint(s) and ${cleanedDrivers} driver(s)`);
+        } else {
+          console.log(`✓ No unused client manager datapoints or drivers found`);
+        }
+      } catch (cleanupError) {
+        console.warn(`⚠️  Could not check for unused client manager datapoints:`, cleanupError);
+        // Continue anyway
+      }
+
+      console.log('========================================');
+      console.log('✓ OPC UA Connection Deletion Complete');
+      if (connectionExists) {
+        console.log(`  Connection: ${normalizedConnection}`);
+        if (managerDp) {
+          console.log(`  Manager: ${managerDp}`);
+        }
+      } else {
+        console.log(`  Connection did not exist, performed cleanup only`);
+      }
+      console.log('========================================');
+
+      return true;
+    } catch (error) {
+      console.error('========================================');
+      console.error('✗ OPC UA Connection Deletion Failed');
       console.error('========================================');
       console.error(`Error: ${error}`);
       throw error;

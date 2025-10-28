@@ -11,6 +11,7 @@ declare module 'winccoa-manager' {
     // Datapoint operations
     dpExists(dpName: string): boolean;
     dpCreate(dpName: string, dpType: string, systemId?: number, dpId?: number): Promise<boolean>;
+    dpDelete(dpName: string | string[]): Promise<boolean>;
     dpGet(dpe: string | string[]): Promise<any>;
     dpSet(dpe: string | string[], value: any): boolean;
     dpSetWait(dpe: string | string[], value: any): Promise<void>;

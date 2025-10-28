@@ -8,17 +8,11 @@
 import type {
   WidgetInstance,
   ComponentMeta,
-  StructuredSettings,
-  GroupContext,
-  DataPointContext,
-  StaticContext,
-  ArrayContext
+  StructuredSettings
 } from '../../types/dashboards/schema.js';
 import {
-  createStaticContext,
-  createDataPointContext,
-  createGroupContext,
-  createArrayContext
+  createArrayContext,
+  createSimpleGroupContext
 } from '../../types/dashboards/schema.js';
 import type {
   WidgetConfig,
@@ -26,6 +20,8 @@ import type {
   LabelConfig,
   TrendConfig,
   PieConfig,
+  ProgressBarConfig,
+  BarChartConfig,
   WidgetType
 } from '../../types/dashboards/widgets.js';
 import type { WidgetDimensions } from '../../types/dashboards/layout.js';
@@ -52,6 +48,8 @@ export class WidgetFactory {
     this.registerWidgetType('label', this.createLabel.bind(this));
     this.registerWidgetType('trend', this.createTrend.bind(this));
     this.registerWidgetType('pie', this.createPie.bind(this));
+    this.registerWidgetType('progressbar', this.createProgressBar.bind(this));
+    this.registerWidgetType('barchart', this.createBarChart.bind(this));
   }
 
   /**
@@ -96,14 +94,30 @@ export class WidgetFactory {
    * Create Gauge widget
    */
   private createGauge(config: GaugeConfig, dimensions: WidgetDimensions): WidgetInstance {
-    const { dataPoint, title, chartType = 'classic', showTooltip = true } = config;
+    const {
+      dataPoint,
+      title,
+      chartType = 'classic',
+      showTooltip = true,
+      color,
+      format,
+      unit,
+      name,
+      isRelative = false,
+      // Global appearance settings
+      animation,
+      font,
+      renderer,
+      theme,
+      backgroundColor
+    } = config;
     const { x, y, cols, rows, minCols, minRows } = dimensions;
 
     // Build settings with correct structure
     const settings: StructuredSettings = {
       jsonFileName: 'StandardLibrary/Charts/gauge.widget',
-      config: createGroupContext({
-        chartType: createStaticContext(chartType),
+      config: createSimpleGroupContext({
+        chartType,                      // Simplified: direct value
         datapoint: {
           context: 'data-point',
           config: {
@@ -124,11 +138,22 @@ export class WidgetFactory {
             alertColor: ''
           }
         },
-        showTooltip: createStaticContext(showTooltip)
+        showTooltip,                     // Simplified: direct value
+        ...(color && { color }),
+        ...(format && { format }),
+        ...(unit && { unit }),
+        ...(name && { name }),
+        isRelative,
+        // Global appearance settings
+        ...(animation !== undefined && { animation }),
+        ...(font && { font }),
+        ...(renderer && { renderer }),
+        ...(theme && { theme }),
+        ...(backgroundColor && { backgroundColor })
       }),
-      general: createGroupContext({
-        titleAlignment: createStaticContext('center'),
-        subtitleAlignment: createStaticContext('center')
+      general: createSimpleGroupContext({
+        titleAlignment: 'center',       // Simplified: direct value
+        subtitleAlignment: 'center'
       })
     };
 
@@ -165,14 +190,18 @@ export class WidgetFactory {
       icon = '',
       iconPosition = 'left',
       iconSizeFactor = 'medium',
-      fontSizeFactor = 'small',
-      unitFontSizeFactor = 'small'
+      fontSizeFactor = 'medium',  // Changed from 'small' to 'medium' for better readability
+      unitFontSizeFactor = 'small',
+      color,
+      format,
+      unit,
+      name
     } = config;
     const { x, y, cols, rows, minCols, minRows } = dimensions;
 
     const settings: StructuredSettings = {
       jsonFileName: 'StandardLibrary/Charts/label.widget',
-      config: createGroupContext({
+      config: createSimpleGroupContext({
         datapoint: {
           context: 'data-point',
           config: {
@@ -190,15 +219,19 @@ export class WidgetFactory {
             alertColor: ''
           }
         },
-        icon: createStaticContext(icon),
-        iconPosition: createStaticContext(iconPosition),
-        iconSizeFactor: createStaticContext(iconSizeFactor),
-        fontSizeFactor: createStaticContext(fontSizeFactor),
-        unitFontSizeFactor: createStaticContext(unitFontSizeFactor)
+        icon,                           // Simplified: direct values
+        iconPosition,
+        iconSizeFactor,
+        fontSizeFactor,
+        unitFontSizeFactor,
+        ...(color && { color }),
+        ...(format && { format }),
+        ...(unit && { unit }),
+        ...(name && { name })
       }),
-      general: createGroupContext({
-        titleAlignment: createStaticContext('center'),
-        subtitleAlignment: createStaticContext('center')
+      general: createSimpleGroupContext({
+        titleAlignment: 'center',       // Simplified: direct values
+        subtitleAlignment: 'center'
       })
     };
 
@@ -233,9 +266,8 @@ export class WidgetFactory {
     const {
       dataPoint,
       dataPoints,
-      series,
       title,
-      timeRange = 'now/h', // Default to current hour
+      timeRange = 'now/h', // Default to current hour (from last full hour) - grows with time for live monitoring
       legendType = 'scroll',
       legendOrientation = 'horizontal',
       legendVerticalPosition = 'top',
@@ -246,109 +278,106 @@ export class WidgetFactory {
       showRangePicker = true,
       showTooltip = true,
       yAxisColor = '',
-      zoom = 1
+      yAxisName = '',
+      yAxisUnit,
+      range,
+      zoom = 1,
+      // Global appearance settings
+      animation,
+      font,
+      renderer,
+      theme,
+      backgroundColor
     } = config;
     const { x, y, cols, rows, minCols, minRows } = dimensions;
 
-    // Build series array based on priority: series > dataPoints > dataPoint
-    let seriesArray: any[];
+    // Build series array from dataPoints (smart union type) or single dataPoint
+    const dpArray = dataPoints && dataPoints.length > 0 ? dataPoints : [dataPoint!];
 
-    if (series && series.length > 0) {
-      // Use detailed series configuration
-      seriesArray = series.map((s) => {
-        const seriesConfig: any = {
-          datapoint: {
-            context: 'data-point',
-            config: {
-              definedConfigs: [
-                'datapoint',
-                'value',
-                'name',
-                'unit',
-                'format',
-                'color',
-                'min',
-                'max',
-                'alertColor'
-              ],
-              dpName: s.dataPoint,
-              fetchMethod: 'historic',
-              compress: true,
-              historic: {
-                sTimeRange: '${sTimeRange}'
-              },
-              customAlertColor: true,
-              alertColor: ''
-            }
-          },
-          lineStyle: createStaticContext(s.lineStyle || 'solid')
-        };
+    const seriesArray = dpArray.map((dp) => {
+      const seriesConfig: any = {
+        datapoint: {
+          context: 'data-point',
+          config: {
+            definedConfigs: [
+              'datapoint',
+              'value',
+              'name',
+              'unit',
+              'format',
+              'color',
+              'min',
+              'max',
+              'alertColor'
+            ],
+            dpName: typeof dp === 'string' ? dp : dp.dataPoint,
+            fetchMethod: 'historic',
+            compress: true,
+            historic: {
+              sTimeRange: '${sTimeRange}'
+            },
+            customAlertColor: true,
+            alertColor: ''
+          }
+        },
+        lineStyle: typeof dp === 'string' ? 'solid' : (dp.lineStyle || 'solid')
+      };
 
-        // Add custom y-axis if requested
-        if (s.showCustomYAxis) {
-          seriesConfig.showCustomYAxis = createStaticContext(true);
-          // Default to 'right' for custom y-axis (since main axis is on left)
-          seriesConfig.yAxisPosition = createStaticContext(s.yAxisPosition || 'right');
+      // Add new visual and formatting properties (when dp is an object)
+      if (typeof dp !== 'string') {
+        // Visual customization
+        if (dp.showArea !== undefined) seriesConfig.showArea = dp.showArea;
+        if (dp.showConfidenceBand !== undefined) seriesConfig.showConfidenceBand = dp.showConfidenceBand;
+        if (dp.color) seriesConfig.color = dp.color;
+
+        // Data formatting
+        if (dp.unit) seriesConfig.unit = dp.unit;
+        if (dp.format) seriesConfig.format = dp.format;
+        if (dp.name) seriesConfig.name = dp.name;
+
+        // Custom Y-axis configuration
+        if (dp.showCustomYAxis) {
+          seriesConfig.showCustomYAxis = true;
+          seriesConfig.yAxisPosition = dp.yAxisPosition || 'right';
+          if (dp.min !== undefined) seriesConfig.min = dp.min;
+          if (dp.max !== undefined) seriesConfig.max = dp.max;
         }
+      }
 
-        return createGroupContext(seriesConfig);
-      });
-    } else {
-      // Use simple dataPoint(s) array
-      const dpArray = dataPoints && dataPoints.length > 0 ? dataPoints : [dataPoint!];
-      seriesArray = dpArray.map((dp) =>
-        createGroupContext({
-          datapoint: {
-            context: 'data-point',
-            config: {
-              definedConfigs: [
-                'datapoint',
-                'value',
-                'name',
-                'unit',
-                'format',
-                'color',
-                'min',
-                'max',
-                'alertColor'
-              ],
-              dpName: dp,
-              fetchMethod: 'historic',
-              compress: true,
-              historic: {
-                sTimeRange: '${sTimeRange}'
-              },
-              customAlertColor: true,
-              alertColor: ''
-            }
-          },
-          lineStyle: createStaticContext('solid')
-        })
-      );
-    }
+      return createSimpleGroupContext(seriesConfig);
+    });
 
     const settings: StructuredSettings = {
       jsonFileName: 'StandardLibrary/Charts/linechart.widget',
-      config: createGroupContext({
-        legendType: createStaticContext(legendType),
+      config: createSimpleGroupContext({
+        legendType,                    // Simplified: direct values
         series: createArrayContext(seriesArray as any),
-        showLegend: createStaticContext(showLegend),
-        zoom: createStaticContext(zoom),
-        legendOrientation: createStaticContext(legendOrientation),
-        showYAxisGrid: createStaticContext(showYAxisGrid),
-        showXAxisGrid: createStaticContext(showXAxisGrid),
-        legendVerticalPosition: createStaticContext(legendVerticalPosition),
-        legendHorizontalPosition: createStaticContext(legendHorizontalPosition),
-        yAxisColor: createStaticContext(yAxisColor),
-        showRangePicker: createStaticContext(showRangePicker),
-        showTooltip: createStaticContext(showTooltip)
+        showLegend,
+        zoom,
+        legendOrientation,
+        showYAxisGrid,
+        showXAxisGrid,
+        legendVerticalPosition,
+        legendHorizontalPosition,
+        yAxisColor,
+        yAxisName,
+        ...(yAxisUnit && { yAxisUnit }),
+        ...(range && { range }),
+        showRangePicker,
+        showTooltip,
+        // Global appearance settings
+        ...(animation !== undefined && { animation }),
+        ...(font && { font }),
+        ...(renderer && { renderer }),
+        ...(theme && { theme }),
+        ...(backgroundColor && { backgroundColor })
       }),
-      general: createGroupContext({
-        titleAlignment: createStaticContext('center'),
-        subtitleAlignment: createStaticContext('center')
+      general: createSimpleGroupContext({
+        titleAlignment: 'center',       // Simplified: direct values
+        subtitleAlignment: 'center'
       }),
-      variables: createGroupContext({
-        sTimeRange: createStaticContext(timeRange)
+      variables: createSimpleGroupContext({
+        sTimeRange: timeRange           // Simplified: direct value
       })
     };
 
@@ -377,24 +406,35 @@ export class WidgetFactory {
 
   /**
    * Create Pie widget
+   * ECharts-based widget extending WuiEchartsWithLegend
    */
   private createPie(config: PieConfig, dimensions: WidgetDimensions): WidgetInstance {
-    const { dataPoints, dataPointsDescriptions, title } = config;
+    const {
+      dataPoints,
+      dataPointsDescriptions,
+      title,
+      chartType = 'pie',
+      labelsShow = false,
+      labelsPosition = 'outside',
+      labelsDetails = 'value',
+      labelLineLength = 10,
+      legendPosition = 'topright',
+      showTooltip = true,
+      colors,
+      darkModeColors
+    } = config;
     const { x, y, cols, rows, minCols, minRows } = dimensions;
 
-    // Color arrays for pie slices
-    const colors = ['#123123', '#006FE6', '#BBD0D7', '#265461', '#016FE6', '#BBC0D7'];
-    const darkColors = ['#123123', '#006FE6', '#BBD0D7', '#265461', '#016FE6', '#BBC0D7'];
+    // Default color arrays for pie slices
+    const defaultColors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272'];
+    const defaultDarkColors = ['#4992ff', '#7cffb2', '#fddd60', '#ff6e76', '#58d9f9', '#05c091'];
+    const sliceColors = colors || defaultColors;
+    const sliceDarkColors = darkModeColors || defaultDarkColors;
 
-    // Build series array with datapoint-context
+    // Build series array with datapoint-context (ECharts format)
     const seriesArray = dataPoints.map((dp, index) =>
-      createGroupContext({
-        name: createGroupContext({
-          name: createStaticContext({ 'en_US.utf8': dataPointsDescriptions[index] || `Slice ${index + 1}` }),
-          queryName: createStaticContext(false),
-          nameSource: createStaticContext('manual')
-        }),
-        dpe: {
+      createSimpleGroupContext({
+        datapoint: {
           context: 'data-point',
           config: {
             dpName: dp,
@@ -411,82 +451,231 @@ export class WidgetFactory {
             alertColor: ''
           }
         },
-        color: createStaticContext({
-          color: colors[index % colors.length],
-          useDifferentColors: false,
-          darkModeColor: darkColors[index % darkColors.length]
-        }),
-        formatSettings: createStaticContext({
-          value: index === 0 ? '%0.2f' : '%0.0d',
-          type: 'oa'
-        }),
-        unitSettings: createStaticContext({
-          type: 'oa',
-          value: { 'en_US.utf8': '' }
-        })
+        name: dataPointsDescriptions[index] || `Slice ${index + 1}`,
+        color: sliceColors[index % sliceColors.length],
+        darkModeColor: sliceDarkColors[index % sliceDarkColors.length]
       })
     );
 
     const settings: StructuredSettings = {
-      jsonFileName: 'pie',
-      config: createGroupContext({
-        type: createStaticContext('pie'),
-        chartOptions: createGroupContext({
-          series: createArrayContext(seriesArray as any),
-          legend: createStaticContext({
-            show: true,
-            orient: 'vertical',
-            position: 'topright'
-          }),
-          tooltip: createStaticContext({ show: true }),
-          chartType: createStaticContext({
-            type: 'pie',
-            pieRadius: 50,
-            radius: [25, 75],
-            roseType: 'area'
-          }),
-          label: createStaticContext({
-            show: true,
-            position: 'outside',
-            formatter: 'value'
-          }),
-          labelLine: createStaticContext({ show: true })
-        })
+      jsonFileName: 'StandardLibrary/Charts/pie.widget',
+      config: createSimpleGroupContext({
+        chartType,
+        labelsShow,
+        labelsPosition,
+        labelsDetails,
+        labelLineLength,
+        series: createArrayContext(seriesArray as any),
+        showTooltip
       }),
-      general: createGroupContext({
-        title: createGroupContext({
-          name: createStaticContext({ 'en_US.utf8': title }),
-          queryName: createStaticContext(false),
-          nameSource: createStaticContext('manual')
-        }),
-        subtitle: createGroupContext({
-          name: createStaticContext(null),
-          queryName: createStaticContext(false),
-          nameSource: createStaticContext('manual')
-        }),
-        background: createGroupContext({
-          customBackground: createStaticContext(false),
-          backgroundColor: createStaticContext({
-            color: '',
-            useDifferentColors: false,
-            darkModeColor: ''
-          })
-        })
+      general: createSimpleGroupContext({
+        titleAlignment: 'center',
+        subtitleAlignment: 'center'
       })
     };
 
     const component: ComponentMeta = {
-      tagname: 'wdk-pie',
-      scripts: [],
+      tagname: 'wui-widget-pie',
+      scripts: ['pie'],
       styles: [],
-      jsonSchema: {},
-      uiSchema: {}
+      jsonSchema: 'StandardLibrary/Charts/pie-json-schema',
+      uiSchema: 'StandardLibrary/Charts/pie-ui-schema'
     };
 
     return {
       id: this.generateUuidV4(),
       version: 2,
-      name: 'WDK_pie.Widget.pie.label',
+      name: 'WUI_pie.Widget.pie.label',
+      x,
+      y,
+      rows,
+      cols,
+      minCols,
+      minRows,
+      settings,
+      component
+    };
+  }
+
+  /**
+   * Create Progress Bar widget
+   */
+  private createProgressBar(config: ProgressBarConfig, dimensions: WidgetDimensions): WidgetInstance {
+    const {
+      dataPoint,
+      title,
+      color,
+      size = '2.25em',
+      unit,
+      format,
+      min,
+      max,
+      showRange = true,
+      isAbsolute = false,
+      alertRanges,
+      // Global appearance settings
+      animation,
+      font,
+      renderer,
+      theme,
+      backgroundColor
+    } = config;
+    const { x, y, cols, rows, minCols, minRows } = dimensions;
+
+    const settings: StructuredSettings = {
+      jsonFileName: 'StandardLibrary/Charts/progressbar.widget',
+      config: createSimpleGroupContext({
+        datapoint: {
+          context: 'data-point',
+          config: {
+            dpName: dataPoint,
+            definedConfigs: [
+              'datapoint',
+              'value',
+              'name',
+              'unit',
+              'format',
+              'color',
+              'min',
+              'max',
+              'alertRanges',
+              'alertColor'
+            ],
+            customAlertColor: true,
+            alertColor: ''
+          }
+        },
+        size,
+        showRange,
+        isAbsolute,
+        ...(color && { color }),
+        ...(unit && { unit }),
+        ...(format && { format }),
+        ...(min !== undefined && { min }),
+        ...(max !== undefined && { max }),
+        ...(alertRanges && { alertRanges }),
+        // Global appearance settings
+        ...(animation !== undefined && { animation }),
+        ...(font && { font }),
+        ...(renderer && { renderer }),
+        ...(theme && { theme }),
+        ...(backgroundColor && { backgroundColor })
+      }),
+      general: createSimpleGroupContext({
+        titleAlignment: 'center',
+        subtitleAlignment: 'center'
+      })
+    };
+
+    const component: ComponentMeta = {
+      tagname: 'wui-widget-progress-bar',
+      scripts: ['progress-bar'],
+      styles: [],
+      jsonSchema: 'StandardLibrary/Charts/progressbar-json-schema',
+      uiSchema: 'StandardLibrary/Charts/progressbar-ui-schema'
+    };
+
+    return {
+      id: this.generateUuidV4(),
+      version: 2,
+      name: 'WUI_progressbar.Widget.progressbar.label',
+      x,
+      y,
+      rows,
+      cols,
+      minCols,
+      minRows,
+      settings,
+      component
+    };
+  }
+
+  /**
+   * Create Bar Chart widget
+   */
+  private createBarChart(config: BarChartConfig, dimensions: WidgetDimensions): WidgetInstance {
+    const {
+      dataPoints,
+      title,
+      yAxisName = '',
+      yAxisUnit,
+      yAxisColor,
+      range,
+      isStacked = false,
+      isHorizontal = false,
+      showTooltip = true,
+      showLegend = true,
+      legendPosition = 'topright',
+      // Global appearance settings
+      animation,
+      font,
+      renderer,
+      theme,
+      backgroundColor
+    } = config;
+    const { x, y, cols, rows, minCols, minRows } = dimensions;
+
+    // Build series array from dataPoints
+    const seriesArray = dataPoints.map((dp) =>
+      createSimpleGroupContext({
+        datapoint: {
+          context: 'data-point',
+          config: {
+            dpName: dp,
+            definedConfigs: [
+              'datapoint',
+              'value',
+              'name',
+              'unit',
+              'format',
+              'color',
+              'alertColor'
+            ],
+            customAlertColor: true,
+            alertColor: ''
+          }
+        }
+      })
+    );
+
+    const settings: StructuredSettings = {
+      jsonFileName: 'StandardLibrary/Charts/barchart.widget',
+      config: createSimpleGroupContext({
+        series: createArrayContext(seriesArray as any),
+        isStacked,
+        isHorizontal,
+        showTooltip,
+        showLegend,
+        legendPosition,
+        yAxisName,
+        ...(yAxisUnit && { yAxisUnit }),
+        ...(yAxisColor && { yAxisColor }),
+        ...(range && { range }),
+        // Global appearance settings
+        ...(animation !== undefined && { animation }),
+        ...(font && { font }),
+        ...(renderer && { renderer }),
+        ...(theme && { theme }),
+        ...(backgroundColor && { backgroundColor })
+      }),
+      general: createSimpleGroupContext({
+        titleAlignment: 'center',
+        subtitleAlignment: 'center'
+      })
+    };
+
+    const component: ComponentMeta = {
+      tagname: 'wui-widget-barchart',
+      scripts: ['barchart'],
+      styles: [],
+      jsonSchema: 'StandardLibrary/Charts/barchart-json-schema',
+      uiSchema: 'StandardLibrary/Charts/barchart-ui-schema'
+    };
+
+    return {
+      id: this.generateUuidV4(),
+      version: 2,
+      name: 'WUI_barchart.Widget.barchart.label',
       x,
       y,
       rows,

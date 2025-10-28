@@ -62,7 +62,35 @@ const trendSeriesSchema = z.object({
   dataPoint: z.string().min(1, 'Datapoint is required'),
   lineStyle: z.enum(['solid', 'dashed', 'dotted']).optional(),
   showCustomYAxis: z.boolean().optional(),
-  yAxisPosition: z.enum(['left', 'right']).optional()
+  yAxisPosition: z.enum(['left', 'right']).optional(),
+  // Visual customization
+  showArea: z.boolean().optional(),
+  showConfidenceBand: z.boolean().optional(),
+  color: z.string().optional(),
+  // Data formatting
+  unit: z.string().optional(),
+  format: z.string().optional(),
+  name: z.string().optional(),
+  // Custom Y-axis range
+  min: z.number().optional(),
+  max: z.number().optional()
+});
+
+/**
+ * Progress bar alert range schema
+ */
+const alertRangeSchema = z.object({
+  min: z.number(),
+  max: z.number(),
+  color: z.string()
+});
+
+/**
+ * Y-axis range schema for bar chart
+ */
+const yAxisRangeSchema = z.object({
+  min: z.number().nullable(),
+  max: z.number().nullable()
 });
 
 /**
@@ -80,108 +108,191 @@ export function registerTools(server: any, context: ServerContext): number {
     'add-widget',
     `Add a widget to a dashboard.
 
-Creates a new widget with the specified configuration and adds it to the dashboard. Supports gauge, label, trend, and pie widgets.
+Creates a new widget with the specified configuration and adds it to the dashboard. Supports gauge, label, trend, pie, progressbar, and barchart widgets.
 
 Parameters:
 - dashboardId: Dashboard datapoint name (e.g., "_Dashboard_000001") (required)
-- type: Widget type - "gauge", "label", "trend", or "pie" (required)
+- type: Widget type - "gauge", "label", "trend", "pie", "progressbar", or "barchart" (required)
 - title: Widget title (required)
-- dataPoint: Datapoint path (required for gauge, label, trend with single datapoint)
-- dataPoints: Array of datapoint paths (required for pie, optional for trend)
+- dataPoint: Single datapoint path (required for gauge, label, progressbar, single-series trend)
+- dataPoints: Array of datapoint paths or objects (required for pie, barchart, optional for trend)
+
+  **SIMPLE USAGE (all series on same Y-axis):**
+  dataPoints: ["DP1.element1.", "DP2.element2."]
+
+  **ADVANCED USAGE (with second Y-axis):**
+  dataPoints: [
+    "DP1.element1.",  // String = default Y-axis (left)
+    {
+      "dataPoint": "DP1.element2.",
+      "showCustomYAxis": true,
+      "yAxisPosition": "right",  // optional, defaults to "right"
+      "lineStyle": "solid"  // optional: "solid", "dashed", "dotted"
+    }
+  ]
+
 - dataPointsDescriptions: Array of descriptions for pie slices (required for pie, must match dataPoints length)
-- series: Array of detailed series configurations for trend (optional, takes precedence over dataPoints)
-  - dataPoint: Datapoint path (required)
-  - lineStyle: "solid", "dashed", or "dotted" (optional, default: "solid")
-  - showCustomYAxis: true/false (optional, default: false) - shows separate y-axis for this series
-  - yAxisPosition: "left" or "right" (optional, default: "right" when showCustomYAxis is true)
 - rangeSettings: Range configuration for gauge (optional)
   - type: "manual" or "oa" (from datapoint config)
   - min: Minimum value (for manual type)
   - max: Maximum value (for manual type)
-- timeRange: Time range for trend widget (optional, default: "now/h" for current hour)
-  - Current periods: "now/h" (current hour), "now/d" (today), "now/w" (this week), "now/M" (this month)
-  - Relative periods: "now-1h/h" (previous hour), "now-1d/d" (yesterday), "now-7d/d" (7 days ago)
+- timeRange: Time range for trend widget (optional, default: "now/h" = current hour)
+  - Last periods: "1h" (last hour), "8h" (last 8 hours), "24h" (last 24 hours)
+  - Current periods: "now/h" (current hour from XX:00), "now/d" (current day), "now/w" (current week), "now/M" (current month)
+  - Previous periods: "1d/d" (yesterday), "1w/w" (last week), "1M/M" (last month)
+  - Absolute: "2025-10-23T14:00:00.000/2025-10-23T15:00:00.000"
+  NOTE: "now/h" shows data from start of current hour and grows with time (e.g., 16:00-16:05 at 16:05) - perfect for live monitoring
 - layout: Widget positioning (optional, defaults to "auto")
-  - Preset string: "auto", "small", "medium", "large", or "fullwidth"
-  - Explicit object: Use a JSON object (NOT a string) with x, y, cols, rows properties
-    IMPORTANT: Pass as object {"x": 12, "y": 0, "cols": 12, "rows": 8}, NOT as string "{\"x\": 12, ...}"
+  - Preset (RECOMMENDED): "auto", "small", "medium", "large", "fullwidth"
+    → "auto" automatically finds free space and PREVENTS OVERLAPS
+  - Explicit: {"x": 12, "y": 0, "cols": 12, "rows": 8}
+    → Use only if you need precise positioning. Check existing widgets first to avoid overlaps!
 
 Returns: Widget ID (UUID)
 
-Example - Gauge:
+---
+
+Example 1 - Gauge with manual range:
 {
   "dashboardId": "_Dashboard_000001",
   "type": "gauge",
-  "title": "Temperature",
-  "dataPoint": "Sensor1.temperature.",
-  "rangeSettings": {"type": "manual", "min": 0, "max": 100},
+  "title": "Light Density Inside",
+  "dataPoint": "System1:S1LGH1.actualValue.lightDensityInside",
+  "rangeSettings": {"type": "manual", "min": 0, "max": 1000},
   "layout": "medium"
 }
 
-Example - Trend (single):
+Example 2 - Simple Trend (all series on one Y-axis):
 {
   "dashboardId": "_Dashboard_000001",
   "type": "trend",
-  "title": "Temperature Trend",
-  "dataPoint": "Sensor1.temperature.",
+  "title": "Temperature Comparison",
+  "dataPoints": ["Sensor1.temperature.", "Sensor2.temperature.", "Sensor3.temperature."],
+  "timeRange": "now/h",
   "layout": "large"
 }
 
-Example - Trend (multiple with custom y-axis and explicit positioning):
+Example 3 - Trend with SECOND Y-AXIS (COMMON: multiple elements of ONE datapoint):
 {
   "dashboardId": "_Dashboard_000001",
   "type": "trend",
-  "title": "Multi Sensor Trend",
-  "dataPoints": ["Sensor1.temperature.", "Sensor2.pressure.", "Sensor3.humidity."],
-  "series": [
-    {"dataPoint": "Sensor1.temperature.", "lineStyle": "solid"},
-    {"dataPoint": "Sensor2.pressure.", "lineStyle": "solid", "showCustomYAxis": true, "yAxisPosition": "right"}
+  "title": "S1LGH1 - Multi-Parameter Monitoring",
+  "dataPoints": [
+    "System1:S1LGH1.actualValue.actualLevel",
+    {
+      "dataPoint": "System1:S1LGH1.actualValue.illuminationLevel",
+      "showCustomYAxis": true,
+      "yAxisPosition": "right"
+    },
+    {
+      "dataPoint": "System1:S1LGH1.actualValue.actualPower",
+      "showCustomYAxis": true,
+      "yAxisPosition": "right"
+    }
   ],
-  "timeRange": "now/d",
-  "layout": {"x": 25, "y": 0, "cols": 25, "rows": 13}
+  "timeRange": "now/h",
+  "layout": "fullwidth"
 }
 
-NOTE: Dashboard grid is 50 columns wide. x:25, cols:25 places widget in right half.
-
-NOTE: When using 'series' parameter, you must also provide 'dataPoints' or 'dataPoint' parameter.
-
-Example - Pie:
+Example 4 - Trend with SECOND Y-AXIS (multiple datapoints):
 {
   "dashboardId": "_Dashboard_000001",
-  "type": "pie",
-  "title": "Energy Distribution",
-  "dataPoints": ["Motor1.power.", "Motor2.power.", "Motor3.power."],
-  "dataPointsDescriptions": ["Motor 1", "Motor 2", "Motor 3"],
-  "layout": "medium"
-}`,
+  "type": "trend",
+  "title": "Temperature vs Pressure",
+  "dataPoints": [
+    "Reactor1.temperature.",
+    {
+      "dataPoint": "Reactor1.pressure.",
+      "showCustomYAxis": true,
+      "yAxisPosition": "right",
+      "lineStyle": "dashed"
+    }
+  ],
+  "timeRange": "now/d",
+  "layout": "large"
+}
+
+---
+
+IMPORTANT LAYOUT GUIDELINES:
+- **ALWAYS use "auto" layout** when creating multiple widgets to prevent overlaps
+- Dashboard grid is 50 columns wide
+- Only use explicit coordinates if you have a specific layout design and verify no overlaps exist
+- Example explicit layout: {"x": 25, "y": 0, "cols": 25, "rows": 13} places widget in right half`,
     {
       dashboardId: z.string().min(1, 'Dashboard ID is required'),
-      type: z.enum(['gauge', 'label', 'trend', 'pie'], {
-        errorMap: () => ({ message: 'Widget type must be gauge, label, trend, or pie' })
+      type: z.enum(['gauge', 'label', 'trend', 'pie', 'progressbar', 'barchart'], {
+        errorMap: () => ({ message: 'Widget type must be gauge, label, trend, pie, progressbar, or barchart' })
       }),
       title: z.string().min(1, 'Widget title is required'),
       dataPoint: z.string().optional(),
-      dataPoints: z.array(z.string()).optional(),
+      dataPoints: z.array(z.union([z.string(), trendSeriesSchema])).optional(),
       dataPointsDescriptions: z.array(z.string()).optional(),
-      series: z.array(trendSeriesSchema).optional(),
       rangeSettings: rangeSettingsSchema.optional(),
       timeRange: z.string().optional(),
-      layout: layoutSchema.optional()
+      layout: layoutSchema.optional(),
+      // Progress bar specific
+      color: z.string().optional(),
+      size: z.enum(['1.5em', '2.25em', '3em']).optional(),
+      unit: z.string().optional(),
+      format: z.string().optional(),
+      min: z.number().optional(),
+      max: z.number().optional(),
+      showRange: z.boolean().optional(),
+      isAbsolute: z.boolean().optional(),
+      alertRanges: z.array(alertRangeSchema).optional(),
+      // Bar chart specific
+      yAxisName: z.string().optional(),
+      yAxisUnit: z.string().optional(),
+      yAxisColor: z.string().optional(),
+      range: yAxisRangeSchema.optional(),
+      isStacked: z.boolean().optional(),
+      isHorizontal: z.boolean().optional(),
+      showTooltip: z.boolean().optional(),
+      showLegend: z.boolean().optional(),
+      legendPosition: z.enum(['topleft', 'topright', 'bottomleft', 'bottomright']).optional()
     },
     async (params: {
       dashboardId: string;
-      type: 'gauge' | 'label' | 'trend' | 'pie';
+      type: 'gauge' | 'label' | 'trend' | 'pie' | 'progressbar' | 'barchart';
       title: string;
       dataPoint?: string;
-      dataPoints?: string[];
+      dataPoints?: (string | { dataPoint: string; lineStyle?: 'solid' | 'dashed' | 'dotted'; showCustomYAxis?: boolean; yAxisPosition?: 'left' | 'right' })[];
       dataPointsDescriptions?: string[];
-      series?: Array<{ dataPoint: string; lineStyle?: 'solid' | 'dashed' | 'dotted'; showCustomYAxis?: boolean; yAxisPosition?: 'left' | 'right' }>;
       rangeSettings?: { type: 'manual' | 'oa'; min?: number; max?: number };
       timeRange?: string;
       layout?: any;
+      // Progress bar specific
+      color?: string;
+      size?: '1.5em' | '2.25em' | '3em';
+      unit?: string;
+      format?: string;
+      min?: number;
+      max?: number;
+      showRange?: boolean;
+      isAbsolute?: boolean;
+      alertRanges?: Array<{ min: number; max: number; color: string }>;
+      // Bar chart specific
+      yAxisName?: string;
+      yAxisUnit?: string;
+      yAxisColor?: string;
+      range?: { min: number | null; max: number | null };
+      isStacked?: boolean;
+      isHorizontal?: boolean;
+      showTooltip?: boolean;
+      showLegend?: boolean;
+      legendPosition?: 'topleft' | 'topright' | 'bottomleft' | 'bottomright';
     }) => {
       try {
-        const { dashboardId, type, title, dataPoint, dataPoints, dataPointsDescriptions, series, rangeSettings, timeRange, layout } = params;
+        const {
+          dashboardId, type, title, dataPoint, dataPoints, dataPointsDescriptions,
+          rangeSettings, timeRange, layout,
+          // Progress bar
+          color, size, unit, format, min, max, showRange, isAbsolute, alertRanges,
+          // Bar chart
+          yAxisName, yAxisUnit, yAxisColor, range, isStacked, isHorizontal,
+          showTooltip, showLegend, legendPosition
+        } = params;
 
         console.log(`Adding ${type} widget to dashboard ${dashboardId}`);
 
@@ -215,15 +326,14 @@ Example - Pie:
             break;
 
           case 'trend':
-            if (!dataPoint && !dataPoints && !series) {
-              return createErrorResponse('Trend widget requires either dataPoint, dataPoints, or series parameter');
+            if (!dataPoint && !dataPoints) {
+              return createErrorResponse('Trend widget requires either dataPoint or dataPoints parameter');
             }
             widgetConfig = {
               type: 'trend',
               title,
               dataPoint,
               dataPoints,
-              series,
               timeRange,
               layout
             };
@@ -233,14 +343,60 @@ Example - Pie:
             if (!dataPoints || !dataPointsDescriptions) {
               return createErrorResponse('Pie widget requires both dataPoints and dataPointsDescriptions parameters');
             }
-            if (dataPoints.length !== dataPointsDescriptions.length) {
+            // Pie charts only support string arrays, extract strings from objects if needed
+            const pieDataPoints = dataPoints.map(dp => typeof dp === 'string' ? dp : dp.dataPoint);
+            if (pieDataPoints.length !== dataPointsDescriptions.length) {
               return createErrorResponse('dataPoints and dataPointsDescriptions must have the same length');
             }
             widgetConfig = {
               type: 'pie',
               title,
-              dataPoints,
+              dataPoints: pieDataPoints,
               dataPointsDescriptions,
+              layout
+            };
+            break;
+
+          case 'progressbar':
+            if (!dataPoint) {
+              return createErrorResponse('Progress bar widget requires dataPoint parameter');
+            }
+            widgetConfig = {
+              type: 'progressbar',
+              title,
+              dataPoint,
+              color,
+              size,
+              unit,
+              format,
+              min,
+              max,
+              showRange,
+              isAbsolute,
+              alertRanges,
+              layout
+            };
+            break;
+
+          case 'barchart':
+            if (!dataPoints || dataPoints.length === 0) {
+              return createErrorResponse('Bar chart widget requires dataPoints parameter with at least one datapoint');
+            }
+            // Bar charts only support string arrays, extract strings from objects if needed
+            const barDataPoints = dataPoints.map(dp => typeof dp === 'string' ? dp : dp.dataPoint);
+            widgetConfig = {
+              type: 'barchart',
+              title,
+              dataPoints: barDataPoints,
+              yAxisName,
+              yAxisUnit,
+              yAxisColor,
+              range,
+              isStacked,
+              isHorizontal,
+              showTooltip,
+              showLegend,
+              legendPosition,
               layout
             };
             break;
@@ -270,7 +426,7 @@ Example - Pie:
     'edit-widget',
     `Edit a widget on a dashboard.
 
-Updates widget properties. Currently supports updating title and layout.
+Updates widget properties including title, layout, and appearance settings (header, footer, icons, colors).
 
 Parameters:
 - dashboardId: Dashboard datapoint name (required)
@@ -280,32 +436,114 @@ Parameters:
 - title: New widget title (optional)
 - layout: New widget layout (optional)
 
-At least one of title or layout must be provided.
+APPEARANCE SETTINGS (optional but recommended):
+Header/Footer: (recommended to be used for more clarity on the dashboard)
+- titleIcon: Header icon (see ICON OPTIONS below)
+- headerTitle: Header title text
+- titleAlignment: Header text alignment - "left", "center", or "right"
+- subtitleIcon: Footer icon (see ICON OPTIONS below)
+- footerTitle: Footer text
+- subtitleAlignment: Footer text alignment - "left", "center", or "right"
 
-Example:
+ICON OPTIONS:
+You have two options for icons:
+1. Built-in Siemens IX icons (1,407 available - use list-ix-icons tool to search)
+   - Examples: "trend-upward", "info", "warning", "chart-curve-spline"
+   - Use exact icon names from Siemens IX library
+2. Custom SVG icons (if IX icons don't fit your needs)
+   - Create with: create-custom-icon tool (types: trend, gauge, alert, simple, custom)
+   - Use path: "/data/WebUI/icons/your-icon.svg"
+
+RECOMMENDED WORKFLOW:
+1. Search IX icons first: Use list-ix-icons with keyword (e.g., {"search": "trend"})
+2. If no suitable icon found: Create custom icon with create-custom-icon
+3. Use icon in widget: Set titleIcon or subtitleIcon parameter
+
+Colors:
+- backgroundColor: Background color (CSS variable like "var(--theme-color-ghost--selected-active)" or hex like "#ffffff")
+- borderColor: Border color (CSS variable like "var(--theme-color-critical)" or hex)
+
+Controls:
+- showFullscreenButton: Show fullscreen button (true/false)
+
+Links:
+- linkTitle: Link text
+- linkOpenInNewTab: Open link in new tab (true/false)
+
+At least one parameter (title, layout, or appearance setting) must be provided.
+
+Example 1 - Update title and layout:
 {
   "dashboardId": "_Dashboard_000001",
   "widgetIdentifier": {"id": "550e8400-e29b-41d4-a716-446655440000"},
   "title": "Updated Temperature",
   "layout": "large"
+}
+
+Example 2 - Add header and footer with icons:
+{
+  "dashboardId": "_Dashboard_000001",
+  "widgetIdentifier": {"index": 0},
+  "titleIcon": "trend-upward",
+  "headerTitle": "Production Trend",
+  "titleAlignment": "center",
+  "subtitleIcon": "info",
+  "footerTitle": "Last 24 hours",
+  "subtitleAlignment": "left"
 }`,
     {
       dashboardId: z.string().min(1, 'Dashboard ID is required'),
       widgetIdentifier: widgetIdentifierSchema,
       title: z.string().min(1).optional(),
-      layout: layoutSchema.optional()
+      layout: layoutSchema.optional(),
+      // Appearance settings
+      titleIcon: z.string().optional(),
+      headerTitle: z.string().optional(),
+      titleAlignment: z.enum(['left', 'center', 'right']).optional(),
+      subtitleIcon: z.string().optional(),
+      footerTitle: z.string().optional(),
+      subtitleAlignment: z.enum(['left', 'center', 'right']).optional(),
+      backgroundColor: z.string().optional(),
+      borderColor: z.string().optional(),
+      showFullscreenButton: z.boolean().optional(),
+      linkTitle: z.string().optional(),
+      linkOpenInNewTab: z.boolean().optional()
     },
     async (params: {
       dashboardId: string;
       widgetIdentifier: { id: string } | { index: number };
       title?: string;
       layout?: any;
+      // Appearance
+      titleIcon?: string;
+      headerTitle?: string;
+      titleAlignment?: 'left' | 'center' | 'right';
+      subtitleIcon?: string;
+      footerTitle?: string;
+      subtitleAlignment?: 'left' | 'center' | 'right';
+      backgroundColor?: string;
+      borderColor?: string;
+      showFullscreenButton?: boolean;
+      linkTitle?: string;
+      linkOpenInNewTab?: boolean;
     }) => {
       try {
-        let { dashboardId, widgetIdentifier, title, layout } = params;
+        let { dashboardId, widgetIdentifier, title, layout,
+              titleIcon, headerTitle, titleAlignment,
+              subtitleIcon, footerTitle, subtitleAlignment,
+              backgroundColor, borderColor, showFullscreenButton,
+              linkTitle, linkOpenInNewTab } = params;
 
-        if (!title && !layout) {
-          return createErrorResponse('At least one of title or layout must be provided');
+        // Check if at least one parameter is provided
+        const hasAppearanceUpdate = titleIcon !== undefined || headerTitle !== undefined ||
+                                     titleAlignment !== undefined || subtitleIcon !== undefined ||
+                                     footerTitle !== undefined || subtitleAlignment !== undefined ||
+                                     backgroundColor !== undefined || borderColor !== undefined ||
+                                     showFullscreenButton !== undefined || linkTitle !== undefined ||
+                                     linkOpenInNewTab !== undefined;
+
+        if (!title && !layout && !hasAppearanceUpdate) {
+          return createErrorResponse('At least one parameter (title, layout, or appearance setting) must be provided');
         }
 
         // Fix: Parse layout if it's a JSON string (Claude AI sometimes sends it as string)
@@ -319,10 +557,26 @@ Example:
 
         console.log(`Editing widget on dashboard ${dashboardId}`);
 
+        // Build appearance object if any appearance settings provided
+        const appearance = hasAppearanceUpdate ? {
+          titleIcon,
+          title: headerTitle,
+          titleAlignment,
+          subtitleIcon,
+          subtitle: footerTitle,
+          subtitleAlignment,
+          backgroundColor,
+          borderColor,
+          showFullscreenButton,
+          linkTitle,
+          linkOpenInNewTab
+        } : undefined;
+
         await dashboardManager.editWidget(dashboardId, widgetIdentifier, {
           type: 'gauge', // Type is not changed during edit
           title: title || '',
-          layout
+          layout,
+          appearance
         } as any);
 
         return createSuccessResponse({
