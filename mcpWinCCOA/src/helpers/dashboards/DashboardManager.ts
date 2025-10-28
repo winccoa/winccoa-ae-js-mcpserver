@@ -58,10 +58,23 @@ export class DashboardManager {
 
   /**
    * Create a new dashboard
-   * @param config - Dashboard configuration (name, description)
+   * @param config - Dashboard configuration (name, description, createdBy)
    * @returns Dashboard datapoint name (e.g. "_Dashboard_000001")
    */
   async createDashboard(config: DashboardConfig): Promise<string> {
+    // Lookup user and get userId
+    const userNames = await this.winccoa.dpGet('_Users.UserName');
+    const userIndex = userNames.findIndex((name: string) => name === config.createdBy);
+
+    if (userIndex === -1) {
+      throw new Error(
+        `User not found: ${config.createdBy}. Dashboard cannot be created without valid creator.`
+      );
+    }
+
+    const userIds = await this.winccoa.dpGet('_Users.UserId');
+    const userId = userIds[userIndex];
+
     // Get next available dashboard number
     const dashboardNumber = await this.getNextDashboardNumber();
     const dpName = getDashboardDpName(dashboardNumber);
@@ -85,8 +98,9 @@ export class DashboardManager {
     this.winccoa.dpSet(`${dpName}.id`, dashboardNumber);
     this.winccoa.dpSet(`${dpName}.settings`, settingsJson);
     this.winccoa.dpSet(`${dpName}.widgets`, []); // Empty widget array
+    this.winccoa.dpSet(`${dpName}.createdBy`, userId); // Set creator userId
 
-    console.log(`✅ Created dashboard: ${dpName}`);
+    console.log(`✅ Created dashboard: ${dpName} (created by user: ${config.createdBy})`);
     return dpName;
   }
 
@@ -206,6 +220,22 @@ export class DashboardManager {
       existingWidgets
     );
 
+    // Validate no overlaps (safety check for explicit layouts)
+    const wouldOverlap = existingWidgets.some((existing) => {
+      return this.layoutHelper.widgetsOverlap(
+        { x: dimensions.x, y: dimensions.y, cols: dimensions.cols, rows: dimensions.rows },
+        existing
+      );
+    });
+
+    if (wouldOverlap) {
+      console.warn(
+        `Warning: Widget at position (${dimensions.x}, ${dimensions.y}) may overlap with existing widgets. Consider using layout: "auto" instead.`
+      );
+      // Note: We don't throw an error to allow intentional overlaps if needed,
+      // but the warning will help debug unintentional overlaps
+    }
+
     // Create widget instance
     const widget = this.widgetFactory.createWidget(config, dimensions);
 
@@ -257,6 +287,70 @@ export class DashboardManager {
       }
     }
 
+    // Update appearance settings if provided
+    if (updates.appearance) {
+      const settings = widget.settings as any;
+      if (!settings.general) {
+        settings.general = { context: 'group', config: {} };
+      }
+      if (!settings.general.config) {
+        settings.general.config = {};
+      }
+
+      const appearance = updates.appearance;
+
+      // Helper function to create multilingual text format
+      const createMultilingualText = (text: string) => ({
+        context: 'group',
+        config: {
+          'en_US.utf8': text
+        }
+      });
+
+      // Update header settings
+      if (appearance.titleIcon !== undefined) {
+        settings.general.config.titleIcon = appearance.titleIcon;
+      }
+      if (appearance.title !== undefined) {
+        settings.general.config.title = createMultilingualText(appearance.title);
+      }
+      if (appearance.titleAlignment !== undefined) {
+        settings.general.config.titleAlignment = appearance.titleAlignment;
+      }
+
+      // Update footer settings
+      if (appearance.subtitleIcon !== undefined) {
+        settings.general.config.subtitleIcon = appearance.subtitleIcon;
+      }
+      if (appearance.subtitle !== undefined) {
+        settings.general.config.subtitle = createMultilingualText(appearance.subtitle);
+      }
+      if (appearance.subtitleAlignment !== undefined) {
+        settings.general.config.subtitleAlignment = appearance.subtitleAlignment;
+      }
+
+      // Update color settings
+      if (appearance.backgroundColor !== undefined) {
+        settings.general.config.backgroundColor = appearance.backgroundColor;
+      }
+      if (appearance.borderColor !== undefined) {
+        settings.general.config.borderColor = appearance.borderColor;
+      }
+
+      // Update control settings
+      if (appearance.showFullscreenButton !== undefined) {
+        settings.general.config.showFullscreenButton = appearance.showFullscreenButton;
+      }
+
+      // Update link settings
+      if (appearance.linkTitle !== undefined) {
+        settings.general.config.linkTitle = createMultilingualText(appearance.linkTitle);
+      }
+      if (appearance.linkOpenInNewTab !== undefined) {
+        settings.general.config.linkOpenInNewTab = appearance.linkOpenInNewTab;
+      }
+    }
+
     // Update layout if provided
     if (updates.layout) {
       const dimensions = this.layoutHelper.resolveLayout(
@@ -267,7 +361,11 @@ export class DashboardManager {
           ? 'label'
           : widget.component.tagname.includes('trend')
           ? 'trend'
-          : 'pie',
+          : widget.component.tagname.includes('pie')
+          ? 'pie'
+          : widget.component.tagname.includes('progress-bar')
+          ? 'progressbar'
+          : 'barchart',
         widgets.filter((_, i) => i !== widgetIndex)
       );
       widget.x = dimensions.x;
@@ -396,7 +494,14 @@ export class DashboardManager {
     }
 
     if ('dataPoints' in config && config.dataPoints) {
-      datapoints.push(...config.dataPoints);
+      // Handle both string and object formats in dataPoints
+      for (const dp of config.dataPoints) {
+        if (typeof dp === 'string') {
+          datapoints.push(dp);
+        } else {
+          datapoints.push(dp.dataPoint);
+        }
+      }
     }
 
     for (const dp of datapoints) {
