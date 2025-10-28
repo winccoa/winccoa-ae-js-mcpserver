@@ -12,6 +12,10 @@ export enum DpConfigType {
   DPCONFIG_NONE = 0,
   /** Archive config */
   DPCONFIG_DB_ARCHIVEINFO = 4,
+  /** Min/Max range check config */
+  DPCONFIG_MINMAX_PVSS_RANGECHECK = 7,
+  /** Set range check config */
+  DPCONFIG_SET_PVSS_RANGECHECK = 8,
   /** Binary signal alert */
   DPCONFIG_ALERT_BINARYSIGNAL = 12,
   /** Non-binary signal alert */
@@ -23,7 +27,9 @@ export enum DpConfigType {
   /** Distribution/manager allocation config */
   DPCONFIG_DISTRIBUTION_INFO = 56,
   /** Sum alert */
-  DPCONFIG_SUM_ALERT = 59
+  DPCONFIG_SUM_ALERT = 59,
+  /** Match range check config */
+  DPCONFIG_MATCH_PVSS_RANGECHECK = 64
 }
 
 /**
