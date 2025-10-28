@@ -217,6 +217,7 @@ Example 4 - Trend with SECOND Y-AXIS (multiple datapoints):
 IMPORTANT LAYOUT GUIDELINES:
 - **ALWAYS use "auto" layout** when creating multiple widgets to prevent overlaps
 - Dashboard grid is 50 columns wide
+- Dashboard grid is 25 rows high
 - Only use explicit coordinates if you have a specific layout design and verify no overlaps exist
 - Example explicit layout: {"x": 25, "y": 0, "cols": 25, "rows": 13} places widget in right half`,
     {
