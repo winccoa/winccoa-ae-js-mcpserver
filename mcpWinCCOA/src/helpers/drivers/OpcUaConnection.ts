@@ -121,16 +121,34 @@ export class OpcUaConnection extends BaseConnection {
     try {
       console.log(`🔍 Validating OPC UA driver for manager number ${managerNumber}...`);
 
-      // 1. Check if the manager datapoint exists
+      // 1. Ensure the manager datapoint exists (create if necessary)
       const managerDp = `_OPCUA${managerNumber}`;
       if (!this.checkDpExists(managerDp)) {
-        console.log(`❌ Manager datapoint ${managerDp} does not exist`);
-        return {
-          valid: false,
-          error: `OPC UA Manager datapoint ${managerDp} does not exist. Please create it first using dpCreate() or WinCC OA Console.`
-        };
+        console.log(`⚠️  Manager datapoint ${managerDp} does not exist`);
+        console.log(`🔧 Creating manager datapoint ${managerDp}...`);
+
+        try {
+          const created = await this.winccoa.dpCreate(managerDp, '_OPCUA');
+          if (!created) {
+            console.error(`❌ Failed to create manager datapoint ${managerDp}`);
+            return {
+              valid: false,
+              error: `OPC UA Manager datapoint ${managerDp} does not exist and could not be created automatically. Please create it manually using dpCreate("${managerDp}", "_OPCUA").`
+            };
+          }
+          console.log(`✅ Successfully created manager datapoint ${managerDp}`);
+          warnings.push(`Manager datapoint ${managerDp} was automatically created.`);
+        } catch (createError) {
+          const errorMsg = createError instanceof Error ? createError.message : String(createError);
+          console.error(`❌ Error creating manager datapoint: ${errorMsg}`);
+          return {
+            valid: false,
+            error: `Failed to create manager datapoint ${managerDp}: ${errorMsg}. Please create it manually.`
+          };
+        }
+      } else {
+        console.log(`✓ Manager datapoint ${managerDp} exists`);
       }
-      console.log(`✓ Manager datapoint ${managerDp} exists`);
 
       // 2. Connect to Pmon and get manager status
       const pmonClient = new PmonClient();
