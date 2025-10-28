@@ -16,9 +16,20 @@ import type {
   DpDistribConfig
 } from '../../types/index.js';
 import { DpConfigType, OpcUaDatatype, DpAddressDirection } from '../../types/index.js';
+import { PmonClient } from '../pmon/PmonClient.js';
+import { ManagerState } from '../../types/pmon/protocol.js';
 
 // Re-export enums and constants for backward compatibility
 export { SecurityPolicy, MessageSecurityMode, OPCUA_DEFAULTS } from '../../types/index.js';
+
+/**
+ * Interface for driver validation results
+ */
+interface DriverValidationResult {
+  valid: boolean;
+  error?: string;
+  warnings?: string[];
+}
 
 /**
  * OPC UA Connection Manager Class
@@ -96,6 +107,138 @@ export class OpcUaConnection extends BaseConnection {
     // Validate reconnect timer
     if (config.reconnectTimer !== undefined && config.reconnectTimer <= 0) {
       throw new Error('Reconnect timer must be positive');
+    }
+  }
+
+  /**
+   * Validate that the OPC UA driver exists, is running, and has the correct manager number configured
+   * @param managerNumber - The manager number to validate (e.g., 4 for _OPCUA4)
+   * @returns Validation result with status, optional error message, and optional warnings
+   */
+  private async validateOpcUaDriver(managerNumber: number): Promise<DriverValidationResult> {
+    const warnings: string[] = [];
+
+    try {
+      console.log(`🔍 Validating OPC UA driver for manager number ${managerNumber}...`);
+
+      // 1. Check if the manager datapoint exists
+      const managerDp = `_OPCUA${managerNumber}`;
+      if (!this.checkDpExists(managerDp)) {
+        console.log(`❌ Manager datapoint ${managerDp} does not exist`);
+        return {
+          valid: false,
+          error: `OPC UA Manager datapoint ${managerDp} does not exist. Please create it first using dpCreate() or WinCC OA Console.`
+        };
+      }
+      console.log(`✓ Manager datapoint ${managerDp} exists`);
+
+      // 2. Connect to Pmon and get manager status
+      const pmonClient = new PmonClient();
+      let status;
+      let managerList;
+
+      try {
+        status = await pmonClient.getManagerStatus();
+        managerList = await pmonClient.getManagerList();
+        console.log(`✓ Connected to Pmon, found ${status.managers.length} managers`);
+      } catch (pmonError) {
+        const errorMsg = pmonError instanceof Error ? pmonError.message : String(pmonError);
+        console.warn(`⚠️  Could not connect to Pmon: ${errorMsg}`);
+        warnings.push(
+          `Could not verify driver status via Pmon: ${errorMsg}. ` +
+          `Connection may fail if driver is not running. ` +
+          `Please ensure the OPC UA driver with '-num ${managerNumber}' is configured and running.`
+        );
+        return {
+          valid: true,
+          warnings
+        };
+      }
+
+      // 3. Search for OPC UA driver with the correct manager number
+      let driverFound = false;
+      let driverRunning = false;
+      let driverIndex: number | null = null;
+      let driverName: string = '';
+
+      for (let i = 0; i < status.managers.length; i++) {
+        const mgr = status.managers[i];
+        if (!mgr) continue;
+
+        const mgrDetails = managerList[mgr.index];
+        if (!mgrDetails) continue;
+
+        // Check if this is an OPC UA driver (look for OPCUA in the manager name)
+        const isOpcUaDriver =
+          mgrDetails.manager?.toLowerCase().includes('opcua') ||
+          mgrDetails.manager?.toLowerCase().includes('opc-ua');
+
+        if (isOpcUaDriver) {
+          const managerNameStr = mgrDetails.manager || 'unknown';
+          const commandLineStr = mgrDetails.commandlineOptions || '';
+          console.log(`  Found OPC UA manager: ${managerNameStr}, options: "${commandLineStr}"`);
+
+          // Check if the manager number matches (look for "-num X" in command line options)
+          const numMatch = commandLineStr.match(/-num\s+(\d+)/);
+          const configuredNum = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) : null;
+
+          if (configuredNum === managerNumber) {
+            driverFound = true;
+            driverIndex = mgr.index;
+            driverName = managerNameStr;
+            driverRunning = (mgr.state === ManagerState.Running);
+            console.log(`✓ Found matching OPC UA driver '${driverName}' at index ${driverIndex} with -num ${managerNumber}`);
+            console.log(`  Driver state: ${driverRunning ? 'RUNNING' : 'NOT RUNNING'} (state code: ${mgr.state})`);
+            break;
+          }
+        }
+      }
+
+      // 4. Evaluate results
+      if (!driverFound) {
+        console.log(`❌ No OPC UA driver with '-num ${managerNumber}' found`);
+        return {
+          valid: false,
+          error:
+            `No OPC UA driver with '-num ${managerNumber}' found in Pmon configuration.\n\n` +
+            `To fix this, add an OPC UA driver using the 'add-manager' tool:\n` +
+            `  - managerName: "WCCOAopcua" (or "WCCOAopcuadrv" depending on your WinCC OA version)\n` +
+            `  - options: "-num ${managerNumber}"\n` +
+            `  - startMode: "always"\n\n` +
+            `Example: add-manager with managerName="WCCOAopcua", position=5, startMode="always", options="-num ${managerNumber}"`
+        };
+      }
+
+      if (!driverRunning) {
+        console.log(`⚠️  Driver found but not running (index ${driverIndex})`);
+        warnings.push(
+          `OPC UA driver '${driverName}' (index ${driverIndex}) exists with '-num ${managerNumber}' ` +
+          `but is currently not running. ` +
+          `The connection will be created but will only work after starting the driver. ` +
+          `Use 'start-manager' tool with managerIndex=${driverIndex} to start it.`
+        );
+      }
+
+      console.log(`✓ OPC UA driver validation completed successfully`);
+      return {
+        valid: true,
+        warnings: warnings.length > 0 ? warnings : undefined
+      };
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`❌ Error during driver validation:`, errorMessage);
+
+      // If validation fails due to unexpected error, warn but don't block
+      warnings.push(
+        `Driver validation encountered an error: ${errorMessage}. ` +
+        `Proceeding with connection creation, but please verify the driver configuration manually.`
+      );
+
+      return {
+        valid: true,
+        warnings
+      };
     }
   }
 
@@ -764,6 +907,25 @@ export class OpcUaConnection extends BaseConnection {
       // Validate configuration
       this.validateConnectionConfig(config);
       console.log('✓ Configuration validated');
+
+      // Validate OPC UA driver existence and status
+      const driverValidation = await this.validateOpcUaDriver(config.managerNumber);
+
+      if (!driverValidation.valid) {
+        throw new Error(driverValidation.error);
+      }
+
+      if (driverValidation.warnings && driverValidation.warnings.length > 0) {
+        console.log('========================================');
+        console.log('⚠️  Driver Validation Warnings:');
+        console.log('========================================');
+        driverValidation.warnings.forEach(warning => {
+          console.warn(`⚠️  ${warning}`);
+        });
+        console.log('========================================');
+      }
+
+      console.log('✓ OPC UA driver validated');
 
       // Generate connection name if not specified
       const connectionName = config.connectionName || (await this.generateConnectionName());
