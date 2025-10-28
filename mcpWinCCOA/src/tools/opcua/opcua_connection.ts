@@ -100,21 +100,49 @@ export function registerTools(server: any, context: ServerContext): number {
   // Tool 2: Browse OPC UA Address Space
   server.tool(
     "opcua-browse",
-    `Browses the OPC UA address space of an existing connection and returns nodes.
+    `Browses the OPC UA address space with smart auto-depth selection.
 
-    This tool allows you to navigate through the OPC UA server's address space hierarchy,
-    exploring available nodes, variables, objects, and their properties.
+    This tool intelligently navigates through the OPC UA server's address space hierarchy,
+    automatically optimizing depth based on address space size to stay within the 800-node limit.
 
-    The depth parameter determines how many levels of nodes are returned:
-    - If depth is not specified, only 1 level (direct children) is returned
-    - depth=0: Unlimited recursive browsing - browses the entire subtree without limit
-    - depth=1: Returns 1 level (direct children only)
-    - depth=2: Returns 2 levels (children and their children)
-    - depth=3: Returns 3 levels, etc.
-    - depth=25: Maximum depth limit (recommended for bounded recursive browsing)
+    SMART AUTO-DEPTH BEHAVIOR (when depth not specified):
 
-    When depth > 1, nodes will include a 'children' array with nested nodes, allowing
-    recursive browsing of the address space in a single request.
+    For ROOT NODES (ns=0;i=85 Objects folder):
+    - Conservative approach: tries depth=2 first
+    - If result > 800 nodes, automatically retries with depth=1
+    - Returns actualDepthUsed in response (1 or 2)
+    - Identifies large branches for further exploration
+
+    For SPECIFIC BRANCHES (user browsing a particular node):
+    - FULL RECURSIVE EXPLORATION: Browses entire branch to all leaf nodes
+    - Uses depth-first exploration with batched API calls (minimizes calls)
+    - Continues until reaching leaf nodes OR hitting 1000-node hard limit
+    - Returns recursionStats showing maxDepthReached, leafNodesReached, totalApiCalls
+    - Returns exploredBranches (fully explored) and expandableBranches (hit limit)
+    - Uses hasChildren field to intelligently skip leaf nodes
+    - Allows exploring complete branches within budget
+
+    EXAMPLE AUTO-DEPTH RESPONSES:
+    1. Browsing ROOT (ns=0;i=85) - Small address space:
+       Returns depth=2 results with all children expanded
+
+    2. Browsing ROOT (ns=0;i=85) - Large address space:
+       Returns depth=1 results with message:
+       "Auto-adjusted from depth=2 to depth=1 to stay under 800-node limit.
+        Large branches detected:
+        - ns=2;s=Production (browse this node for its 5000+ children)
+        - ns=2;s=Quality (browse this node for its 2000+ children)"
+
+    3. Browsing SPECIFIC BRANCH (ns=2;s=Production):
+       Returns full recursive exploration:
+       "Soft limit reached (876/800 nodes). Fully explored: Machines, Conveyors, Packaging.
+        Not explored (2 branches): Quality, Maintenance. Browse these individually."
+       recursionStats: { maxDepthReached: 6, leafNodesReached: 423, totalApiCalls: 7 }
+
+    4. User-specified depth validation:
+       If depth is explicitly specified and would exceed 800 nodes, request is REJECTED with:
+       "Address space is large (120 direct children). depth=3 would return 10,000+ nodes.
+        Maximum depth allowed: 2. Use depth=1 or depth=2."
 
     Parameters:
     - connectionName: Name of the OPC UA connection (e.g., "_OpcUAConnection1" or "OpcUAConnection1")
@@ -123,9 +151,10 @@ export function registerTools(server: any, context: ServerContext): number {
       - 0 = Value nodes (variables with values)
       - 1 = Event nodes
       - 2 = Alarm & Condition nodes
-    - depth: Number of levels to browse (optional, default: 1, 0=unlimited, max: 25)
-      - 0 = Unlimited recursive browsing (entire subtree)
-      - 1-25 = Specific number of levels to return
+    - depth: Number of levels to browse (optional, AUTO-SELECTED if omitted)
+      - If OMITTED: Smart auto-depth (tries 2, falls back to 1 if needed)
+      - If SPECIFIED: 1-5 allowed, validated against address space size
+      - depth=0 is DISABLED for safety
     - useCache: Use cached results if available (optional, default: true)
       Cached results are instant (0ms) vs 2-5 seconds for fresh requests
       Cache TTL is 5 minutes
@@ -138,19 +167,32 @@ export function registerTools(server: any, context: ServerContext): number {
     - "ns=0;i=87" - Views folder
     - "ns=0;i=84" - Root folder
 
-    Returns: Array of nodes with the following information for each:
-    - displayName: Human-readable name
-    - browsePath: Path in the address space hierarchy
-    - nodeId: Unique OPC UA node identifier
-    - dataType: Data type of the node (if applicable)
-    - valueRank: Value rank (scalar, array, etc.)
-    - nodeClass: Node class (Variable, Object, Method, etc.)
-    - children: Array of child nodes (present when depth > 1)
+    Returns: Browse result with MINIMAL node information and smart guidance:
 
-    Performance Tips:
-    - Use depth=2 or depth=3 to explore hierarchies faster (1 request vs N requests)
-    - Repeated browsing is cached for 5 minutes (instant response)
-    - Use refreshCache=true only when you need the latest data`,
+    Node fields (lightweight, ~50% smaller payload):
+    - displayName: Human-readable name
+    - nodeId: Unique OPC UA node identifier
+    - nodeClass: Node class (Variable, Object, Method, etc.)
+    - hasChildren: Boolean flag indicating if node has children
+
+    Smart guidance fields (NEW):
+    - actualDepthUsed: What depth was actually used (1 or 2)
+    - largeBranches: Array of branches with many children (if detected)
+      Each branch includes: nodeId, displayName, estimatedChildren, level
+    - expandableBranches: Branches not expanded due to 800-node limit
+    - warning: Human-readable guidance on what to browse next
+
+    Pagination support:
+    - Default limit: 800 nodes per request (optimal for context window)
+    - Response includes: totalNodes, hasMore, nextOffset
+    - Use offset and limit for pagination if needed
+
+    Performance & Best Practices:
+    - Omit depth parameter for smart auto-depth (recommended for most cases)
+    - Specify depth only when you need exact control
+    - Auto-depth uses shared cache ('auto' key) for faster responses
+    - When browsing large branches, browse each branch individually
+    - Follow guidance in largeBranches field for next steps`,
     {
       connectionName: z.string().describe('Name of the OPC UA connection'),
       parentNodeId: z.string().optional().describe('Parent node ID to browse from (default: "ns=0;i=85" for Objects folder)'),
@@ -162,10 +204,23 @@ export function registerTools(server: any, context: ServerContext): number {
       depth: z
         .number()
         .int()
-        .min(0)
-        .max(25)
+        .min(1)
+        .max(5)
         .optional()
-        .describe('Number of levels to browse (default: 1, 0=unlimited, max: 25). Determines how many levels of nodes are returned.'),
+        .describe('Number of levels to browse (OPTIONAL - OMIT FOR FULL BRANCH EXPLORATION).\n\nWhen OMITTED (RECOMMENDED for branches):\n- Root nodes (ns=0;i=85): Conservative auto-depth, tries depth=2 first, falls back to depth=1 if needed\n- Specific branches: FULL RECURSIVE EXPLORATION to all leaf nodes\n  * Uses depth-first exploration with batched API calls (minimizes WinCC OA calls)\n  * Continues until reaching leaf nodes OR hitting 1000-node hard limit\n  * Returns recursionStats (maxDepthReached, leafNodesReached, totalApiCalls)\n  * Returns exploredBranches (fully explored) and expandableBranches (hit limit)\n  * Uses hasChildren field to intelligently skip leaf nodes\n  * Soft limit: 800 nodes (completes current branch), Hard limit: 1000 nodes (absolute stop)\n\nWhen SPECIFIED (less flexible):\n- 1-5 allowed, validated against address space size\n- Uses fixed depth (does NOT explore to leaf nodes)\n- Not recommended for branch exploration\n\nIMPORTANT: To browse a complete branch to all leaf nodes, ALWAYS OMIT the depth parameter.'),
+      offset: z
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .describe('Starting position for pagination (default: 0). Skip first N nodes. Use with limit for pagination.'),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(800)
+        .optional()
+        .describe('Maximum nodes to return per page (default: 800, max: 800). Use with offset for pagination.'),
       useCache: z
         .boolean()
         .optional()
@@ -180,6 +235,8 @@ export function registerTools(server: any, context: ServerContext): number {
       parentNodeId,
       eventSource,
       depth,
+      offset,
+      limit,
       useCache,
       refreshCache
     }: {
@@ -187,15 +244,32 @@ export function registerTools(server: any, context: ServerContext): number {
       parentNodeId?: string;
       eventSource?: '0' | '1' | '2' | number;
       depth?: number;
+      offset?: number;
+      limit?: number;
       useCache?: boolean;
       refreshCache?: boolean;
     }) => {
       try {
+        // Validate depth parameter if specified
+        if (depth !== undefined && (depth < 1 || depth > 5)) {
+          return createErrorResponse(
+            `Invalid depth parameter: ${depth}. ` +
+            `Depth must be between 1 and 5, or omit for smart auto-depth. ` +
+            `depth=0 (unlimited browsing) is disabled for safety to prevent crashes on large address spaces (>10K nodes). ` +
+            `For large hierarchies, omit depth parameter to use smart auto-depth selection.`,
+            {
+              invalidDepth: depth,
+              allowedRange: '1-5 or undefined',
+              suggestion: 'Omit depth parameter for smart auto-depth, or use depth=1-5 for explicit control'
+            }
+          );
+        }
+
         console.log('Browsing OPC UA connection:', {
           connectionName,
           parentNodeId,
           eventSource,
-          depth: depth ?? 1,
+          depth: depth === undefined ? 'auto' : depth,
           useCache: useCache ?? true,
           refreshCache: refreshCache ?? false
         });
@@ -203,25 +277,70 @@ export function registerTools(server: any, context: ServerContext): number {
         // Convert eventSource to number if it's a string
         const eventSourceNum = eventSource !== undefined ? (typeof eventSource === 'string' ? parseInt(eventSource) : eventSource) : 0;
 
-        // Call the browse method with new parameters
-        const nodes = await opcua.browse(
+        // Call the browse method with pagination parameters (depth undefined = auto-depth)
+        const browseResult = await opcua.browse(
           connectionName,
           parentNodeId,
           eventSourceNum as 0 | 1 | 2,
-          depth ?? 1,
+          depth, // Pass undefined through for auto-depth
           useCache ?? true,
-          refreshCache ?? false
+          refreshCache ?? false,
+          undefined, // maxNodeCount (use default 800)
+          offset ?? 0,
+          limit
         );
 
-        console.log(`Found ${nodes.length} nodes in OPC UA address space`);
-        return createSuccessResponse({
+        console.log(`Found ${browseResult.nodes.length} nodes (page ${(offset ?? 0) / (limit ?? 600)} of browse)${browseResult.isPartial ? ' - more available' : ''}`);
+
+        // Build response with pagination metadata
+        const response: any = {
           connectionName,
           parentNodeId: parentNodeId || 'ns=0;i=85',
-          depth: depth ?? 1,
-          nodeCount: nodes.length,
+          nodeCount: browseResult.nodes.length,
           cached: useCache && !refreshCache ? 'possibly from cache' : 'fresh data',
-          nodes
-        });
+          nodes: browseResult.nodes
+        };
+
+        // Add requested depth if specified by user
+        if (depth !== undefined) {
+          response.requestedDepth = depth;
+        }
+
+        // Add pagination metadata
+        if (browseResult.totalNodes !== undefined) {
+          response.totalNodes = browseResult.totalNodes;
+        }
+        if (browseResult.offset !== undefined) {
+          response.offset = browseResult.offset;
+        }
+        if (browseResult.limit !== undefined) {
+          response.limit = browseResult.limit;
+        }
+        if (browseResult.hasMore !== undefined) {
+          response.hasMore = browseResult.hasMore;
+        }
+        if (browseResult.nextOffset !== undefined && browseResult.nextOffset !== null) {
+          response.nextOffset = browseResult.nextOffset;
+        }
+
+        // Add warning if partial
+        if (browseResult.isPartial && browseResult.warning) {
+          response.isPartial = true;
+          response.warning = browseResult.warning;
+        }
+
+        // Add smart guidance fields
+        if (browseResult.actualDepthUsed !== undefined) {
+          response.actualDepthUsed = browseResult.actualDepthUsed;
+        }
+        if (browseResult.largeBranches && browseResult.largeBranches.length > 0) {
+          response.largeBranches = browseResult.largeBranches;
+        }
+        if (browseResult.expandableBranches && browseResult.expandableBranches.length > 0) {
+          response.expandableBranches = browseResult.expandableBranches;
+        }
+
+        return createSuccessResponse(response);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         const errorStack = error instanceof Error ? error.stack : undefined;
