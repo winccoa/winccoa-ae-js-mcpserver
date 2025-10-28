@@ -1199,6 +1199,75 @@ export class OpcUaConnection extends BaseConnection {
   }
 
   /**
+   * Check if OPC UA connection is established and ready for browsing
+   * @param connDp - Connection datapoint name (with _ prefix)
+   * @throws Error if connection is not established (ConnState != 3)
+   */
+  private async checkConnectionEstablished(connDp: string): Promise<void> {
+    try {
+      // Check if connection datapoint exists
+      const exists = this.winccoa.dpExists(connDp);
+      if (!exists) {
+        throw new Error(
+          `OPC UA connection '${connDp}' does not exist. ` +
+          `Please create the connection first using the 'opcua-add-connection' tool.`
+        );
+      }
+
+      // Read connection state
+      const connStateResult = await this.winccoa.dpGet([`${connDp}.State.ConnState`]);
+      const connState = connStateResult[0];
+
+      // Check if connected (state = 3)
+      if (connState !== 3) {
+        // Get server state for additional context
+        let serverState = 'Unknown';
+        try {
+          const serverStateResult = await this.winccoa.dpGet([`${connDp}.State.ServerState`]);
+          serverState = serverStateResult[0] || 'Unknown';
+        } catch {
+          // Ignore error, server state is optional context
+        }
+
+        // State meanings for user reference
+        const stateDescriptions: Record<number, string> = {
+          0: 'Disconnected',
+          1: 'Error/Connection failed',
+          2: 'Connecting',
+          3: 'Connected (ready to browse)',
+          5: 'Error'
+        };
+
+        const currentStateDesc = stateDescriptions[connState] || `Unknown state (${connState})`;
+
+        throw new Error(
+          `OPC UA connection '${connDp}' is not established.\n` +
+          `Connection state: ${connState} (${currentStateDesc})\n` +
+          `Server state: ${serverState}\n\n` +
+          `Please ensure:\n` +
+          `- The OPC UA connection is active\n` +
+          `- The OPC UA server is reachable\n` +
+          `- The OPC UA driver is running\n\n` +
+          `State meanings:\n` +
+          `- 0 = Disconnected\n` +
+          `- 1 = Error/Connection failed\n` +
+          `- 2 = Connecting (please wait and retry)\n` +
+          `- 3 = Connected (ready to browse)\n` +
+          `- 5 = Error`
+        );
+      }
+
+      console.log(`Connection ${connDp} is established (ConnState=3)`);
+    } catch (error) {
+      // Re-throw with context
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(`Failed to check connection status for ${connDp}: ${String(error)}`);
+    }
+  }
+
+  /**
    * Browse full branch recursively using depth-first exploration
    * Explores entire branch to leaf nodes, minimizing API calls by using batched depth
    *
@@ -1443,6 +1512,9 @@ export class OpcUaConnection extends BaseConnection {
     try {
       // Ensure connection name has leading underscore
       const connDp = connectionName.startsWith('_') ? connectionName : `_${connectionName}`;
+
+      // Check if connection is established before browsing
+      await this.checkConnectionEstablished(connDp);
 
       // Default to Objects folder if no parent specified
       const startNode = parentNodeId || 'ns=0;i=85';

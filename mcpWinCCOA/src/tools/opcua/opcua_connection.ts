@@ -105,6 +105,11 @@ export function registerTools(server: any, context: ServerContext): number {
     This tool intelligently navigates through the OPC UA server's address space hierarchy,
     automatically optimizing depth based on address space size to stay within the 800-node limit.
 
+    PREREQUISITES:
+    - OPC UA connection must be established (ConnState=3)
+    - If connection is not active, browse will fail with descriptive error showing current state
+    - Use 'opcua-add-connection' tool to create connections if needed
+
     SMART AUTO-DEPTH BEHAVIOR (when depth not specified):
 
     For ROOT NODES (ns=0;i=85 Objects folder):

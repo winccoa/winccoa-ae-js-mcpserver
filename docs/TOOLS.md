@@ -37,6 +37,10 @@ The MCP server provides tools that AI assistants can use to interact with WinCC 
   - Creates necessary manager datapoints (_OPCUA{num})
   - Configures connection parameters (URL, security, authentication)
 - `opcua-browse` - Browse OPC UA server address space with **full recursive exploration**
+  - **Prerequisites:**
+    - Connection must be established (ConnState=3)
+    - Automatically validates connection status before browsing
+    - Returns clear error if connection is not active (with current state and troubleshooting guidance)
   - **Smart Auto-Depth Browsing (OMIT depth parameter - RECOMMENDED):**
     - **Root nodes** (Objects folder): Conservative, tries depth=2 → depth=1 if needed
     - **Specific branches**: FULL RECURSIVE EXPLORATION to all leaf nodes
