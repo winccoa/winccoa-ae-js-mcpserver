@@ -11,6 +11,9 @@ import type {
   MessageSecurityMode,
   BrowseNode,
   BrowseEventSource,
+  BrowseResult,
+  BranchInfo,
+  RecursionStats,
   OPCUA_DEFAULTS,
   DpAddressConfig,
   DpDistribConfig
@@ -32,17 +35,148 @@ interface DriverValidationResult {
 }
 
 /**
+ * Cache entry for browse results
+ */
+interface BrowseCacheEntry {
+  nodes: BrowseNode[];
+  timestamp: number;
+  ttl: number;
+}
+
+/**
  * OPC UA Connection Manager Class
  *
  * Extends BaseConnection with OPC UA-specific functionality.
  */
 export class OpcUaConnection extends BaseConnection {
   /**
+   * Cache for browse results
+   * Key format: `${connectionName}:${nodeId}:${eventSource}:${depth}`
+   */
+  private browseCache: Map<string, BrowseCacheEntry> = new Map();
+
+  /**
+   * Default TTL for cache entries (5 minutes in milliseconds)
+   */
+  private readonly DEFAULT_CACHE_TTL = 5 * 60 * 1000;
+
+  /**
+   * Maximum number of nodes to return in a single browse operation
+   * Protects against context window overflow on client side
+   * Set to 800 for optimal context usage with smart auto-depth
+   */
+  private readonly MAX_NODE_COUNT = 800;
+
+  /**
+   * Browse operation timeout in milliseconds
+   * Prevents indefinite hangs on problematic browse operations
+   */
+  private readonly BROWSE_TIMEOUT_MS = 120000; // 120 seconds (2 minutes)
+
+  /**
+   * Maximum cache size in bytes (50MB)
+   * Prevents unbounded cache growth
+   */
+  private readonly MAX_CACHE_SIZE_BYTES = 50 * 1024 * 1024;
+
+  /**
    * Generate a unique browse request ID
    * @returns Unique request ID
    */
   private generateBrowseRequestId(): string {
     return `browse_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Generate cache key for browse results
+   * @param connectionName - Connection name
+   * @param nodeId - Node ID
+   * @param eventSource - Event source type
+   * @param depth - Browse depth
+   * @returns Cache key
+   */
+  private generateBrowseCacheKey(
+    connectionName: string,
+    nodeId: string,
+    eventSource: BrowseEventSource,
+    depth: number | 'auto'
+  ): string {
+    return `${connectionName}:${nodeId}:${eventSource}:${depth}`;
+  }
+
+  /**
+   * Get cached browse results if available and not expired
+   * @param key - Cache key
+   * @returns Cached nodes or undefined
+   */
+  private getCachedBrowseResults(key: string): BrowseNode[] | undefined {
+    const entry = this.browseCache.get(key);
+    if (!entry) {
+      return undefined;
+    }
+
+    const now = Date.now();
+    if (now - entry.timestamp > entry.ttl) {
+      // Entry expired, remove it
+      this.browseCache.delete(key);
+      return undefined;
+    }
+
+    console.log(`✓ Cache HIT for ${key}`);
+    return entry.nodes;
+  }
+
+  /**
+   * Cache browse results
+   * @param key - Cache key
+   * @param nodes - Browse nodes to cache
+   * @param ttl - Time to live in milliseconds (optional, defaults to DEFAULT_CACHE_TTL)
+   */
+  private cacheBrowseResults(key: string, nodes: BrowseNode[], ttl?: number): void {
+    this.browseCache.set(key, {
+      nodes,
+      timestamp: Date.now(),
+      ttl: ttl ?? this.DEFAULT_CACHE_TTL
+    });
+    console.log(`✓ Cached ${nodes.length} nodes for ${key} (TTL: ${ttl ?? this.DEFAULT_CACHE_TTL}ms)`);
+  }
+
+  /**
+   * Clear expired cache entries (automatic cleanup)
+   */
+  private cleanupExpiredCache(): void {
+    const now = Date.now();
+    let removedCount = 0;
+
+    for (const [key, entry] of this.browseCache.entries()) {
+      if (now - entry.timestamp > entry.ttl) {
+        this.browseCache.delete(key);
+        removedCount++;
+      }
+    }
+
+    if (removedCount > 0) {
+      console.log(`✓ Cleaned up ${removedCount} expired cache entries`);
+    }
+  }
+
+  /**
+   * Clear all cache entries for a specific connection
+   * @param connectionName - Connection name
+   */
+  private clearConnectionCache(connectionName: string): void {
+    let removedCount = 0;
+
+    for (const key of this.browseCache.keys()) {
+      if (key.startsWith(`${connectionName}:`)) {
+        this.browseCache.delete(key);
+        removedCount++;
+      }
+    }
+
+    if (removedCount > 0) {
+      console.log(`✓ Cleared ${removedCount} cache entries for connection ${connectionName}`);
+    }
   }
 
   /**
@@ -594,41 +728,893 @@ export class OpcUaConnection extends BaseConnection {
   }
 
   /**
-   * Browse the OPC UA address space
+   * Browse a single level (depth=1) for size estimation
+   * Used to check address space size before allowing deep browsing
+   *
+   * @param connDp - Connection datapoint name (with _ prefix)
+   * @param nodeId - Node ID to browse
+   * @param eventSource - Event source type
+   * @returns Promise with array of direct children nodes
+   */
+  private async browseSingleLevel(
+    connDp: string,
+    nodeId: string,
+    eventSource: BrowseEventSource
+  ): Promise<number> {
+    try {
+      const requestId = this.generateBrowseRequestId();
+
+      const nodeCount = await new Promise<number>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Timeout during size estimation'));
+        }, 10000); // 10 second timeout
+
+        const callback = async () => {
+          try {
+            const values = await this.winccoa.dpGet([
+              `${connDp}.Browse.RequestId`,
+              `${connDp}.Browse.DisplayNames`
+            ]) as any[];
+
+            const returnedRequestId = values[0] as string;
+            if (returnedRequestId !== requestId) {
+              return; // Not our request
+            }
+
+            const displayNames = values[1] as string[];
+            const count = displayNames ? displayNames.filter(n => n && n.length > 0).length : 0;
+
+            clearTimeout(timeout);
+            this.winccoa.dpDisconnect(connId);
+            resolve(count);
+          } catch (error) {
+            clearTimeout(timeout);
+            this.winccoa.dpDisconnect(connId);
+            reject(error);
+          }
+        };
+
+        const connId = this.winccoa.dpConnect(
+          callback,
+          [`${connDp}.Browse.DisplayNames`, `${connDp}.Browse.RequestId`],
+          false
+        );
+
+        this.winccoa
+          .dpSetWait(`${connDp}.Browse.GetBranch:_original.._value`, [requestId, nodeId, 1, eventSource])
+          .catch(reject);
+      });
+
+      return nodeCount;
+    } catch (error) {
+      console.error('Error estimating address space size:', error);
+      return 0; // Return 0 on error to allow browsing to proceed
+    }
+  }
+
+  /**
+   * Build branch estimates from browse results
+   * Analyzes flat browse results to identify large branches
+   *
+   * @param nodes - Flat array of browse nodes
+   * @param parentNodeId - Parent node that was browsed
+   * @returns Array of branch information for branches with > 100 estimated children
+   */
+  private buildBranchEstimates(nodes: BrowseNode[], parentNodeId: string): BranchInfo[] {
+    const branchMap = new Map<string, { count: number; node: BrowseNode }>();
+
+    // Parse browsePaths to identify parent-child relationships
+    // BrowsePath format: "/0:Objects/2:DeviceSet/3:IoT_Suite_Mobile/3:Counters"
+    for (const node of nodes) {
+      // Skip nodes without browsePath (shouldn't happen but be safe)
+      if (!node.nodeId) continue;
+
+      // For depth=1 browse, all nodes are direct children - count them
+      // For depth>1, we need to parse browsePaths to group by parent
+
+      // Simple heuristic: If node is Object/Folder type, estimate children count
+      // based on how many nodes appear after this one in the hierarchy
+      const isContainer = node.nodeClass?.includes('Object') || node.nodeClass?.includes('Folder');
+
+      if (isContainer) {
+        branchMap.set(node.nodeId, {
+          count: 1, // Will be updated if we find children
+          node: node
+        });
+      }
+    }
+
+    // Build branch info for branches with significant child counts
+    const largeBranches: BranchInfo[] = [];
+
+    for (const [nodeId, info] of branchMap.entries()) {
+      // For depth=1 results, we can't estimate children accurately
+      // Mark as "potentially large" if it's a container type
+      if (info.node.hasChildren) {
+        largeBranches.push({
+          nodeId: nodeId,
+          displayName: info.node.displayName,
+          estimatedChildren: 0, // Unknown for depth=1
+          level: 1,
+          browsePath: nodeId
+        });
+      }
+    }
+
+    return largeBranches;
+  }
+
+  /**
+   * Browse with automatic depth selection (smart auto-depth)
+   * Tries depth=2 first, retries with depth=1 if result exceeds 800 nodes
+   * Uses 'auto' cache key to maximize cache hit rate
+   *
+   * @param connectionName - Connection name
+   * @param parentNodeId - Parent node ID to browse
+   * @param eventSource - Event source type
+   * @param useCache - Use cached results
+   * @param refreshCache - Force refresh cache
+   * @param maxNodes - Maximum nodes to return (default: 800)
+   * @returns Browse result with actualDepthUsed metadata
+   */
+  private async browseWithAutoDepth(
+    connectionName: string,
+    parentNodeId: string,
+    eventSource: BrowseEventSource,
+    useCache: boolean,
+    refreshCache: boolean,
+    maxNodes: number = 800
+  ): Promise<BrowseResult> {
+    // Check cache with 'auto' key first
+    const autoCacheKey = this.generateBrowseCacheKey(connectionName, parentNodeId, eventSource, 'auto');
+
+    if (useCache && !refreshCache) {
+      const cachedResults = this.getCachedBrowseResults(autoCacheKey);
+      if (cachedResults) {
+        console.log(`✓ Auto-depth cache HIT for ${autoCacheKey}`);
+        return {
+          nodes: cachedResults.slice(0, maxNodes),
+          isPartial: cachedResults.length > maxNodes,
+          totalNodes: cachedResults.length,
+          offset: 0,
+          limit: maxNodes,
+          hasMore: cachedResults.length > maxNodes,
+          nextOffset: cachedResults.length > maxNodes ? maxNodes : null,
+          actualDepthUsed: 2 // Assume cached results were depth=2
+        };
+      }
+    }
+
+    console.log(`Auto-depth browse: Trying depth=2 first...`);
+
+    try {
+      // Try depth=2 first (temporarily disable smart depth limiting)
+      const result = await this.browse(
+        connectionName,
+        parentNodeId,
+        eventSource,
+        2, // depth=2
+        useCache,
+        refreshCache,
+        maxNodes,
+        0, // offset
+        maxNodes // limit
+      );
+
+      // If result has more than maxNodes nodes, retry with depth=1
+      if (result.totalNodes && result.totalNodes > maxNodes) {
+        console.log(`Auto-depth: depth=2 returned ${result.totalNodes} nodes (> ${maxNodes}), retrying with depth=1...`);
+
+        const result1 = await this.browse(
+          connectionName,
+          parentNodeId,
+          eventSource,
+          1, // depth=1
+          useCache,
+          refreshCache,
+          maxNodes,
+          0,
+          maxNodes
+        );
+
+        // Add metadata showing we auto-downgraded
+        result1.actualDepthUsed = 1;
+        result1.warning = (result1.warning || '') +
+          ` Auto-adjusted from depth=2 to depth=1 to stay under ${maxNodes}-node limit. ` +
+          `Address space is large. Browse specific nodes for deeper levels.`;
+
+        // Identify large branches
+        if (result1.nodes.length > 0) {
+          result1.largeBranches = this.buildBranchEstimates(result1.nodes, parentNodeId);
+        }
+
+        // Cache result with 'auto' key
+        this.cacheBrowseResults(autoCacheKey, result1.nodes);
+
+        return result1;
+      }
+
+      // depth=2 fit under limit, return it
+      console.log(`Auto-depth: depth=2 returned ${result.totalNodes || result.nodes.length} nodes, within limit`);
+      result.actualDepthUsed = 2;
+
+      // Cache result with 'auto' key
+      this.cacheBrowseResults(autoCacheKey, result.nodes);
+
+      return result;
+    } catch (error) {
+      // If depth=2 failed due to smart depth limiting, fall back to depth=1
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (errorMsg.includes('depth=2') || errorMsg.includes('Address space is large')) {
+        console.log(`Auto-depth: depth=2 rejected by smart limiting, using depth=1...`);
+
+        const result1 = await this.browse(
+          connectionName,
+          parentNodeId,
+          eventSource,
+          1,
+          useCache,
+          refreshCache,
+          maxNodes,
+          0,
+          maxNodes
+        );
+
+        result1.actualDepthUsed = 1;
+        result1.warning = (result1.warning || '') +
+          ` Auto-adjusted to depth=1 due to large address space. Browse specific nodes for deeper levels.`;
+
+        // Identify large branches
+        if (result1.nodes.length > 0) {
+          result1.largeBranches = this.buildBranchEstimates(result1.nodes, parentNodeId);
+        }
+
+        // Cache result with 'auto' key
+        this.cacheBrowseResults(autoCacheKey, result1.nodes);
+
+        return result1;
+      }
+
+      // Other error, rethrow
+      throw error;
+    }
+  }
+
+  /**
+   * Selective recursive browse (Option C)
+   * Pre-checks depth=1, then selectively browses children to stay under maxNodes
+   * Maximizes depth within node budget
+   *
+   * @param connectionName - Connection name
+   * @param parentNodeId - Parent node ID to browse
+   * @param eventSource - Event source type
+   * @param useCache - Use cached results
+   * @param refreshCache - Force refresh cache
+   * @param maxNodes - Maximum total nodes to return (default: 800)
+   * @returns Browse result with expandableBranches metadata
+   */
+  private async selectiveBrowse(
+    connectionName: string,
+    parentNodeId: string,
+    eventSource: BrowseEventSource,
+    useCache: boolean,
+    refreshCache: boolean,
+    maxNodes: number = 800
+  ): Promise<BrowseResult> {
+    console.log(`Selective browse: Starting with depth=1 pre-check...`);
+
+    // Step 1: Browse depth=1 to get direct children
+    const level1Result = await this.browse(
+      connectionName,
+      parentNodeId,
+      eventSource,
+      1,
+      useCache,
+      refreshCache,
+      maxNodes,
+      0,
+      maxNodes
+    );
+
+    const directChildren = level1Result.nodes;
+    const directChildCount = directChildren.length;
+
+    console.log(`Selective browse: Found ${directChildCount} direct children`);
+
+    // If depth=1 already exceeds budget, return as-is
+    if (directChildCount >= maxNodes) {
+      console.log(`Selective browse: depth=1 already at/over budget, returning level 1 only`);
+      level1Result.actualDepthUsed = 1;
+      level1Result.warning = `Address space has ${directChildCount} direct children. ` +
+        `Showing first ${maxNodes}. Browse specific nodes for deeper levels.`;
+      return level1Result;
+    }
+
+    // Step 2: Calculate budget for expanding children
+    const remainingBudget = maxNodes - directChildCount;
+    console.log(`Selective browse: ${remainingBudget} nodes remaining for expansions`);
+
+    // Step 3: Identify expandable children (Objects/Folders with hasChildren=true)
+    const expandableBranches: BrowseNode[] = directChildren.filter(
+      node => node.hasChildren === true
+    );
+
+    if (expandableBranches.length === 0) {
+      console.log(`Selective browse: No expandable branches found, returning depth=1`);
+      level1Result.actualDepthUsed = 1;
+      return level1Result;
+    }
+
+    console.log(`Selective browse: Found ${expandableBranches.length} expandable branches`);
+
+    // Step 4: Try to expand all branches with depth=2 if budget allows
+    // Estimate: each branch might have ~10-20 children average
+    const estimatedPerBranch = Math.floor(remainingBudget / expandableBranches.length);
+
+    if (estimatedPerBranch < 5) {
+      // Not enough budget to expand meaningfully, return depth=1 with expandable info
+      console.log(`Selective browse: Budget too tight (${estimatedPerBranch} per branch), returning depth=1 with guidance`);
+      level1Result.actualDepthUsed = 1;
+      level1Result.expandableBranches = expandableBranches.map(node => ({
+        nodeId: node.nodeId,
+        displayName: node.displayName,
+        estimatedChildren: 0,
+        level: 1
+      }));
+      level1Result.warning = `Showing ${directChildCount} nodes at depth=1. ` +
+        `${expandableBranches.length} branches can be expanded. ` +
+        `Browse specific branches individually: ${expandableBranches.slice(0, 3).map(n => n.displayName).join(', ')}${expandableBranches.length > 3 ? ', ...' : ''}`;
+      return level1Result;
+    }
+
+    // Step 5: Expand selected branches
+    console.log(`Selective browse: Expanding branches (budget: ${estimatedPerBranch} nodes per branch)...`);
+
+    const allNodes: BrowseNode[] = [...directChildren];
+    const notExpandedBranches: BranchInfo[] = [];
+    let expandedCount = 0;
+
+    for (const branch of expandableBranches) {
+      // Check if we still have budget
+      if (allNodes.length >= maxNodes) {
+        // Out of budget, mark remaining branches as not expanded
+        notExpandedBranches.push({
+          nodeId: branch.nodeId,
+          displayName: branch.displayName,
+          estimatedChildren: 0,
+          level: 1
+        });
+        continue;
+      }
+
+      try {
+        // Browse this specific branch with depth=1 (its direct children)
+        const branchResult = await this.browse(
+          connectionName,
+          branch.nodeId,
+          eventSource,
+          1,
+          useCache,
+          refreshCache,
+          maxNodes - allNodes.length, // Remaining budget
+          0,
+          maxNodes - allNodes.length
+        );
+
+        // Add children to result
+        const childrenToAdd = branchResult.nodes.slice(0, maxNodes - allNodes.length);
+        allNodes.push(...childrenToAdd);
+        expandedCount++;
+
+        console.log(`Selective browse: Expanded ${branch.displayName} (+${childrenToAdd.length} nodes, total: ${allNodes.length})`);
+
+        // If we're at budget, stop
+        if (allNodes.length >= maxNodes) {
+          // Mark remaining as not expanded
+          const currentIndex = expandableBranches.indexOf(branch);
+          for (let i = currentIndex + 1; i < expandableBranches.length; i++) {
+            const remainingBranch = expandableBranches[i];
+            if (remainingBranch) {
+              notExpandedBranches.push({
+                nodeId: remainingBranch.nodeId,
+                displayName: remainingBranch.displayName,
+                estimatedChildren: 0,
+                level: 1
+              });
+            }
+          }
+          break;
+        }
+      } catch (error) {
+        console.error(`Selective browse: Failed to expand ${branch.displayName}:`, error);
+        notExpandedBranches.push({
+          nodeId: branch.nodeId,
+          displayName: branch.displayName,
+          estimatedChildren: 0,
+          level: 1
+        });
+      }
+    }
+
+    // Build final result
+    const result: BrowseResult = {
+      nodes: allNodes,
+      isPartial: notExpandedBranches.length > 0,
+      totalNodes: allNodes.length,
+      actualDepthUsed: expandedCount > 0 ? 2 : 1,
+      expandableBranches: notExpandedBranches.length > 0 ? notExpandedBranches : undefined,
+      warning: notExpandedBranches.length > 0
+        ? `Showing ${allNodes.length} nodes with selective expansion (${expandedCount}/${expandableBranches.length} branches expanded). ` +
+        `${notExpandedBranches.length} branches not expanded due to ${maxNodes}-node limit. ` +
+        `Browse these nodes individually: ${notExpandedBranches.slice(0, 3).map(b => b.displayName).join(', ')}${notExpandedBranches.length > 3 ? ', ...' : ''}`
+        : `Showing ${allNodes.length} nodes with full expansion at depth=2`,
+      offset: 0,
+      limit: maxNodes,
+      hasMore: false,
+      nextOffset: null
+    };
+
+    console.log(`Selective browse: Complete. ${allNodes.length} total nodes, depth=${result.actualDepthUsed}, ${notExpandedBranches.length} branches not expanded`);
+    return result;
+  }
+
+  /**
+   * Estimate safe depth for batched browsing based on remaining budget
+   * Uses hasChildren information and conservative estimates to avoid exceeding limits
+   *
+   * @param remainingBudget - Number of nodes remaining in budget
+   * @param parentNode - Parent node being browsed (optional, for hasChildren hint)
+   * @returns Recommended depth for next browse operation (1-3)
+   */
+  private estimateSafeDepth(remainingBudget: number, parentNode?: BrowseNode): number {
+    // Use hasChildren hint if available
+    // If parent has no children, no need to browse deeper
+    if (parentNode && parentNode.hasChildren === false) {
+      return 1; // Leaf node, no point going deeper
+    }
+
+    // Conservative depth estimation to avoid budget overrun
+    // Formula: depth=N typically returns N levels * avgChildren^(N-1) nodes
+
+    if (remainingBudget > 700) {
+      // Plenty of budget: try depth=3
+      // Estimate: ~100-200 nodes for typical hierarchy
+      return 3;
+    }
+
+    if (remainingBudget > 400) {
+      // Moderate budget: try depth=2
+      // Estimate: ~20-50 nodes for typical hierarchy
+      return 2;
+    }
+
+    if (remainingBudget > 100) {
+      // Low budget: use depth=1
+      // Estimate: ~5-15 nodes
+      return 1;
+    }
+
+    // Very low budget: depth=1 but we're close to limit
+    return 1;
+  }
+
+  /**
+   * Browse full branch recursively using depth-first exploration
+   * Explores entire branch to leaf nodes, minimizing API calls by using batched depth
+   *
+   * @param connectionName - Connection name (with _ prefix)
+   * @param startNodeId - Starting node ID for branch
+   * @param eventSource - Event source type
+   * @param softLimit - Soft limit for node count (default: 800, orientation)
+   * @param hardLimit - Hard limit for node count (default: 1000, absolute maximum)
+   * @param maxDepth - Maximum recursion depth (default: 10, safety limit)
+   * @param useCache - Use cached results
+   * @param refreshCache - Force refresh cache
+   * @returns Browse result with full branch exploration
+   */
+  private async browseFullBranch(
+    connectionName: string,
+    startNodeId: string,
+    eventSource: BrowseEventSource,
+    softLimit: number = 800,
+    hardLimit: number = 1000,
+    maxDepth: number = 10,
+    useCache: boolean = true,
+    refreshCache: boolean = false
+  ): Promise<BrowseResult> {
+    console.log(`Full branch browse: Starting recursive exploration of ${startNodeId}`);
+    console.log(`Limits: soft=${softLimit}, hard=${hardLimit}, maxDepth=${maxDepth}`);
+
+    const allNodes: BrowseNode[] = [];
+    const exploredBranches: string[] = [];
+    const expandableBranches: BranchInfo[] = [];
+
+    let totalApiCalls = 0;
+    let maxDepthReached = 0;
+    let leafNodesCount = 0;
+
+    // Queue of nodes to explore (depth-first: use array as stack)
+    interface QueueItem {
+      nodeId: string;
+      displayName: string;
+      currentDepth: number;
+    }
+    const nodesToExplore: QueueItem[] = [{
+      nodeId: startNodeId,
+      displayName: 'root',
+      currentDepth: 0
+    }];
+
+    // Track which nodes we've already explored to avoid duplicates
+    const exploredNodeIds = new Set<string>();
+
+    // Depth-first exploration loop
+    while (nodesToExplore.length > 0 && allNodes.length < hardLimit) {
+      // Pop from end (depth-first)
+      const current = nodesToExplore.pop()!;
+
+      // Skip if already explored
+      if (exploredNodeIds.has(current.nodeId)) {
+        continue;
+      }
+
+      // Check depth limit
+      if (current.currentDepth >= maxDepth) {
+        console.log(`Depth limit reached at ${current.displayName} (depth=${current.currentDepth})`);
+        expandableBranches.push({
+          nodeId: current.nodeId,
+          displayName: current.displayName,
+          estimatedChildren: 0,
+          level: current.currentDepth
+        });
+        continue;
+      }
+
+      // Calculate safe batch depth for this browse operation
+      const remainingBudget = hardLimit - allNodes.length;
+      const batchDepth = this.estimateSafeDepth(remainingBudget);
+
+      console.log(`Browsing ${current.displayName} (depth=${current.currentDepth}, batchDepth=${batchDepth}, remaining=${remainingBudget})`);
+
+      try {
+        // Browse this node with calculated batch depth
+        const result = await this.browse(
+          connectionName,
+          current.nodeId,
+          eventSource,
+          batchDepth,
+          useCache,
+          refreshCache,
+          hardLimit,
+          0,
+          hardLimit
+        );
+
+        totalApiCalls++;
+        exploredNodeIds.add(current.nodeId);
+
+        // Add all returned nodes
+        const newNodes = result.nodes || [];
+        allNodes.push(...newNodes);
+
+        console.log(`  → Got ${newNodes.length} nodes (total: ${allNodes.length})`);
+
+        // Update max depth reached
+        maxDepthReached = Math.max(maxDepthReached, current.currentDepth + batchDepth);
+
+        // Check if we're approaching limits
+        if (allNodes.length >= softLimit && allNodes.length < hardLimit) {
+          console.log(`Soft limit reached (${allNodes.length}/${softLimit}), will complete current branches`);
+        }
+
+        // Find nodes with children that need further exploration
+        const nodesWithChildren = newNodes.filter(n => n.hasChildren === true);
+        const leafNodes = newNodes.filter(n => n.hasChildren === false);
+        leafNodesCount += leafNodes.length;
+
+        console.log(`  → ${nodesWithChildren.length} expandable, ${leafNodes.length} leaves`);
+
+        // If we have nodes with children and budget remaining, queue them for exploration
+        if (nodesWithChildren.length > 0 && allNodes.length < hardLimit) {
+          // Add to stack (reverse order for depth-first left-to-right)
+          for (let i = nodesWithChildren.length - 1; i >= 0; i--) {
+            const node = nodesWithChildren[i];
+            if (!node) continue; // Skip undefined nodes
+
+            // Check if this would exceed hard limit
+            if (allNodes.length + nodesToExplore.length >= hardLimit) {
+              expandableBranches.push({
+                nodeId: node.nodeId,
+                displayName: node.displayName,
+                estimatedChildren: 0,
+                level: current.currentDepth + 1
+              });
+            } else {
+              nodesToExplore.push({
+                nodeId: node.nodeId,
+                displayName: node.displayName,
+                currentDepth: current.currentDepth + 1
+              });
+            }
+          }
+        }
+
+        // Mark branch as fully explored if we reached all leaves
+        if (nodesWithChildren.length === 0 || allNodes.length >= hardLimit) {
+          exploredBranches.push(current.displayName);
+        }
+
+        // Hard limit check
+        if (allNodes.length >= hardLimit) {
+          console.log(`Hard limit reached (${allNodes.length}/${hardLimit}), stopping exploration`);
+
+          // Mark remaining queued nodes as expandable
+          for (const remaining of nodesToExplore) {
+            expandableBranches.push({
+              nodeId: remaining.nodeId,
+              displayName: remaining.displayName,
+              estimatedChildren: 0,
+              level: remaining.currentDepth
+            });
+          }
+          break;
+        }
+
+      } catch (error) {
+        console.error(`Error browsing ${current.displayName}:`, error);
+        expandableBranches.push({
+          nodeId: current.nodeId,
+          displayName: current.displayName,
+          estimatedChildren: 0,
+          level: current.currentDepth
+        });
+      }
+    }
+
+    // Build final result
+    const hitSoftLimit = allNodes.length >= softLimit;
+    const hitHardLimit = allNodes.length >= hardLimit;
+
+    let warning = '';
+    if (hitHardLimit) {
+      warning = `Hard limit reached (${allNodes.length}/${hardLimit} nodes). `;
+    } else if (hitSoftLimit) {
+      warning = `Soft limit reached (${allNodes.length}/${softLimit} nodes). `;
+    }
+
+    if (exploredBranches.length > 0) {
+      warning += `Fully explored: ${exploredBranches.slice(0, 3).join(', ')}${exploredBranches.length > 3 ? ', ...' : ''}. `;
+    }
+
+    if (expandableBranches.length > 0) {
+      warning += `Not explored (${expandableBranches.length} branches): ${expandableBranches.slice(0, 3).map(b => b.displayName).join(', ')}${expandableBranches.length > 3 ? ', ...' : ''}. Browse these individually.`;
+    }
+
+    const result: BrowseResult = {
+      nodes: allNodes,
+      isPartial: expandableBranches.length > 0,
+      totalNodes: allNodes.length,
+      actualDepthUsed: maxDepthReached,
+      exploredBranches: exploredBranches.length > 0 ? exploredBranches : undefined,
+      expandableBranches: expandableBranches.length > 0 ? expandableBranches : undefined,
+      recursionStats: {
+        maxDepthReached,
+        totalLevelsExplored: maxDepthReached,
+        leafNodesReached: leafNodesCount,
+        totalApiCalls
+      },
+      warning: warning || undefined,
+      offset: 0,
+      limit: hardLimit,
+      hasMore: false,
+      nextOffset: null
+    };
+
+    console.log(`Full branch browse complete: ${allNodes.length} nodes, ${totalApiCalls} API calls, max depth ${maxDepthReached}`);
+    return result;
+  }
+
+  /**
+   * Browse the OPC UA address space with smart auto-depth and pagination
    *
    * @param connectionName - Name of the connection (e.g., '_OpcUAConnection1')
-   * @param parentNodeId - Node ID of the parent node (optional, default: "ns=0;i=85" for Root)
+   * @param parentNodeId - Node ID of the parent node (optional, default: "ns=0;i=85" for Objects folder)
    * @param eventSource - 0=Value (default), 1=Event, 2=Alarm&Condition
-   * @returns Promise with array of browse nodes
+   * @param depth - Number of levels to browse (optional). If not specified, auto-selects depth=1 or 2 based on address space size.
+   *                When specified: 1-5 allowed. User-specified depths are validated (rejected if would exceed 800 nodes).
+   * @param useCache - Use cached results if available (default: true)
+   * @param refreshCache - Force refresh cache (default: false)
+   * @param maxNodeCount - Maximum nodes to return (default: 800). Prevents context overflow.
+   * @param offset - Starting position for pagination (default: 0). Skip first N nodes.
+   * @param limit - Max nodes per page (default: 800, max: 800). Use with offset for pagination.
+   * @returns Promise with browse result including nodes and pagination metadata
    */
   async browse(
     connectionName: string,
     parentNodeId?: string,
-    eventSource: BrowseEventSource = 0
-  ): Promise<BrowseNode[]> {
+    eventSource: BrowseEventSource = 0,
+    depth?: number,
+    useCache: boolean = true,
+    refreshCache: boolean = false,
+    maxNodeCount?: number,
+    offset: number = 0,
+    limit?: number
+  ): Promise<BrowseResult> {
     try {
       // Ensure connection name has leading underscore
       const connDp = connectionName.startsWith('_') ? connectionName : `_${connectionName}`;
 
       // Default to Objects folder if no parent specified
       const startNode = parentNodeId || 'ns=0;i=85';
-      const level = 1; // Only direct children
+
+      // Maximum nodes to return (default to 800, matching Option C requirement)
+      const maxNodes = maxNodeCount || 800;
+
+      // Apply pagination parameters
+      const pageOffset = Math.max(0, offset); // Ensure non-negative
+      const pageLimit = limit ? Math.min(limit, maxNodes) : maxNodes;
+
+      // AUTO-DEPTH: If depth not specified, use smart auto-depth strategy
+      if (depth === undefined) {
+        // For root nodes (Objects folder), be conservative with auto-depth
+        // For specific branches, be more aggressive (try up to depth=3)
+        const isRootNode = startNode === 'ns=0;i=85' || startNode === 'ns=0;i=84' ||
+                           startNode === 'ns=0;i=86' || startNode === 'ns=0;i=87';
+
+        if (isRootNode) {
+          console.log(`Auto-depth browsing (root node) for ${startNode}`);
+          return await this.browseWithAutoDepth(
+            connDp,
+            startNode,
+            eventSource,
+            useCache,
+            refreshCache,
+            maxNodes
+          );
+        } else {
+          // Specific branch: browse entire branch recursively to leaf nodes
+          console.log(`Auto-depth browsing (specific branch) for ${startNode} - using full branch browse`);
+          return await this.browseFullBranch(
+            connDp,
+            startNode,
+            eventSource,
+            maxNodes,     // soft limit (800)
+            1000,         // hard limit
+            10,           // max depth
+            useCache,
+            refreshCache
+          );
+        }
+      }
+
+      // VALIDATE USER-SPECIFIED DEPTH: Ensure it won't cause overflow
+      // Validate depth range (1-5 allowed, 0 disabled for safety)
+      if (depth < 1 || depth > 5) {
+        throw new Error(
+          `Invalid depth ${depth}. Depth must be between 1 and 5. ` +
+          `depth=0 (unlimited browsing) is disabled for safety to prevent crashes on large address spaces. ` +
+          `Omit depth parameter to use smart auto-depth selection.`
+        );
+      }
+
+      // Smart depth limiting: check address space size before allowing deep browse
+      if (depth > 1 && !refreshCache) {
+        console.log(`Checking address space size for depth=${depth} validation...`);
+        const childCount = await this.browseSingleLevel(connDp, startNode, eventSource);
+        console.log(`Found ${childCount} direct children at this level`);
+
+        // If > 50 children and depth > 2, reject (would return 10K+ nodes)
+        if (childCount > 50 && depth > 2) {
+          throw new Error(
+            `Address space is large (${childCount} direct children). ` +
+            `depth=${depth} would likely return 10,000+ nodes causing context overflow (>200K tokens). ` +
+            `Maximum depth allowed for this node: 2. ` +
+            `Recommendation: Use depth=1 or depth=2, and browse incrementally with pagination.`
+          );
+        }
+
+        // If > 100 children, only allow depth=1
+        if (childCount > 100 && depth > 1) {
+          throw new Error(
+            `Address space is very large (${childCount} direct children). ` +
+            `depth=${depth} would cause context overflow. ` +
+            `Only depth=1 allowed for this node. ` +
+            `Please browse incrementally: use depth=1 to get children, then browse each child individually.`
+          );
+        }
+      }
+
+      // Cleanup expired cache entries periodically
+      this.cleanupExpiredCache();
+
+      // Generate cache key
+      const cacheKey = this.generateBrowseCacheKey(connDp, startNode, eventSource, depth);
+
+      // Check cache if enabled and not refreshing
+      if (useCache && !refreshCache) {
+        const cachedFullResults = this.getCachedBrowseResults(cacheKey);
+        if (cachedFullResults) {
+          console.log(`✓ Cache HIT for ${cacheKey} (${cachedFullResults.length} total nodes cached)`);
+
+          // Apply pagination to CACHED FULL results
+          const totalNodes = cachedFullResults.length;
+          const startIndex = pageOffset;
+          const endIndex = Math.min(startIndex + pageLimit, totalNodes);
+          const paginatedResults = cachedFullResults.slice(startIndex, endIndex);
+
+          // Calculate pagination metadata
+          const hasMore = endIndex < totalNodes;
+          const nextOffset = hasMore ? endIndex : null;
+          const isPartial = hasMore;
+
+          let warning: string | undefined;
+          if (isPartial) {
+            warning = `Showing nodes ${startIndex + 1}-${endIndex} of ${totalNodes} total (from cache). ` +
+              `Use offset=${nextOffset} to get the next page.`;
+          }
+
+          console.log(`Returning page ${startIndex}-${endIndex} from cache`);
+
+          // Return paginated cached results with full metadata
+          return {
+            nodes: paginatedResults,
+            isPartial,
+            warning,
+            appliedLimit: pageLimit,
+            totalNodes,
+            offset: startIndex,
+            limit: pageLimit,
+            hasMore,
+            nextOffset
+          };
+        }
+        console.log(`Cache MISS for ${cacheKey}`);
+      }
+
+      console.log(`Browsing ${depth} level(s) for node ${startNode}`);
 
       // Generate unique request ID
       const requestId = this.generateBrowseRequestId();
 
-      console.log(`Starting browse on ${connDp}, node: ${startNode}, eventSource: ${eventSource}`);
+      // Perform browse operation with specified depth, timeout, and node limit
+      const browseResult = await new Promise<BrowseResult>((resolve, reject) => {
+        let timeoutId: NodeJS.Timeout | null = null;
+        let connId: number | null = null;
+        let isCompleted = false;
+        // Cleanup function to avoid memory leaks
+        const cleanup = () => {
+          if (isCompleted) return;
+          isCompleted = true;
 
-      // Create promise to wait for browse result
-      return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error(`Browse timeout after 30 seconds for connection ${connDp}`));
-        }, 30000);
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+          if (connId !== null) {
+            this.winccoa.dpDisconnect(connId);
+            connId = null;
+          }
+        };
+
+        // Setup timeout protection
+        timeoutId = setTimeout(() => {
+          if (isCompleted) return;
+
+          console.error(`Browse operation timed out after ${this.BROWSE_TIMEOUT_MS}ms`);
+          cleanup();
+          reject(new Error(
+            `Browse operation timed out after ${this.BROWSE_TIMEOUT_MS / 1000} seconds (2 minutes). ` +
+            `This usually indicates a very large address space or connectivity issues. ` +
+            `Try browsing a more specific node, reducing the depth parameter, or checking server connectivity.`
+          ));
+        }, this.BROWSE_TIMEOUT_MS);
 
         // Callback function for dpConnect
         const browseCallback = async (dpes: string[]) => {
           try {
-            console.log(`Browse callback triggered!`);
+            if (isCompleted) return; // Already completed (timeout or previous call)
+
+            console.log(`Browse callback triggered`);
 
             // Read all values at once with a single dpGet call
             const values = await this.winccoa.dpGet([
@@ -649,8 +1635,6 @@ export class OpcUaConnection extends BaseConnection {
             const valueRanks = values[5] as string[] | undefined;
             const nodeClasses = values[6] as string[] | undefined;
 
-            console.log(`Returned RequestId: ${returnedRequestId}, Expected: ${requestId}`);
-
             // Check if this is our request
             if (returnedRequestId !== requestId) {
               console.log(`RequestId mismatch, ignoring callback`);
@@ -658,40 +1642,79 @@ export class OpcUaConnection extends BaseConnection {
             }
 
             console.log(`RequestId matches, processing ${displayNames.length} nodes`);
-            clearTimeout(timeout);
 
-            // Build result array
-            const results: BrowseNode[] = [];
+            // Build ALL results first (MINIMAL FIELDS ONLY)
+            const allResults: BrowseNode[] = [];
 
             for (let i = 0; i < displayNames.length; i++) {
               const displayName = displayNames[i];
               if (displayName && displayName.length > 0) {
-                results.push({
+                const nodeClass = nodeClasses?.[i] || 'Unknown';
+
+                // Smart heuristic for hasChildren flag
+                // Objects and Folders typically have children, Variables typically don't
+                let hasChildren: boolean | undefined = undefined;
+                if (nodeClass.includes('Object') || nodeClass.includes('Folder')) {
+                  hasChildren = true;
+                } else if (nodeClass.includes('Variable')) {
+                  hasChildren = false;
+                }
+                // For other node classes (Method, etc.), leave undefined
+
+                // MINIMAL RESPONSE: Only displayName, nodeId, nodeClass, hasChildren
+                // For full details (browsePath, dataType, valueRank, description, etc.),
+                // use opcua-get-node-details tool
+                allResults.push({
                   displayName: displayName,
-                  browsePath: browsePaths[i] || '',
                   nodeId: nodeIds[i] || '',
-                  dataType: dataTypes[i] || '',
-                  valueRank: valueRanks?.[i],
-                  nodeClass: nodeClasses?.[i]
+                  nodeClass: nodeClass,
+                  hasChildren: hasChildren
                 });
               }
             }
 
-            console.log(`Browse completed: found ${results.length} nodes`);
+            // Apply pagination: slice results based on offset and limit
+            const totalNodes = allResults.length;
+            const startIndex = pageOffset;
+            const endIndex = Math.min(startIndex + pageLimit, totalNodes);
+            const paginatedResults = allResults.slice(startIndex, endIndex);
 
-            // Disconnect callback
-            this.winccoa.dpDisconnect(connId);
+            // Calculate pagination metadata
+            const hasMore = endIndex < totalNodes;
+            const nextOffset = hasMore ? endIndex : null;
+            const isPartial = hasMore;
 
-            resolve(results);
+            let warning: string | undefined;
+            if (isPartial) {
+              warning = `Showing nodes ${startIndex + 1}-${endIndex} of ${totalNodes} total. ` +
+                `Use offset=${nextOffset} to get the next page.`;
+            }
+
+            console.log(`Browse completed: ${paginatedResults.length} nodes returned (${startIndex}-${endIndex} of ${totalNodes})`);
+
+            // Cleanup and resolve with pagination metadata
+            cleanup();
+            resolve({
+              nodes: paginatedResults,
+              isPartial,
+              warning,
+              appliedLimit: pageLimit,
+              totalNodes,
+              offset: startIndex,
+              limit: pageLimit,
+              hasMore,
+              nextOffset,
+              _fullResults: allResults // Internal field for caching (not exposed to client)
+            });
           } catch (error) {
             console.error(`Error in browse callback:`, error);
-            this.winccoa.dpDisconnect(connId);
+            cleanup();
             reject(error);
           }
         };
 
         // Connect callback to browse datapoints
-        const connId = this.winccoa.dpConnect(
+        connId = this.winccoa.dpConnect(
           browseCallback,
           [
             `${connDp}.Browse.DisplayNames`,
@@ -705,16 +1728,178 @@ export class OpcUaConnection extends BaseConnection {
           false // Don't send initial values
         );
 
-        // Trigger browse request
+        // Trigger browse request - pass depth directly to WinCC OA
         this.winccoa
-          .dpSetWait(`${connDp}.Browse.GetBranch:_original.._value`, [requestId, startNode, level, eventSource])
-          .catch(reject);
+          .dpSetWait(`${connDp}.Browse.GetBranch:_original.._value`, [requestId, startNode, depth, eventSource])
+          .catch((error) => {
+            cleanup();
+            reject(error);
+          });
       });
+
+      // Cache FULL results (not paginated) for future pagination requests
+      if (useCache && browseResult._fullResults) {
+        const fullResults = browseResult._fullResults;
+        const estimatedSize = JSON.stringify(fullResults).length;
+
+        // Only cache if total size < 5MB
+        if (estimatedSize < this.MAX_CACHE_SIZE_BYTES / 10) {
+          const cacheKey = this.generateBrowseCacheKey(connDp, startNode, eventSource, depth);
+          this.cacheBrowseResults(cacheKey, fullResults);
+          console.log(`✓ Cached ${fullResults.length} FULL nodes for ${cacheKey} (all pages can use this cache)`);
+        } else {
+          console.log(`⚠ Skipping cache: Result size (${Math.round(estimatedSize / 1024 / 1024)}MB) exceeds 5MB limit`);
+        }
+
+        // Remove internal field before returning to client
+        delete browseResult._fullResults;
+      }
+
+      return browseResult;
     } catch (error) {
       console.error(`Error browsing OPC UA connection:`, error);
       throw error;
     }
   }
+
+  /**
+   * Get detailed node information for specific nodes (batch operation)
+   * COMMENTED OUT: NodeDetails type was removed along with opcua_node_details tool
+   * Can be re-enabled if needed by adding back NodeDetails type definition
+   *
+   * @param connectionName - Name of the connection (e.g., '_OpcUAConnection1')
+   * @param nodeIds - Array of node IDs to fetch details for
+   * @returns Promise with array of node details
+   */
+  /*
+  async getNodeDetails(
+    connectionName: string,
+    nodeIds: string[]
+  ): Promise<NodeDetails[]> {
+    try {
+      // Ensure connection name has leading underscore
+      const connDp = connectionName.startsWith('_') ? connectionName : `_${connectionName}`;
+
+      console.log(`Fetching details for ${nodeIds.length} nodes from ${connDp}`);
+
+      // Validate node IDs
+      if (!nodeIds || nodeIds.length === 0) {
+        throw new Error('nodeIds array is empty. Please provide at least one node ID.');
+      }
+
+      const results: NodeDetails[] = [];
+
+      // Process each node ID (batch operation)
+      for (const nodeId of nodeIds) {
+        try {
+          // Generate unique request ID for this node
+          const requestId = this.generateBrowseRequestId();
+
+          // Browse this specific node at depth=0 to get its full details
+          // This gives us all the attributes we need
+          const nodeInfo = await new Promise<NodeDetails>((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error(`Timeout fetching details for node ${nodeId}`));
+            }, 10000); // 10 second timeout per node
+
+            // Callback function for dpConnect
+            const detailsCallback = async (dpes: string[]) => {
+              try {
+                // Read all values at once
+                const values = await this.winccoa.dpGet([
+                  `${connDp}.Browse.RequestId`,
+                  `${connDp}.Browse.DisplayNames`,
+                  `${connDp}.Browse.BrowsePaths`,
+                  `${connDp}.Browse.NodeIds`,
+                  `${connDp}.Browse.DataTypes`,
+                  `${connDp}.Browse.ValueRanks`,
+                  `${connDp}.Browse.NodeClasses`
+                ]) as any[];
+
+                const returnedRequestId = values[0] as string;
+                if (returnedRequestId !== requestId) {
+                  return; // Not our request
+                }
+
+                const displayNames = values[1] as string[];
+                const browsePaths = values[2] as string[];
+                const nodeIds = values[3] as string[];
+                const dataTypes = values[4] as string[];
+                const valueRanks = values[5] as string[];
+                const nodeClasses = values[6] as string[];
+
+                // Should have exactly one result (the node itself)
+                if (displayNames && displayNames.length > 0 && displayNames[0]) {
+                  clearTimeout(timeout);
+                  this.winccoa.dpDisconnect(connId);
+
+                  resolve({
+                    nodeId: nodeId,
+                    displayName: displayNames[0] || '',
+                    browsePath: browsePaths[0] || '',
+                    nodeClass: nodeClasses[0] || 'Unknown',
+                    dataType: dataTypes[0] || '',
+                    valueRank: valueRanks[0] || ''
+                  });
+                } else {
+                  clearTimeout(timeout);
+                  this.winccoa.dpDisconnect(connId);
+                  reject(new Error(`Node ${nodeId} not found or has no data`));
+                }
+              } catch (error) {
+                clearTimeout(timeout);
+                this.winccoa.dpDisconnect(connId);
+                reject(error);
+              }
+            };
+
+            // Connect callback
+            const connId = this.winccoa.dpConnect(
+              detailsCallback,
+              [
+                `${connDp}.Browse.DisplayNames`,
+                `${connDp}.Browse.BrowsePaths`,
+                `${connDp}.Browse.NodeIds`,
+                `${connDp}.Browse.DataTypes`,
+                `${connDp}.Browse.ValueRanks`,
+                `${connDp}.Browse.NodeClasses`,
+                `${connDp}.Browse.RequestId`
+              ],
+              false
+            );
+
+            // Trigger browse for this specific node (depth=0, eventSource=0)
+            this.winccoa
+              .dpSetWait(`${connDp}.Browse.GetBranch:_original.._value`, [requestId, nodeId, 0, 0])
+              .catch(reject);
+          });
+
+          results.push(nodeInfo);
+          console.log(`✓ Fetched details for node: ${nodeInfo.displayName} (${nodeId})`);
+        } catch (error) {
+          // If individual node fails, add error entry but continue with others
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error(`✗ Failed to fetch details for node ${nodeId}:`, errorMessage);
+          results.push({
+            nodeId: nodeId,
+            displayName: '',
+            browsePath: '',
+            nodeClass: '',
+            dataType: '',
+            valueRank: '',
+            error: errorMessage
+          });
+        }
+      }
+
+      console.log(`Fetched details for ${results.length} nodes (${results.filter(r => !r.error).length} successful)`);
+      return results;
+    } catch (error) {
+      console.error(`Error fetching node details:`, error);
+      throw error;
+    }
+  }
+  */
 
   /**
    * Get manager number for a given OPC UA connection

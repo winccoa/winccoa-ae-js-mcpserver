@@ -36,9 +36,49 @@ The MCP server provides tools that AI assistants can use to interact with WinCC 
   - Uses `AddServer` command to dynamically add connection to running OPC UA driver
   - Creates necessary manager datapoints (_OPCUA{num})
   - Configures connection parameters (URL, security, authentication)
-- `opcua-browse` - Browse OPC UA server address space
-  - Navigate through server node hierarchy
-  - Explore variables, objects, and properties
+- `opcua-browse` - Browse OPC UA server address space with **full recursive exploration**
+  - **Smart Auto-Depth Browsing (OMIT depth parameter - RECOMMENDED):**
+    - **Root nodes** (Objects folder): Conservative, tries depth=2 → depth=1 if needed
+    - **Specific branches**: FULL RECURSIVE EXPLORATION to all leaf nodes
+      - Uses depth-first exploration with batched API calls (minimizes WinCC OA calls)
+      - Continues until reaching leaf nodes OR hitting 1000-node hard limit
+      - Returns `recursionStats`: maxDepthReached, leafNodesReached, totalApiCalls
+      - Returns `exploredBranches` (fully explored) and `expandableBranches` (hit limit)
+      - Uses `hasChildren` field to intelligently skip leaf nodes
+      - Soft limit: 800 nodes (completes current branch), Hard limit: 1000 nodes (absolute stop)
+    - Provides intelligent guidance on which branches to browse next
+  - **Returns minimal fields for performance:**
+    - displayName, nodeId, nodeClass, hasChildren
+    - ~50% smaller payload than full details
+  - **Smart Guidance Fields:**
+    - `largeBranches`: Array of branches with many children detected
+      - Each includes: nodeId, displayName, estimatedChildren, level
+      - Tells you exactly which nodes to browse next
+    - `expandableBranches`: Branches not expanded due to 800-node limit
+    - `exploredBranches`: Branches fully explored to all leaf nodes
+    - `recursionStats`: Statistics about recursive exploration (depth, leaf nodes, API calls)
+    - `warning`: Human-readable guidance for next steps
+  - **User-Specified Depth (less flexible, not recommended for branches):**
+    - Specify depth=1-5 for explicit control
+    - Uses fixed depth (does NOT explore to leaf nodes)
+    - Validated against address space size (rejected if would exceed 800 nodes)
+    - depth=0 disabled for safety (prevents crashes)
+  - **Pagination Support:**
+    - Default limit: 800 nodes per request (optimal for context window)
+    - Use `offset` and `limit` parameters for pagination
+    - Response includes: `totalNodes`, `hasMore`, `nextOffset`
+  - **Safety & Performance:**
+    - 800-node soft limit (orientation, completes current branch)
+    - 1000-node hard limit (absolute stop)
+    - 2-minute timeout protection
+    - 5-minute caching with 'auto' key for faster responses
+    - Batched API calls minimize WinCC OA load (e.g., 5 calls vs 5000)
+  - **Best Practices:**
+    - **Always omit depth for full branch exploration** (recommended)
+    - Follow guidance in `largeBranches` field
+    - Browse large branches individually
+    - Use caching for repeated navigation
+    - Check `hasChildren` field to understand node structure
 
 **`opcua/opcua_address`** - OPC UA address configuration
 - `opcua-add-address-config` - Configure OPC UA addresses for datapoint elements
@@ -62,7 +102,7 @@ TOOLS=datapoints/dp_basic,datapoints/dp_set
 # Load only creation and type tools
 TOOLS=datapoints/dp_create,datapoints/dp_types,datapoints/dp_type_create
 
-# Load OPC UA tools only
+# Load OPC UA tools only (recommended: include both for full OPC UA support)
 TOOLS=opcua/opcua_connection,opcua/opcua_address
 ```
 

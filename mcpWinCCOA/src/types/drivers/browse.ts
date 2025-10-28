@@ -5,27 +5,66 @@
  */
 
 /**
- * OPC UA Browse Node
- * Represents a node in the OPC UA address space hierarchy
+ * OPC UA Browse Node (Minimal Response)
+ * Represents a node in the OPC UA address space hierarchy with minimal fields for performance
+ *
+ * For detailed node information (browsePath, dataType, valueRank, description, etc.),
+ * use the opcua-get-node-details tool with the nodeId
  */
 export interface BrowseNode {
   /** Human-readable display name */
   displayName: string;
 
-  /** Browse path in the address space hierarchy */
-  browsePath: string;
-
-  /** Unique OPC UA node identifier */
+  /** Unique OPC UA node identifier (use this for opcua-get-node-details) */
   nodeId: string;
 
-  /** Data type of the node (if applicable) */
-  dataType: string;
+  /** Node class (Variable, Object, Method, ObjectType, VariableType, etc.) */
+  nodeClass: string;
 
-  /** Value rank (scalar, array, etc.) */
-  valueRank?: string;
+  /** Indicates if this node has child nodes (for tree UI navigation) */
+  hasChildren?: boolean;
 
-  /** Node class (Variable, Object, Method, etc.) */
-  nodeClass?: string;
+  /** Child nodes (populated when browsing with depth > 1) */
+  children?: BrowseNode[];
+}
+
+/**
+ * Branch information for large address space analysis
+ * Used to identify and report branches that have many children
+ */
+export interface BranchInfo {
+  /** Node ID of the branch */
+  nodeId: string;
+
+  /** Human-readable display name */
+  displayName: string;
+
+  /** Estimated number of children in this branch */
+  estimatedChildren: number;
+
+  /** Hierarchy level (1 = direct child, 2 = grandchild, etc.) */
+  level: number;
+
+  /** Browse path showing full hierarchy */
+  browsePath?: string;
+}
+
+/**
+ * Recursion statistics for full-branch browsing
+ * Provides insights into how deeply the branch was explored
+ */
+export interface RecursionStats {
+  /** Maximum depth level reached during recursion */
+  maxDepthReached: number;
+
+  /** Total number of levels explored */
+  totalLevelsExplored: number;
+
+  /** Number of leaf nodes (nodes with no children) reached */
+  leafNodesReached: number;
+
+  /** Total number of API calls made */
+  totalApiCalls: number;
 }
 
 /**
@@ -75,4 +114,64 @@ export interface BrowseResponse {
 
   /** Request ID for tracking */
   requestId?: string;
+
+  /** Warning message if results are partial */
+  warning?: string;
+
+  /** True if results were truncated due to limits */
+  isPartial?: boolean;
+
+  /** Limit that was applied (if any) */
+  appliedLimit?: number;
+}
+
+/**
+ * Browse result with metadata
+ * Internal type for browse operations with limit tracking and pagination
+ */
+export interface BrowseResult {
+  /** Array of browse nodes (current page) */
+  nodes: BrowseNode[];
+
+  /** True if results were truncated due to limits */
+  isPartial: boolean;
+
+  /** Warning message if results are partial */
+  warning?: string;
+
+  /** Limit that caused truncation */
+  appliedLimit?: number;
+
+  /** Total number of nodes found (before pagination) */
+  totalNodes?: number;
+
+  /** Current starting offset (for pagination) */
+  offset?: number;
+
+  /** Current limit applied (for pagination) */
+  limit?: number;
+
+  /** True if more nodes are available on next page */
+  hasMore?: boolean;
+
+  /** Offset to use for next page (null if no more pages) */
+  nextOffset?: number | null;
+
+  /** Internal: Full results before pagination (for caching) */
+  _fullResults?: BrowseNode[];
+
+  /** Actual depth used in browsing (may differ from requested if auto-adjusted) */
+  actualDepthUsed?: number;
+
+  /** Large branches detected (> 100 estimated children) */
+  largeBranches?: BranchInfo[];
+
+  /** Branches that weren't expanded due to node limit constraints */
+  expandableBranches?: BranchInfo[];
+
+  /** Branches that were fully explored to leaf nodes */
+  exploredBranches?: string[];
+
+  /** Recursion statistics (for full-branch browsing) */
+  recursionStats?: RecursionStats;
 }
