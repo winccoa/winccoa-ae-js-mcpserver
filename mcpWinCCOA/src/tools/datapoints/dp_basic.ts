@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { mkTypesContent, addDescriptionAndUnitsToChildren, createSuccessResponse, createErrorResponse } from '../../utils/helpers.js';
+import { mkTypesContent, addDescriptionAndUnitsToChildren, createSuccessResponse, createErrorResponse, validateDatapointElementsForGet } from '../../utils/helpers.js';
 import type { ServerContext, McpContent } from '../../types/index.js';
 
 /**
@@ -166,6 +166,19 @@ Supports all WinCC OA datapoint element types including state values, command va
     async ({ dpe }: { dpe: string | string[] }) => {
       try {
         const dpeArray = Array.isArray(dpe) ? dpe : [dpe];
+
+        // Validate datapoint elements (reject asterisk wildcard)
+        const validation = validateDatapointElementsForGet(dpeArray);
+        if (!validation.valid) {
+          return createErrorResponse(
+            `Wildcard '*' not allowed in dpGet (response too large). Invalid datapoint element(s): ${validation.invalid.join(', ')}. Use get-datapoints tool with dpNamePattern for wildcard searches.`,
+            {
+              errorType: 'INVALID_DPE_WILDCARD',
+              invalidElements: validation.invalid
+            }
+          );
+        }
+
         const dpesToQuery: string[] = [];
 
         // Build query array with value and timestamp for each dpe

@@ -128,3 +128,43 @@ export function isValidDatapointName(dpName: string): boolean {
   // Basic validation: should not be empty, no special chars that break WinCC OA
   return dpName.length > 0 && !dpName.includes('..') && !dpName.startsWith('.');
 }
+
+/**
+ * Validate datapoint element for dpGet operations
+ * Rejects asterisk (*) wildcard to prevent large responses
+ * @param dpe - Datapoint element name to validate
+ * @returns True if valid for dpGet
+ */
+export function isValidDatapointElementForGet(dpe: string): boolean {
+  if (!dpe || typeof dpe !== 'string') {
+    return false;
+  }
+
+  // Reject asterisk wildcard (causes response too large)
+  if (dpe.includes('*')) {
+    return false;
+  }
+
+  // Basic validation
+  return dpe.length > 0 && !dpe.includes('..') && !dpe.startsWith('.');
+}
+
+/**
+ * Validate array of datapoint elements for dpGet operations
+ * @param dpes - Array of datapoint element names
+ * @returns Validation result with invalid entries if any
+ */
+export function validateDatapointElementsForGet(dpes: string[]): { valid: boolean; invalid: string[] } {
+  const invalid: string[] = [];
+
+  for (const dpe of dpes) {
+    if (!isValidDatapointElementForGet(dpe)) {
+      invalid.push(dpe);
+    }
+  }
+
+  return {
+    valid: invalid.length === 0,
+    invalid
+  };
+}

@@ -9,8 +9,6 @@
  * All driver-specific configs should extend this interface
  */
 export interface ConnectionConfig {
-  /** Connection name (datapoint name) */
-  connectionName?: string;
   /** Enable connection immediately after creation */
   enableConnection?: boolean;
 }

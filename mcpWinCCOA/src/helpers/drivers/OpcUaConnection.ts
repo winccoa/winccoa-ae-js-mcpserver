@@ -1274,6 +1274,84 @@ export class OpcUaConnection extends BaseConnection {
   }
 
   /**
+   * Check if OPC UA connection is established and ready for browsing
+   * Uses Common.State.ConnState (unified driver state across all WinCC OA drivers)
+   * @param connDp - Connection datapoint name (with _ prefix)
+   * @throws Error if connection is not established (Common.State.ConnState < 256)
+   */
+  private async checkConnectionEstablished(connDp: string): Promise<void> {
+    try {
+      // Check if connection datapoint exists
+      const exists = this.winccoa.dpExists(connDp);
+      if (!exists) {
+        throw new Error(
+          `OPC UA connection '${connDp}' does not exist. ` +
+          `Please create the connection first using the 'opcua-add-connection' tool.`
+        );
+      }
+
+      // Read common connection state (unified across all drivers)
+      const connStateResult = await this.winccoa.dpGet([`${connDp}.Common.State.ConnState`]);
+      const connState = connStateResult[0];
+
+      // Check if connected (state >= 256)
+      // Per WinCC OA documentation: values < 256 = not connected, values >= 256 = connected
+      if (connState < 256) {
+        // Get server state for additional context
+        let serverState = 'Unknown';
+        try {
+          const serverStateResult = await this.winccoa.dpGet([`${connDp}.State.ServerState`]);
+          serverState = serverStateResult[0] || 'Unknown';
+        } catch {
+          // Ignore error, server state is optional context
+        }
+
+        // State meanings for user reference (from WinCC OA Common.State.ConnState)
+        const stateDescriptions: Record<number, string> = {
+          [-1]: 'Not Initialized',
+          0: 'Undefined',
+          1: 'Not Connected',
+          2: 'Connecting',
+          3: 'Not Active',
+          4: 'Disconnecting',
+          5: 'Failure',
+          9: 'WaitForReconnect'
+        };
+
+        const currentStateDesc = stateDescriptions[connState] || `Unknown state (${connState})`;
+
+        throw new Error(
+          `OPC UA connection '${connDp}' is not established.\n` +
+          `Connection state (Common.State.ConnState): ${connState} (${currentStateDesc})\n` +
+          `Server state: ${serverState}\n\n` +
+          `Please ensure:\n` +
+          `- The OPC UA connection is active\n` +
+          `- The OPC UA server is reachable\n` +
+          `- The OPC UA driver is running\n\n` +
+          `State meanings (Common.State.ConnState):\n` +
+          `- -1 = Not Initialized\n` +
+          `- 0 = Undefined\n` +
+          `- 1 = Not Connected\n` +
+          `- 2 = Connecting (please wait and retry)\n` +
+          `- 3 = Not Active\n` +
+          `- 4 = Disconnecting\n` +
+          `- 5 = Failure\n` +
+          `- 9 = WaitForReconnect\n` +
+          `- 256+ = Connected (ready to browse)`
+        );
+      }
+
+      console.log(`Connection ${connDp} is established (Common.State.ConnState=${connState}, >= 256 = connected)`);
+    } catch (error) {
+      // Re-throw with context
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(`Failed to check connection status for ${connDp}: ${String(error)}`);
+    }
+  }
+
+  /**
    * Browse full branch recursively using depth-first exploration
    * Explores entire branch to leaf nodes, minimizing API calls by using batched depth
    *
@@ -1518,6 +1596,9 @@ export class OpcUaConnection extends BaseConnection {
     try {
       // Ensure connection name has leading underscore
       const connDp = connectionName.startsWith('_') ? connectionName : `_${connectionName}`;
+
+      // Check if connection is established before browsing
+      await this.checkConnectionEstablished(connDp);
 
       // Default to Objects folder if no parent specified
       const startNode = parentNodeId || 'ns=0;i=85';
@@ -2385,8 +2466,8 @@ export class OpcUaConnection extends BaseConnection {
 
       console.log('✓ OPC UA driver validated');
 
-      // Generate connection name if not specified
-      const connectionName = config.connectionName || (await this.generateConnectionName());
+      // Auto-generate connection name
+      const connectionName = await this.generateConnectionName();
       console.log(`✓ Connection name: ${connectionName}`);
 
       // Ensure that _OPCUA<managerNumber> exists
