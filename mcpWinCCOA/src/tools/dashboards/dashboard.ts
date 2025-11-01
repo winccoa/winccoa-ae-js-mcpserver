@@ -26,12 +26,31 @@ export function registerTools(server: any, context: ServerContext): number {
 
 Creates a dashboard with the specified name, description, and creator. The dashboard will be automatically assigned a unique ID (e.g., _Dashboard_000001).
 
-IMPORTANT: The createdBy parameter is REQUIRED. It must be a valid username from the WinCC OA user system. Dashboards without a valid creator cannot be modified later.
+IMPORTANT RESTRICTIONS:
+- The createdBy parameter is REQUIRED and must be a valid username from the WinCC OA user system
+- DO NOT use "root" as the creator - dashboards created by root CANNOT be modified later
+- Use proper user accounts like "admin" or other valid usernames instead
+
+DASHBOARD LAYOUT STRATEGY:
+When creating dashboards, Claude AI should follow these principles:
+
+1. **GROUP RELATED WIDGETS** - Place similar data together (all sector gauges in one area, all trends together)
+2. **USE CONSISTENT SIZING** - All widgets in a group should use same preset (e.g., all gauges "medium")
+3. **STICK TO MEDIUM OR LARGER** - Avoid "small" presets for better readability
+4. **LET AUTO-POSITIONING HANDLE PLACEMENT** - The system maintains 4-column alignment automatically
+5. **CREATE VISUAL HIERARCHY** - Important data = larger widgets (trends, charts), supporting data = medium (gauges, labels)
+
+Example structure for monitoring system:
+- Row 1: Primary trend widgets (24x8 each) - main monitoring data
+- Row 2: Status gauges (8x8 each) - supporting metrics
+- Row 3: Control charts (12x8 each) - operational parameters
+
+This creates professional, easy-to-read dashboards
 
 Parameters:
 - name: Dashboard name (required)
 - description: Dashboard description (required)
-- createdBy: Username of the dashboard creator (required, must exist in _Users.UserName)
+- createdBy: Username of the dashboard creator (required, must exist in _Users.UserName, cannot be "root")
 
 Returns: Dashboard datapoint name (e.g., "_Dashboard_000001")
 

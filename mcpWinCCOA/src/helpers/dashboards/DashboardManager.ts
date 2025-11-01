@@ -62,6 +62,14 @@ export class DashboardManager {
    * @returns Dashboard datapoint name (e.g. "_Dashboard_000001")
    */
   async createDashboard(config: DashboardConfig): Promise<string> {
+    // Validate that root user is not used as creator
+    // Dashboards created by root cannot be modified later in WinCC OA
+    if (config.createdBy.toLowerCase() === 'root') {
+      throw new Error(
+        'Dashboard cannot be created with "root" as creator. Dashboards created by root cannot be modified later. Please use a proper user account (e.g., "admin" or another valid username).'
+      );
+    }
+
     // Lookup user and get userId
     const userNames = await this.winccoa.dpGet('_Users.UserName');
     const userIndex = userNames.findIndex((name: string) => name === config.createdBy);
@@ -236,6 +244,41 @@ export class DashboardManager {
       // but the warning will help debug unintentional overlaps
     }
 
+    // Auto-populate yAxisUnit from first datapoint if not provided (trend widgets)
+    if (config.type === 'trend' && !(config as any).yAxisUnit) {
+      const firstDp = (config as any).dataPoint ||
+        ((config as any).dataPoints?.[0] &&
+         (typeof (config as any).dataPoints[0] === 'string'
+           ? (config as any).dataPoints[0]
+           : (config as any).dataPoints[0].dataPoint));
+
+      if (firstDp) {
+        const unit = await this.getDatapointUnit(firstDp);
+        if (unit) {
+          (config as any).yAxisUnit = unit;
+          console.log(`📊 Auto-populated yAxisUnit from DPE config: ${unit}`);
+        } else {
+          console.warn(`⚠️ No unit found in DPE config for ${firstDp}. Consider configuring :_original.._unit or specifying yAxisUnit manually.`);
+        }
+      }
+    }
+
+    // Auto-populate units for individual series in dataPoints array
+    if ((config as any).dataPoints && Array.isArray((config as any).dataPoints)) {
+      for (let i = 0; i < (config as any).dataPoints.length; i++) {
+        const dp = (config as any).dataPoints[i];
+        if (typeof dp === 'object' && dp.dataPoint && !dp.unit) {
+          const unit = await this.getDatapointUnit(dp.dataPoint);
+          if (unit) {
+            dp.unit = unit;
+            console.log(`📊 Auto-populated series unit from DPE config: ${unit} for ${dp.dataPoint}`);
+          } else {
+            console.warn(`⚠️ No unit found in DPE config for series ${dp.dataPoint}. Consider configuring :_original.._unit.`);
+          }
+        }
+      }
+    }
+
     // Create widget instance
     const widget = this.widgetFactory.createWidget(config, dimensions);
 
@@ -349,6 +392,105 @@ export class DashboardManager {
       if (appearance.linkOpenInNewTab !== undefined) {
         settings.general.config.linkOpenInNewTab = appearance.linkOpenInNewTab;
       }
+    }
+
+    // Update widget-specific settings if provided
+    const settings = widget.settings as any;
+    const widgetUpdates = updates as any; // Cast to any for dynamic property access
+    if (settings.config && settings.config.config) {
+      // Data formatting settings (common to most widgets)
+      if (widgetUpdates.unit !== undefined) {
+        settings.config.config.unit = widgetUpdates.unit;
+      }
+      if (widgetUpdates.format !== undefined) {
+        settings.config.config.format = widgetUpdates.format;
+      }
+      if (widgetUpdates.name !== undefined) {
+        settings.config.config.name = widgetUpdates.name;
+      }
+      if (widgetUpdates.color !== undefined) {
+        settings.config.config.color = widgetUpdates.color;
+      }
+      if (widgetUpdates.showTooltip !== undefined) {
+        settings.config.config.showTooltip = widgetUpdates.showTooltip;
+      }
+
+      // Range settings
+      if (widgetUpdates.min !== undefined) {
+        settings.config.config.min = widgetUpdates.min;
+      }
+      if (widgetUpdates.max !== undefined) {
+        settings.config.config.max = widgetUpdates.max;
+      }
+      if (widgetUpdates.rangeSettings !== undefined) {
+        settings.config.config.rangeSettings = widgetUpdates.rangeSettings;
+      }
+
+      // Trend-specific settings
+      if (widgetUpdates.showLegend !== undefined) {
+        settings.config.config.showLegend = widgetUpdates.showLegend;
+      }
+      if (widgetUpdates.dataPoints !== undefined) {
+        // Handle dataPoints update (rebuild series array)
+        const dpArray = widgetUpdates.dataPoints;
+        const seriesArray = dpArray.map((dp: any) => {
+          const seriesConfig: any = {
+            datapoint: {
+              context: 'data-point',
+              config: {
+                definedConfigs: ['datapoint', 'value', 'name', 'unit', 'format', 'color', 'min', 'max', 'alertColor'],
+                dpName: typeof dp === 'string' ? dp : dp.dataPoint,
+                fetchMethod: 'historic',
+                compress: true,
+                historic: { sTimeRange: '${sTimeRange}' },
+                customAlertColor: true,
+                alertColor: ''
+              }
+            },
+            lineStyle: typeof dp === 'string' ? 'solid' : (dp.lineStyle || 'solid')
+          };
+
+          if (typeof dp !== 'string' && dp.showCustomYAxis) {
+            seriesConfig.showCustomYAxis = true;
+            seriesConfig.yAxisPosition = dp.yAxisPosition || 'right';
+          }
+
+          return { context: 'group', config: seriesConfig };
+        });
+
+        settings.config.config.series = { context: 'array', config: seriesArray };
+      }
+
+      // Bar chart specific settings
+      if (widgetUpdates.yAxisName !== undefined) {
+        settings.config.config.yAxisName = widgetUpdates.yAxisName;
+      }
+      if (widgetUpdates.yAxisUnit !== undefined) {
+        settings.config.config.yAxisUnit = widgetUpdates.yAxisUnit;
+      }
+      if (widgetUpdates.yAxisColor !== undefined) {
+        settings.config.config.yAxisColor = widgetUpdates.yAxisColor;
+      }
+      if (widgetUpdates.range !== undefined) {
+        settings.config.config.range = widgetUpdates.range;
+      }
+      if (widgetUpdates.isStacked !== undefined) {
+        settings.config.config.isStacked = widgetUpdates.isStacked;
+      }
+      if (widgetUpdates.isHorizontal !== undefined) {
+        settings.config.config.isHorizontal = widgetUpdates.isHorizontal;
+      }
+      if (widgetUpdates.legendPosition !== undefined) {
+        settings.config.config.legendPosition = widgetUpdates.legendPosition;
+      }
+    }
+
+    // Update timeRange in variables section (trend-specific)
+    if (widgetUpdates.timeRange !== undefined && settings.variables) {
+      if (!settings.variables.config) {
+        settings.variables.config = {};
+      }
+      settings.variables.config.sTimeRange = widgetUpdates.timeRange;
     }
 
     // Update layout if provided
@@ -508,6 +650,22 @@ export class DashboardManager {
       if (!this.winccoa.dpExists(dp)) {
         throw new Error(`Datapoint does not exist: ${dp}`);
       }
+    }
+  }
+
+  /**
+   * Get unit from datapoint configuration
+   * @param dpName - Datapoint name
+   * @returns Unit string or undefined
+   */
+  private async getDatapointUnit(dpName: string): Promise<string | undefined> {
+    try {
+      // Get unit from datapoint config using dpGetUnit() API
+      const unit = this.winccoa.dpGetUnit(dpName);
+      return unit || undefined;
+    } catch (error) {
+      // If unit doesn't exist or error reading, return undefined
+      return undefined;
     }
   }
 }

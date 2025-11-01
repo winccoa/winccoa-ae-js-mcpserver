@@ -68,7 +68,7 @@ const trendSeriesSchema = z.object({
   showConfidenceBand: z.boolean().optional(),
   color: z.string().optional(),
   // Data formatting
-  unit: z.string().optional(),
+  unit: z.string().optional().describe('INTERNAL - Auto-populated from DPE config. DO NOT PROVIDE.'),
   format: z.string().optional(),
   name: z.string().optional(),
   // Custom Y-axis range
@@ -142,6 +142,69 @@ Parameters:
   - Previous periods: "1d/d" (yesterday), "1w/w" (last week), "1M/M" (last month)
   - Absolute: "2025-10-23T14:00:00.000/2025-10-23T15:00:00.000"
   NOTE: "now/h" shows data from start of current hour and grows with time (e.g., 16:00-16:05 at 16:05) - perfect for live monitoring
+
+🎯 DASHBOARD STRUCTURE - BEST PRACTICES 🎯
+==========================================
+
+GOLDEN RULES FOR PROFESSIONAL DASHBOARDS:
+1. **USE "MEDIUM" AS MINIMUM SIZE** - Small widgets are hard to read. Use medium (8x8 for gauges, 12x8 for charts) as baseline.
+2. **MAINTAIN 4-COLUMN GRID ALIGNMENT** - All widgets should align to 4-column increments (4, 8, 12, 16, 20, 24, etc.)
+3. **CONSISTENT SIZING WITHIN GROUPS** - Related widgets (e.g., all sector gauges) should use same size
+4. **ROW-BASED ORGANIZATION** - Arrange widgets in logical rows, not randomly scattered
+
+LAYOUT PRESET RECOMMENDATIONS:
+- Gauges: Use "medium" (8x8) - fits 6 per row with perfect alignment
+- Trends: Use "medium" (24x8) - 2 side-by-side, or "fullwidth" for single trend
+- Bar Charts: Use "medium" (12x8) - 4 per row with perfect alignment
+- Labels: Use "medium" (8x4) - 6 per row, same width as gauges
+
+WHY 4-COLUMN ALIGNMENT MATTERS:
+- Dashboard is 50 columns wide (divisible by 2)
+- 4-column grid creates: 12 slots per row (48÷4 = 12 widgets at 4 cols each)
+- Widgets at 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48 columns align perfectly
+- This creates the "smooth structure" you see in professional dashboards
+
+GOOD LAYOUT EXAMPLE (Tunnel Lighting System style):
+Row 1: [Gauge 8x8] [Gauge 8x8] [Trend 24x8] [Gauge 8x8]
+Row 2: [Gauge 8x8] [Chart 12x8] [Chart 12x8] [Gauge 8x8]
+→ Clean grid, consistent sizing, logical grouping
+
+BAD LAYOUT EXAMPLE (avoid):
+[Small 4x4] [Large 16x10] [Medium 8x8] [Small 6x6]
+→ Unaligned, mixed sizes, looks unprofessional
+
+⚠️ CRITICAL: NEVER PROVIDE yAxisUnit OR unit PARAMETERS ⚠️
+================================================================
+
+DO NOT manually specify yAxisUnit or unit parameters. The system automatically reads these from WinCC OA.
+
+WHY UNITS MATTER:
+Trend widgets without units are USELESS to users because they cannot tell if they're seeing Watts vs Kilowatts,
+Celsius vs Fahrenheit, bar vs psi, etc. Units provide essential context for interpreting data.
+
+HOW AUTO-POPULATION WORKS:
+When you create a trend WITHOUT the yAxisUnit parameter, the system automatically:
+1. Queries the datapoint's :_original.._unit attribute from WinCC OA configuration
+2. Auto-populates yAxisUnit if a unit is found in the DPE config
+3. Logs the auto-populated value (e.g., "📊 Auto-populated yAxisUnit from DPE config: kW")
+4. This is MORE RELIABLE than guessing units based on datapoint names
+
+If auto-read fails (no unit in DPE config), a console warning will appear. The system will handle this.
+
+UNIT PARAMETERS (DO NOT PROVIDE):
+- yAxisUnit: (INTERNAL - System auto-reads from DPE config. DO NOT PROVIDE.)
+- yAxisName: (Optional) Name/label for primary Y-axis (e.g., "Temperature", "Power")
+- For dataPoints array: "unit" property is auto-populated. DO NOT PROVIDE.
+
+EXAMPLE - Correct (omit yAxisUnit for auto-read):
+{
+  "type": "trend",
+  "title": "Power Consumption",
+  "dataPoints": ["System1:Reactor1.power"],
+  "timeRange": "now/h"
+  // NO yAxisUnit specified - system will auto-read from DPE :_original.._unit
+}
+
 - layout: Widget positioning (optional, defaults to "auto")
   - Preset (RECOMMENDED): "auto", "small", "medium", "large", "fullwidth"
     → "auto" automatically finds free space and PREVENTS OVERLAPS
@@ -216,8 +279,16 @@ Example 4 - Trend with SECOND Y-AXIS (multiple datapoints):
 
 IMPORTANT LAYOUT GUIDELINES:
 - **ALWAYS use "auto" layout** when creating multiple widgets to prevent overlaps
-- Dashboard grid is 50 columns wide
-- Dashboard grid is 25 rows high
+- **ALWAYS use "medium" or larger** - Small sizes harm readability
+- Dashboard grid is 50 columns wide, 25 rows high
+- Auto-positioning uses 4-column grid alignment (widgets snap to 0, 4, 8, 12, 16, 20, 24... columns)
+- RECOMMENDED preset sizes for professional dashboards:
+  * Gauge: "medium" (8x8) - 6 fit perfectly per row
+  * Trend: "medium" (24x8) - 2 side-by-side OR "fullwidth"
+  * Bar chart: "medium" (12x8) - 4 per row perfect alignment
+  * Label: "medium" (8x4) - matches gauge width for consistency
+  * Pie: "medium" (8x8) - same as gauge for uniform appearance
+- Avoid mixing "small" with "medium/large" - creates uneven layouts
 - Only use explicit coordinates if you have a specific layout design and verify no overlaps exist
 - Example explicit layout: {"x": 25, "y": 0, "cols": 25, "rows": 13} places widget in right half`,
     {
@@ -232,10 +303,22 @@ IMPORTANT LAYOUT GUIDELINES:
       rangeSettings: rangeSettingsSchema.optional(),
       timeRange: z.string().optional(),
       layout: layoutSchema.optional(),
+      // Appearance settings (header, footer, icons, colors) - can be set at creation time
+      titleIcon: z.string().optional(),
+      headerTitle: z.string().optional(),
+      titleAlignment: z.enum(['left', 'center', 'right']).optional(),
+      subtitleIcon: z.string().optional(),
+      footerTitle: z.string().optional(),
+      subtitleAlignment: z.enum(['left', 'center', 'right']).optional(),
+      backgroundColor: z.string().optional(),
+      borderColor: z.string().optional(),
+      showFullscreenButton: z.boolean().optional(),
+      linkTitle: z.string().optional(),
+      linkOpenInNewTab: z.boolean().optional(),
       // Progress bar specific
       color: z.string().optional(),
       size: z.enum(['1.5em', '2.25em', '3em']).optional(),
-      unit: z.string().optional(),
+      unit: z.string().optional().describe('INTERNAL - Auto-populated from DPE config. DO NOT PROVIDE.'),
       format: z.string().optional(),
       min: z.number().optional(),
       max: z.number().optional(),
@@ -244,7 +327,7 @@ IMPORTANT LAYOUT GUIDELINES:
       alertRanges: z.array(alertRangeSchema).optional(),
       // Bar chart specific
       yAxisName: z.string().optional(),
-      yAxisUnit: z.string().optional(),
+      yAxisUnit: z.string().optional().describe('INTERNAL - Auto-populated from DPE config. DO NOT PROVIDE.'),
       yAxisColor: z.string().optional(),
       range: yAxisRangeSchema.optional(),
       isStacked: z.boolean().optional(),
@@ -263,6 +346,18 @@ IMPORTANT LAYOUT GUIDELINES:
       rangeSettings?: { type: 'manual' | 'oa'; min?: number; max?: number };
       timeRange?: string;
       layout?: any;
+      // Appearance settings
+      titleIcon?: string;
+      headerTitle?: string;
+      titleAlignment?: 'left' | 'center' | 'right';
+      subtitleIcon?: string;
+      footerTitle?: string;
+      subtitleAlignment?: 'left' | 'center' | 'right';
+      backgroundColor?: string;
+      borderColor?: string;
+      showFullscreenButton?: boolean;
+      linkTitle?: string;
+      linkOpenInNewTab?: boolean;
       // Progress bar specific
       color?: string;
       size?: '1.5em' | '2.25em' | '3em';
@@ -288,12 +383,37 @@ IMPORTANT LAYOUT GUIDELINES:
         const {
           dashboardId, type, title, dataPoint, dataPoints, dataPointsDescriptions,
           rangeSettings, timeRange, layout,
+          // Appearance
+          titleIcon, headerTitle, titleAlignment, subtitleIcon, footerTitle, subtitleAlignment,
+          backgroundColor, borderColor, showFullscreenButton, linkTitle, linkOpenInNewTab,
           // Progress bar
           color, size, unit, format, min, max, showRange, isAbsolute, alertRanges,
           // Bar chart
           yAxisName, yAxisUnit, yAxisColor, range, isStacked, isHorizontal,
           showTooltip, showLegend, legendPosition
         } = params;
+
+        // Build appearance object if any appearance settings provided
+        const hasAppearance = titleIcon !== undefined || headerTitle !== undefined ||
+                              titleAlignment !== undefined || subtitleIcon !== undefined ||
+                              footerTitle !== undefined || subtitleAlignment !== undefined ||
+                              backgroundColor !== undefined || borderColor !== undefined ||
+                              showFullscreenButton !== undefined || linkTitle !== undefined ||
+                              linkOpenInNewTab !== undefined;
+
+        const appearance = hasAppearance ? {
+          titleIcon,
+          title: headerTitle,
+          titleAlignment,
+          subtitleIcon,
+          subtitle: footerTitle,
+          subtitleAlignment,
+          backgroundColor,
+          borderColor,
+          showFullscreenButton,
+          linkTitle,
+          linkOpenInNewTab
+        } : undefined;
 
         console.log(`Adding ${type} widget to dashboard ${dashboardId}`);
 
@@ -310,7 +430,8 @@ IMPORTANT LAYOUT GUIDELINES:
               title,
               dataPoint,
               rangeSettings,
-              layout
+              layout,
+              appearance
             };
             break;
 
@@ -322,7 +443,8 @@ IMPORTANT LAYOUT GUIDELINES:
               type: 'label',
               title,
               dataPoint,
-              layout
+              layout,
+              appearance
             };
             break;
 
@@ -336,7 +458,12 @@ IMPORTANT LAYOUT GUIDELINES:
               dataPoint,
               dataPoints,
               timeRange,
-              layout
+              yAxisName,
+              yAxisUnit,
+              yAxisColor,
+              range,
+              layout,
+              appearance
             };
             break;
 
@@ -354,7 +481,8 @@ IMPORTANT LAYOUT GUIDELINES:
               title,
               dataPoints: pieDataPoints,
               dataPointsDescriptions,
-              layout
+              layout,
+              appearance
             };
             break;
 
@@ -375,7 +503,8 @@ IMPORTANT LAYOUT GUIDELINES:
               showRange,
               isAbsolute,
               alertRanges,
-              layout
+              layout,
+              appearance
             };
             break;
 
@@ -398,7 +527,8 @@ IMPORTANT LAYOUT GUIDELINES:
               showTooltip,
               showLegend,
               legendPosition,
-              layout
+              layout,
+              appearance
             };
             break;
 
@@ -471,7 +601,37 @@ Links:
 - linkTitle: Link text
 - linkOpenInNewTab: Open link in new tab (true/false)
 
-At least one parameter (title, layout, or appearance setting) must be provided.
+⚠️ UNITS WARNING: DO NOT manually edit 'unit' or 'yAxisUnit' parameters.
+These are automatically managed by the system from WinCC OA DPE configuration.
+
+WIDGET-SPECIFIC SETTINGS (optional):
+Data Formatting:
+- unit: (INTERNAL - DO NOT EDIT - Auto-managed)
+- format: Value format (e.g., "%0.2f")
+- name: Data name/label
+- color: Primary color
+- showTooltip: Show tooltip on hover (true/false)
+
+Ranges:
+- min: Minimum value
+- max: Maximum value
+- rangeSettings: Range configuration {"type": "manual", "min": 0, "max": 100}
+
+Trend-Specific:
+- timeRange: Time range (e.g., "now/h", "24h", "1w/w")
+- showLegend: Show legend (true/false)
+- dataPoints: Array of datapoints (for adding/removing series)
+
+Bar Chart-Specific:
+- yAxisName: Y-axis name
+- yAxisUnit: (INTERNAL - DO NOT EDIT - Auto-managed)
+- yAxisColor: Y-axis color
+- range: Y-axis range {"min": 0, "max": 100}
+- isStacked: Stacked bars (true/false)
+- isHorizontal: Horizontal bars (true/false)
+- legendPosition: "topleft", "topright", "bottomleft", "bottomright"
+
+At least one parameter (title, layout, appearance setting, or widget-specific setting) must be provided.
 
 Example 1 - Update title and layout:
 {
@@ -489,8 +649,23 @@ Example 2 - Add header and footer with icons:
   "headerTitle": "Production Trend",
   "titleAlignment": "center",
   "subtitleIcon": "info",
-  "footerTitle": "Last 24 hours",
   "subtitleAlignment": "left"
+}
+
+Example 3 - Update widget unit and format:
+{
+  "dashboardId": "_Dashboard_000001",
+  "widgetIdentifier": {"index": 0},
+  "unit": "°C",
+  "format": "%0.1f"
+}
+
+Example 4 - Change trend time range and show legend:
+{
+  "dashboardId": "_Dashboard_000001",
+  "widgetIdentifier": {"index": 1},
+  "timeRange": "24h",
+  "showLegend": true
 }`,
     {
       dashboardId: z.string().min(1, 'Dashboard ID is required'),
@@ -508,7 +683,28 @@ Example 2 - Add header and footer with icons:
       borderColor: z.string().optional(),
       showFullscreenButton: z.boolean().optional(),
       linkTitle: z.string().optional(),
-      linkOpenInNewTab: z.boolean().optional()
+      linkOpenInNewTab: z.boolean().optional(),
+      // Widget-specific settings (data formatting, visualization)
+      unit: z.string().optional().describe('INTERNAL - Auto-populated from DPE config. DO NOT PROVIDE.'),
+      format: z.string().optional(),
+      name: z.string().optional(),
+      color: z.string().optional(),
+      showTooltip: z.boolean().optional(),
+      min: z.number().optional(),
+      max: z.number().optional(),
+      rangeSettings: rangeSettingsSchema.optional(),
+      // Trend-specific
+      timeRange: z.string().optional(),
+      showLegend: z.boolean().optional(),
+      dataPoints: z.array(z.union([z.string(), trendSeriesSchema])).optional(),
+      // Bar chart specific
+      yAxisName: z.string().optional(),
+      yAxisUnit: z.string().optional().describe('INTERNAL - Auto-populated from DPE config. DO NOT PROVIDE.'),
+      yAxisColor: z.string().optional(),
+      range: yAxisRangeSchema.optional(),
+      isStacked: z.boolean().optional(),
+      isHorizontal: z.boolean().optional(),
+      legendPosition: z.enum(['topleft', 'topright', 'bottomleft', 'bottomright']).optional()
     },
     async (params: {
       dashboardId: string;
@@ -527,13 +723,38 @@ Example 2 - Add header and footer with icons:
       showFullscreenButton?: boolean;
       linkTitle?: string;
       linkOpenInNewTab?: boolean;
+      // Widget-specific settings
+      unit?: string;
+      format?: string;
+      name?: string;
+      color?: string;
+      showTooltip?: boolean;
+      min?: number;
+      max?: number;
+      rangeSettings?: { type: 'manual' | 'oa'; min?: number; max?: number };
+      // Trend-specific
+      timeRange?: string;
+      showLegend?: boolean;
+      dataPoints?: (string | { dataPoint: string; lineStyle?: 'solid' | 'dashed' | 'dotted'; showCustomYAxis?: boolean; yAxisPosition?: 'left' | 'right' })[];
+      // Bar chart specific
+      yAxisName?: string;
+      yAxisUnit?: string;
+      yAxisColor?: string;
+      range?: { min: number | null; max: number | null };
+      isStacked?: boolean;
+      isHorizontal?: boolean;
+      legendPosition?: 'topleft' | 'topright' | 'bottomleft' | 'bottomright';
     }) => {
       try {
         let { dashboardId, widgetIdentifier, title, layout,
               titleIcon, headerTitle, titleAlignment,
               subtitleIcon, footerTitle, subtitleAlignment,
               backgroundColor, borderColor, showFullscreenButton,
-              linkTitle, linkOpenInNewTab } = params;
+              linkTitle, linkOpenInNewTab,
+              // Widget-specific settings
+              unit, format, name, color, showTooltip, min, max, rangeSettings,
+              timeRange, showLegend, dataPoints,
+              yAxisName, yAxisUnit, yAxisColor, range, isStacked, isHorizontal, legendPosition } = params;
 
         // Check if at least one parameter is provided
         const hasAppearanceUpdate = titleIcon !== undefined || headerTitle !== undefined ||
@@ -543,8 +764,15 @@ Example 2 - Add header and footer with icons:
                                      showFullscreenButton !== undefined || linkTitle !== undefined ||
                                      linkOpenInNewTab !== undefined;
 
-        if (!title && !layout && !hasAppearanceUpdate) {
-          return createErrorResponse('At least one parameter (title, layout, or appearance setting) must be provided');
+        const hasWidgetUpdate = unit !== undefined || format !== undefined || name !== undefined ||
+                                color !== undefined || showTooltip !== undefined || min !== undefined ||
+                                max !== undefined || rangeSettings !== undefined || timeRange !== undefined ||
+                                showLegend !== undefined || dataPoints !== undefined || yAxisName !== undefined ||
+                                yAxisUnit !== undefined || yAxisColor !== undefined || range !== undefined ||
+                                isStacked !== undefined || isHorizontal !== undefined || legendPosition !== undefined;
+
+        if (!title && !layout && !hasAppearanceUpdate && !hasWidgetUpdate) {
+          return createErrorResponse('At least one parameter (title, layout, appearance setting, or widget-specific setting) must be provided');
         }
 
         // Fix: Parse layout if it's a JSON string (Claude AI sometimes sends it as string)
@@ -577,7 +805,26 @@ Example 2 - Add header and footer with icons:
           type: 'gauge', // Type is not changed during edit
           title: title || '',
           layout,
-          appearance
+          appearance,
+          // Widget-specific settings
+          unit,
+          format,
+          name,
+          color,
+          showTooltip,
+          min,
+          max,
+          rangeSettings,
+          timeRange,
+          showLegend,
+          dataPoints,
+          yAxisName,
+          yAxisUnit,
+          yAxisColor,
+          range,
+          isStacked,
+          isHorizontal,
+          legendPosition
         } as any);
 
         return createSuccessResponse({

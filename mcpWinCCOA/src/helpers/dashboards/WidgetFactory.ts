@@ -91,6 +91,60 @@ export class WidgetFactory {
   }
 
   /**
+   * Create general settings (appearance) from widget appearance config
+   * @param appearance - Optional appearance configuration
+   * @returns Group context for settings.general
+   */
+  private createGeneralSettings(appearance?: any): any {
+    const config: any = {
+      titleAlignment: appearance?.titleAlignment || 'center',
+      subtitleAlignment: appearance?.subtitleAlignment || 'center'
+    };
+
+    // Add optional appearance settings if provided
+    if (appearance) {
+      if (appearance.titleIcon !== undefined) {
+        config.titleIcon = appearance.titleIcon;
+      }
+      if (appearance.title !== undefined) {
+        config.title = {
+          context: 'group',
+          config: { 'en_US.utf8': appearance.title }
+        };
+      }
+      if (appearance.subtitleIcon !== undefined) {
+        config.subtitleIcon = appearance.subtitleIcon;
+      }
+      if (appearance.subtitle !== undefined) {
+        config.subtitle = {
+          context: 'group',
+          config: { 'en_US.utf8': appearance.subtitle }
+        };
+      }
+      if (appearance.backgroundColor !== undefined) {
+        config.backgroundColor = appearance.backgroundColor;
+      }
+      if (appearance.borderColor !== undefined) {
+        config.borderColor = appearance.borderColor;
+      }
+      if (appearance.showFullscreenButton !== undefined) {
+        config.showFullscreenButton = appearance.showFullscreenButton;
+      }
+      if (appearance.linkTitle !== undefined) {
+        config.linkTitle = {
+          context: 'group',
+          config: { 'en_US.utf8': appearance.linkTitle }
+        };
+      }
+      if (appearance.linkOpenInNewTab !== undefined) {
+        config.linkOpenInNewTab = appearance.linkOpenInNewTab;
+      }
+    }
+
+    return createSimpleGroupContext(config);
+  }
+
+  /**
    * Create Gauge widget
    */
   private createGauge(config: GaugeConfig, dimensions: WidgetDimensions): WidgetInstance {
@@ -109,7 +163,9 @@ export class WidgetFactory {
       font,
       renderer,
       theme,
-      backgroundColor
+      backgroundColor,
+      // Widget appearance (header, footer, icons, colors)
+      appearance
     } = config;
     const { x, y, cols, rows, minCols, minRows } = dimensions;
 
@@ -151,10 +207,7 @@ export class WidgetFactory {
         ...(theme && { theme }),
         ...(backgroundColor && { backgroundColor })
       }),
-      general: createSimpleGroupContext({
-        titleAlignment: 'center',       // Simplified: direct value
-        subtitleAlignment: 'center'
-      })
+      general: this.createGeneralSettings(appearance)
     };
 
     const component: ComponentMeta = {
@@ -195,7 +248,9 @@ export class WidgetFactory {
       color,
       format,
       unit,
-      name
+      name,
+      // Widget appearance (header, footer, icons, colors)
+      appearance
     } = config;
     const { x, y, cols, rows, minCols, minRows } = dimensions;
 
@@ -229,10 +284,7 @@ export class WidgetFactory {
         ...(unit && { unit }),
         ...(name && { name })
       }),
-      general: createSimpleGroupContext({
-        titleAlignment: 'center',       // Simplified: direct values
-        subtitleAlignment: 'center'
-      })
+      general: this.createGeneralSettings(appearance)
     };
 
     const component: ComponentMeta = {
@@ -287,7 +339,9 @@ export class WidgetFactory {
       font,
       renderer,
       theme,
-      backgroundColor
+      backgroundColor,
+      // Widget appearance (header, footer, icons, colors)
+      appearance
     } = config;
     const { x, y, cols, rows, minCols, minRows } = dimensions;
 
@@ -372,10 +426,7 @@ export class WidgetFactory {
         ...(theme && { theme }),
         ...(backgroundColor && { backgroundColor })
       }),
-      general: createSimpleGroupContext({
-        titleAlignment: 'center',       // Simplified: direct values
-        subtitleAlignment: 'center'
-      }),
+      general: this.createGeneralSettings(appearance),
       variables: createSimpleGroupContext({
         sTimeRange: timeRange           // Simplified: direct value
       })
@@ -421,7 +472,9 @@ export class WidgetFactory {
       legendPosition = 'topright',
       showTooltip = true,
       colors,
-      darkModeColors
+      darkModeColors,
+      // Widget appearance (header, footer, icons, colors)
+      appearance
     } = config;
     const { x, y, cols, rows, minCols, minRows } = dimensions;
 
@@ -468,10 +521,7 @@ export class WidgetFactory {
         series: createArrayContext(seriesArray as any),
         showTooltip
       }),
-      general: createSimpleGroupContext({
-        titleAlignment: 'center',
-        subtitleAlignment: 'center'
-      })
+      general: this.createGeneralSettings(appearance)
     };
 
     const component: ComponentMeta = {
@@ -518,7 +568,9 @@ export class WidgetFactory {
       font,
       renderer,
       theme,
-      backgroundColor
+      backgroundColor,
+      // Widget appearance (header, footer, icons, colors)
+      appearance
     } = config;
     const { x, y, cols, rows, minCols, minRows } = dimensions;
 
@@ -561,10 +613,7 @@ export class WidgetFactory {
         ...(theme && { theme }),
         ...(backgroundColor && { backgroundColor })
       }),
-      general: createSimpleGroupContext({
-        titleAlignment: 'center',
-        subtitleAlignment: 'center'
-      })
+      general: this.createGeneralSettings(appearance)
     };
 
     const component: ComponentMeta = {
@@ -611,7 +660,9 @@ export class WidgetFactory {
       font,
       renderer,
       theme,
-      backgroundColor
+      backgroundColor,
+      // Widget appearance (header, footer, icons, colors)
+      appearance
     } = config;
     const { x, y, cols, rows, minCols, minRows } = dimensions;
 
@@ -658,10 +709,7 @@ export class WidgetFactory {
         ...(theme && { theme }),
         ...(backgroundColor && { backgroundColor })
       }),
-      general: createSimpleGroupContext({
-        titleAlignment: 'center',
-        subtitleAlignment: 'center'
-      })
+      general: this.createGeneralSettings(appearance)
     };
 
     const component: ComponentMeta = {

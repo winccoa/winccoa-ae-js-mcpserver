@@ -63,15 +63,39 @@ export const DASHBOARD_GRID = {
   /** Default widget spacing */
   SPACING: 0,
   /** Minimum widget size */
-  MIN_SIZE: 3
+  MIN_SIZE: 3,
+  /** Grid alignment for auto-positioning (widgets snap to multiples of this value) */
+  ALIGNMENT: 4
 } as const;
+
+/**
+ * Widget Size Presets - Sizing Philosophy
+ *
+ * All widget sizes follow 4-column grid alignment principle for professional dashboard layouts.
+ *
+ * SIZING PHILOSOPHY:
+ * - Small: Discouraged for production use (hard to read, creates visual clutter)
+ * - Medium: RECOMMENDED baseline for professional dashboards (optimal readability)
+ * - Large: For emphasis or data-heavy widgets requiring more space
+ * - Fullwidth: Special case for single-row spanning widgets
+ *
+ * GRID ALIGNMENT:
+ * - Dashboard width: 50 columns
+ * - Recommended column widths: 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48
+ * - Using 4-column increments ensures perfect grid alignment
+ * - Examples: 8 cols = 1/6 width (6 per row), 12 cols = 1/4 width (4 per row), 24 cols = 1/2 width (2 per row)
+ *
+ * DESIGN GUIDELINES:
+ * - Consistent sizing within widget groups creates professional appearance
+ * - Medium (8x8 gauge, 12x8 chart, 24x8 trend) creates the "Tunnel Lighting System" look
+ * - Avoid mixing small/medium/large randomly - leads to unstructured layouts
+ */
 
 /**
  * Default preset dimensions for Gauge widget
  */
 export const GAUGE_PRESETS: WidgetPresets = {
-  small: { cols: 4, rows: 4, minCols: 6, minRows: 6 },
-  medium: { cols: 6, rows: 6, minCols: 6, minRows: 6 },
+  medium: { cols: 8, rows: 8, minCols: 6, minRows: 6 },
   large: { cols: 8, rows: 8, minCols: 6, minRows: 6 }
 };
 
@@ -79,17 +103,16 @@ export const GAUGE_PRESETS: WidgetPresets = {
  * Default preset dimensions for Label widget
  */
 export const LABEL_PRESETS: WidgetPresets = {
-  small: { cols: 4, rows: 3, minCols: 6, minRows: 3 },
-  medium: { cols: 6, rows: 3, minCols: 6, minRows: 3 },
-  large: { cols: 12, rows: 3, minCols: 6, minRows: 3 }
+  medium: { cols: 8, rows: 4, minCols: 6, minRows: 3 },
+  large: { cols: 12, rows: 4, minCols: 6, minRows: 3 }
 };
 
 /**
  * Default preset dimensions for Trend widget
  */
 export const TREND_PRESETS: WidgetPresets = {
-  medium: { cols: 12, rows: 8, minCols: 8, minRows: 8 },
-  large: { cols: 16, rows: 12, minCols: 8, minRows: 8 },
+  medium: { cols: 24, rows: 8, minCols: 8, minRows: 8 },
+  large: { cols: 24, rows: 12, minCols: 8, minRows: 8 },
   fullwidth: { cols: 24, rows: 8, minCols: 8, minRows: 8 }
 };
 
@@ -97,9 +120,16 @@ export const TREND_PRESETS: WidgetPresets = {
  * Default preset dimensions for Pie widget
  */
 export const PIE_PRESETS: WidgetPresets = {
-  small: { cols: 6, rows: 6, minCols: 6, minRows: 6 },
   medium: { cols: 8, rows: 8, minCols: 6, minRows: 6 },
   large: { cols: 12, rows: 12, minCols: 6, minRows: 6 }
+};
+
+/**
+ * Default preset dimensions for Bar Chart widget
+ */
+export const BARCHART_PRESETS: WidgetPresets = {
+  medium: { cols: 12, rows: 8, minCols: 6, minRows: 6 },
+  large: { cols: 16, rows: 10, minCols: 6, minRows: 6 }
 };
 
 /**
@@ -115,6 +145,9 @@ export function getWidgetPresets(widgetType: string): WidgetPresets {
       return TREND_PRESETS;
     case 'pie':
       return PIE_PRESETS;
+    case 'barchart':
+    case 'progressbar':
+      return BARCHART_PRESETS;
     default:
       // Default to medium gauge preset for unknown types
       return GAUGE_PRESETS;
@@ -126,7 +159,7 @@ export function getWidgetPresets(widgetType: string): WidgetPresets {
  */
 export function getDefaultDimensions(widgetType: string): WidgetSizePreset {
   const presets = getWidgetPresets(widgetType);
-  return presets.medium || presets.small || { cols: 6, rows: 6, minCols: 6, minRows: 6 };
+  return presets.medium || { cols: 8, rows: 8, minCols: 6, minRows: 6 };
 }
 
 /**

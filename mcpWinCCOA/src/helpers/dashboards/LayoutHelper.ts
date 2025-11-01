@@ -111,8 +111,17 @@ export class LayoutHelper {
   }
 
   /**
+   * Align a coordinate to the grid alignment
+   * @param value - Coordinate value
+   * @returns Aligned coordinate (multiple of DASHBOARD_GRID.ALIGNMENT)
+   */
+  private alignToGrid(value: number): number {
+    return Math.round(value / DASHBOARD_GRID.ALIGNMENT) * DASHBOARD_GRID.ALIGNMENT;
+  }
+
+  /**
    * Find next available position in grid for a widget
-   * Uses simple top-to-bottom, left-to-right placement
+   * Uses simple top-to-bottom, left-to-right placement with 4-column grid alignment
    * @param existingWidgets - Array of existing widgets
    * @param widgetSize - Size of widget to place
    * @returns Grid position {x, y}
@@ -126,14 +135,19 @@ export class LayoutHelper {
       return { x: 0, y: 0 };
     }
 
-    // Try to find a position by scanning the grid
+    // Try to find a position by scanning the grid with alignment
     const maxY = this.getMaxY(existingWidgets) + 20; // Scan up to 20 rows below last widget
 
     for (let y = 0; y <= maxY; y++) {
-      for (let x = 0; x <= DASHBOARD_GRID.TOTAL_COLUMNS - widgetSize.cols; x++) {
+      // Increment x by ALIGNMENT (4) for grid alignment
+      for (let x = 0; x <= DASHBOARD_GRID.TOTAL_COLUMNS - widgetSize.cols; x += DASHBOARD_GRID.ALIGNMENT) {
         const position = { x, y };
         if (this.isPositionAvailable(position, widgetSize, existingWidgets)) {
-          return position;
+          // Apply grid alignment to the found position
+          return {
+            x: this.alignToGrid(position.x),
+            y: position.y
+          };
         }
       }
     }
