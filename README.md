@@ -14,16 +14,24 @@ This Model Context Protocol (MCP) server connects AI assistants to WinCC OA SCAD
 - 
 ## ⚠️ Warning
 
-**This tool can modify datapoint values in your WinCC OA system.** Changes made through this MCP server directly affect your SCADA system and connected industrial processes. Use at your own risk and ensure proper testing in a safe environment before deploying to production systems.
+**This tool can modify your WinCC OA system configuration and runtime data.** Changes made through this MCP server directly affect your SCADA system and connected industrial processes. Use at your own risk and ensure proper testing in a safe environment before deploying to production systems.
 
-**To prevent write operations**, exclude these tools from your configuration:
-- `datapoints/dp_set` - Allows writing values to datapoints
-- `datapoints/dp_create` - Allows creating new datapoints
+**To prevent write operations to SCADA configuration and runtime data**, exclude these tool categories from your configuration:
+- **Datapoints**: `datapoints/dp_set`, `datapoints/dp_create`, `datapoints/dp_type_create`
+- **Alarms**: `alarms/alarm_set`, `alarms/alarm_delete`
+- **Archives**: `archive/archive_set`, `archive/archive_delete`
+- **Common Config**: `common/common_set`, `common/common_delete`
+- **PV Ranges**: `pv_range/pv_range_set`, `pv_range/pv_range_delete`
+- **Managers**: `manager/manager_control`, `manager/manager_add`, `manager/manager_remove`, `manager/manager_properties`
+- **Dashboards**: `dashboards/dashboard`, `dashboards/widget`
+- **OPC UA**: `opcua/opcua_connection`, `opcua/opcua_address`
+
+**Note**: Icon tools (`icons/icon`) create/delete SVG files but don't modify SCADA data.
 
 Example read-only configuration:
 ```env
 # Only include read operations
-TOOLS=datapoints/dp_basic,datapoints/dp_types
+TOOLS=datapoints/dp_basic,datapoints/dp_types,archive/archive_query,common/common_query,pv_range/pv_range_query,manager/manager_list,opcua/opcua_connection
 ```
 
 ## Prerequisites
@@ -87,8 +95,18 @@ MCP_API_TOKEN=your-secure-token-here
 # Choose industry context
 WINCCOA_FIELD=default  # or 'oil', 'transport'
 
-# Configure available tools  
-TOOLS=datapoints/dp_basic,datapoints/dp_set,datapoints/dp_types
+# Configure available tools (examples - see docs/TOOLS.md for complete list)
+# Full feature set
+TOOLS=datapoints/dp_basic,datapoints/dp_set,opcua/opcua_connection,dashboards/dashboard,manager/manager_list
+
+# Dashboard-focused setup
+# TOOLS=datapoints/dp_basic,dashboards/dashboard,dashboards/widget,icons/icon
+
+# Manager control setup
+# TOOLS=manager/manager_list,manager/manager_control,manager/manager_add
+
+# Read-only monitoring
+# TOOLS=datapoints/dp_basic,archive/archive_query,alarms/alarm_query,manager/manager_list
 ```
 
 ### 3. Start Server
@@ -150,11 +168,25 @@ This method uses `cmd` to properly handle paths with spaces in Windows.
 
 ## Features
 
-✅ **Secure API** - Token-based authentication  
-✅ **Industry Templates** - Pre-configured for Oil & Gas, Transportation  
-✅ **Custom Tools** - Extend with your own WinCC OA integrations  
-✅ **Project Rules** - Plant-specific AI guidance  
-✅ **Dynamic Loading** - Configure only needed tools  
+✅ **Secure API** - Token-based authentication
+✅ **Industry Templates** - Pre-configured for Oil & Gas, Transportation
+✅ **Custom Tools** - Extend with your own WinCC OA integrations
+✅ **Project Rules** - Plant-specific AI guidance
+✅ **Dynamic Loading** - Configure only needed tools
+
+### Available Tool Categories
+
+- **📊 Datapoints** - Read, write, and create datapoints and types
+- **🔗 OPC UA** - Connect to OPC UA servers and browse address spaces
+- **📈 Dashboards & Widgets** - Create and manage visualization dashboards
+- **🚨 Alarms** - Configure alarm thresholds and notifications
+- **📁 Archives** - Query and configure historical data storage
+- **⚙️ Manager Control** - Start, stop, and manage WinCC OA processes (Pmon)
+- **🔧 Common Config** - Set descriptions, aliases, formats, and units
+- **✓ PV Range Validation** - Define min/max value ranges
+- **🎨 Icons** - Create custom SVG icons and browse 1,400+ built-in Siemens IX icons
+
+See **[🔧 TOOLS.md](docs/TOOLS.md)** for complete tool documentation.  
 
 ## Support
 
