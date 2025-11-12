@@ -26,3 +26,4 @@ echo "🔄 Copying system prompt..."
 cp src/systemprompt.md build/
 
 echo "✅ Build completed successfully!"
+echo "✅ All files compiled from TypeScript to JavaScript"
