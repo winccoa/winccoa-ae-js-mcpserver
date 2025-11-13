@@ -67,8 +67,8 @@ Before creating releases, ensure the npm token is configured:
 
 ### 2. npm Organization Access
 
-Ensure your npm account has permissions to publish under the `@etm` scope:
-- Contact npm to join the `@etm` organization, or
+Ensure your npm account has permissions to publish under the `@etm-professional-control` scope:
+- Contact npm to join the `@etm-professional-control` organization, or
 - Change the package name in `mcpWinCCOA/package.json` to use your own scope
 
 ## Release Workflow
@@ -123,13 +123,13 @@ Ensure your npm account has permissions to publish under the `@etm` scope:
    - Check for any errors in the build process
 
 2. **Verify npm publication**:
-   - Check https://www.npmjs.com/package/@etm/winccoa-mcp-server
+   - Check https://www.npmjs.com/package/@etm-professional-control/winccoa-mcp-server
    - Verify new version appears within 1-2 minutes
 
 3. **Download and test**:
    ```bash
    # Test global installation
-   npm install -g @etm/winccoa-mcp-server@latest
+   npm install -g @etm-professional-control/winccoa-mcp-server@latest
    winccoa-mcp-stdio --help
    ```
 
@@ -162,7 +162,7 @@ The GitHub Action performs these steps:
 ## File Structure After Build
 
 ```
-@etm/winccoa-mcp-server/
+@etm-professional-control/winccoa-mcp-server/
 ├── build/                    # Compiled JavaScript
 │   ├── index_stdio.js       # Main STDIO entry point
 │   ├── index_http.js        # HTTP server entry point
@@ -236,7 +236,7 @@ For critical bugs:
 
 ```bash
 # Only possible within 24 hours and if no dependents
-npm unpublish @etm/winccoa-mcp-server@1.2.3
+npm unpublish @etm-professional-control/winccoa-mcp-server@1.2.3
 ```
 
 Better approach: Publish fixed version immediately

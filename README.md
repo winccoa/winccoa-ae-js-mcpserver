@@ -26,6 +26,10 @@ Example read-only configuration:
 TOOLS=datapoints/dp_basic,datapoints/dp_types
 ```
 
+## ℹ️ Version Requirements
+
+**Dashboard Tools Requirement:** The dashboard-related tools require **WinCC OA version 3.21 or higher**. If you are using an earlier version of WinCC OA, these tools will not be available. Other tools and features will continue to work with earlier versions.
+
 ## Prerequisites
 
 This MCP server requires an AI tool that supports Model Context Protocol (MCP) servers. It works with any AI tool that has MCP support. For instructions on how to configure an MCP server in your specific AI tool, please refer to your tools documentation.
