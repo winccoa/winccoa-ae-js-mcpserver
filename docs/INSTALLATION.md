@@ -26,7 +26,7 @@ cd mcpServer
 
 ```bash
 # Install the MCP server package (automatic extraction)
-npm install @etm/winccoa-mcp-server
+npm install @etm-professional-control/winccoa-mcp-server
 ```
 
 **Note for Windows users:** You may need to run Command Prompt as Administrator for npm install commands.
