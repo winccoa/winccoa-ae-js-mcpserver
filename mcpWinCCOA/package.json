@@ -15,7 +15,6 @@
     "start:http": "node build/index_http.js",
     "dev": "tsc && npm start"
   },
-
   "keywords": [
     "mcp",
     "winccoa",
@@ -55,7 +54,9 @@
     }
   },
   "devDependencies": {
-    "@types/node": "^18.0.0",
-    "typescript": "^5.8.3"
+    "@types/express": "^5.0.3",
+    "@types/node": "^18.19.129",
+    "typescript": "^5.8.3",
+    "winccoa-manager": "file:C:/Program Files/Siemens/WinCC_OA/3.21/javascript/winccoa-manager"
   }
 }

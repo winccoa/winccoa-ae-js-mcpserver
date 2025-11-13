@@ -1,10 +1,10 @@
+#!/usr/bin/env node
 /*******************************************************/
 /*                                                     */
 /*   This file was initially creates by Martin Kumhera */
 /*   and extended by AI with CNS (UNS) functions!     */
 /*                                                     */
 /*******************************************************/
-
 
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { initializeServer } from './server.js';
@@ -18,14 +18,13 @@ try {
   console.log('dotenv not available, using environment variables directly');
 }
 
-
-async function main() {
+async function main(): Promise<void> {
   const server = await initializeServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
 
-main().catch((error) => {
+main().catch((error: Error) => {
   console.error("Fatal error in main():", error);
   process.exit(1);
 });

@@ -12,6 +12,15 @@ const installDir = process.env.INIT_CWD || process.cwd();
 const nodeModulesPath = path.join(installDir, 'node_modules', packageName);
 const srcPath = path.join(nodeModulesPath, 'src');
 
+// Skip postinstall if running inside the package itself (development mode)
+// Check if we're in the package directory by comparing with process.cwd()
+const isDevMode = !fs.existsSync(nodeModulesPath) || process.cwd() === installDir;
+
+if (isDevMode) {
+  console.log('Development mode detected - skipping postinstall.');
+  console.log('Use "npm run build" to build the TypeScript sources.');
+  process.exit(0);
+}
 
 console.log(`Installing WinCC OA MCP Server files to: ${installDir}`);
 console.log(`Package location: ${nodeModulesPath}`);
