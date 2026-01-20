@@ -1,0 +1,38 @@
+name: Claude Code Bot
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  claude-fix:
+    # Trigger only when the 'claude-code' label is added
+    if: github.event.label.name == 'claude-code'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Allows Claude to see git history if needed
+
+      - name: Claude Code Action
+        uses: anthropic-ai/claude-code-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # This connects to your Claude subscription
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          instructions: |
+            You are an automated developer agent. 
+            Solve the issue: #${{ github.event.issue.number }}
+            Title: ${{ github.event.issue.title }}
+            Description: ${{ github.event.issue.body }}
+            
+            Requirements:
+            1. Create a new branch named 'claude/fix-issue-${{ github.event.issue.number }}'.
+            2. Implement the fix or feature described.
+            3. Run any existing tests to ensure no regressions.
+            4. Open a Pull Request back to the default branch.
