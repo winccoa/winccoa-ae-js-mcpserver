@@ -26,30 +26,49 @@ export function registerTools(server: any, context: ServerContext): number {
   const mqtt = new MqttConnection();
 
   // ============================================================================
-  // Tool 1: Add MQTT Connection (Unsecure)
+  // Tool 1: Add MQTT Connection (unified for all connection types)
   // ============================================================================
   server.tool(
     "mqtt-add-connection",
     `Creates and configures a new MQTT client connection to an MQTT broker.
 
-    This tool establishes an UNSECURE connection (no TLS) to an MQTT broker.
-    For secure connections with TLS or username/password, use mqtt-add-connection-auth.
-
     Connection Naming:
     Connection names are automatically generated: _MqttConnection1, _MqttConnection2, etc.
 
+    Connection Types:
+    - 1: Unsecure (TCP, default port 1883) - default
+    - 2: TLS (default port 8883)
+    - 3: WebSocket
+    - 4: TLS-PSK
+
+    Usage Examples:
+    - Simple unsecure: host + port
+    - Unsecure with auth: host + port + username + password
+    - TLS without auth: host + port + connectionType=2 + certificate
+    - TLS with auth: host + port + connectionType=2 + certificate + username + password
+    - TLS-PSK: host + port + connectionType=4 + pskIdentity + psk
+
     Required parameters:
     - host: Hostname or IP address of the MQTT broker
-    - port: Port number (default: 1883 for unsecure)
+    - port: Port number (default: 1883)
 
     Optional parameters:
+    - connectionType: 1=Unsecure, 2=TLS, 3=WebSocket, 4=TLS-PSK (default: 1)
+    - username: Username for authentication
+    - password: Encrypted password (WinCC OA encrypted blob string)
+    - certificate: Broker/Root-CA certificate path for TLS (required for connectionType=2). Relative to data/mqtt/cert/
+    - clientCertificate: Client certificate path for mutual TLS. Relative to data/mqtt/cert/
+    - clientKey: Client private key path for mutual TLS. Relative to data/mqtt/cert/
+    - clientCertPassword: Password for client certificate (encrypted WinCC OA blob)
+    - pskIdentity: PSK Identity for TLS-PSK (required for connectionType=4)
+    - psk: Pre-Shared Key for TLS-PSK (required for connectionType=4, encrypted)
     - managerNumber: WinCC OA MQTT driver number (1-99). If not specified, uses the lowest available MQTT driver.
     - keepAliveInterval: Keep alive interval in seconds (default: 20)
     - reconnectInterval: Reconnect interval in seconds (default: 20)
     - persistentSession: Use persistent MQTT session (default: true)
     - enableConnection: Enable connection immediately (default: true)
     - clientId: Custom client ID (auto-generated if not provided)
-    - jsonProfiles: Array of JSON profile strings for value transformation. Each profile maps WinCC OA attributes to JSON keys.
+    - jsonProfiles: Array of JSON profile strings for value transformation.
       Examples:
       - Value only: {"name":"Value","_value":"Value"}
       - Value & Timestamp: {"name":"Value & Timestamp","_value":"Value","_stime":"Time"}
@@ -64,143 +83,50 @@ export function registerTools(server: any, context: ServerContext): number {
         .max(65535)
         .default(1883)
         .describe("Port number (default: 1883)"),
-      managerNumber: z
-        .number()
-        .min(1)
-        .max(99)
-        .optional()
-        .describe("WinCC OA MQTT driver number (1-99). If not specified, uses lowest available MQTT driver."),
-      keepAliveInterval: z
-        .number()
-        .positive()
-        .optional()
-        .describe("Keep alive interval in seconds (default: 20)"),
-      reconnectInterval: z
-        .number()
-        .positive()
-        .optional()
-        .describe("Reconnect interval in seconds (default: 20)"),
-      persistentSession: z
-        .boolean()
-        .optional()
-        .describe("Use persistent MQTT session (default: true)"),
-      enableConnection: z
-        .boolean()
-        .optional()
-        .describe("Enable connection immediately (default: true)"),
-      clientId: z
-        .string()
-        .optional()
-        .describe("Custom client ID (auto-generated if not provided)"),
-      jsonProfiles: z
-        .array(z.string())
-        .optional()
-        .describe("JSON profiles for value transformation (array of JSON strings)"),
-    },
-    async (params: any) => {
-      try {
-        console.log("Adding MQTT connection (unsecure):", params);
-
-        const result = await mqtt.addConnection({
-          connectionType: MqttConnectionType.Unsecure,
-          connectionString: `${params.host}:${params.port}`,
-          managerNumber: params.managerNumber,
-          keepAliveInterval: params.keepAliveInterval,
-          reconnectInterval: params.reconnectInterval,
-          persistentSession: params.persistentSession,
-          enableConnection: params.enableConnection,
-          clientId: params.clientId,
-          jsonProfiles: params.jsonProfiles,
-        });
-
-        if (!result.success) {
-          return createErrorResponse(
-            `Failed to add MQTT connection: ${result.error}`,
-          );
-        }
-
-        console.log(
-          `Successfully created MQTT connection: ${result.connectionName}`,
-        );
-        return createSuccessResponse({
-          connectionName: result.connectionName,
-          broker: `${params.host}:${params.port}`,
-          managerNumber: params.managerNumber ?? "auto-detected",
-          connectionType: "Unsecure",
-          message: "MQTT connection created and configured successfully",
-        });
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        console.error("Error adding MQTT connection:", error);
-        return createErrorResponse(
-          `Failed to add MQTT connection: ${errorMessage}`,
-        );
-      }
-    },
-  );
-
-  // ============================================================================
-  // Tool 2: Add MQTT Connection with Authentication
-  // ============================================================================
-  server.tool(
-    "mqtt-add-connection-auth",
-    `Creates and configures a new MQTT client connection with username/password authentication.
-
-    This tool establishes an UNSECURE connection with username/password authentication.
-    For TLS encryption, set connectionType to 2 (TLS).
-
-    Connection Types:
-    - 1: Unsecure (TCP, default port 1883)
-    - 2: TLS (default port 8883)
-    - 3: WebSocket
-    - 4: TLS-PSK
-
-    Required parameters:
-    - host: Hostname or IP address of the MQTT broker
-    - port: Port number
-    - username: Username for authentication
-    - password: Password for authentication
-
-    Optional parameters:
-    - managerNumber: WinCC OA MQTT driver number (1-99). If not specified, uses the lowest available MQTT driver.
-    - connectionType: 1=Unsecure, 2=TLS, 3=WebSocket, 4=TLS-PSK (default: 1)
-    - certificate: Broker certificate file for TLS (required for connectionType 2)
-    - keepAliveInterval: Keep alive interval in seconds (default: 20)
-    - reconnectInterval: Reconnect interval in seconds (default: 20)
-    - persistentSession: Use persistent MQTT session (default: true)
-    - enableConnection: Enable connection immediately (default: true)
-    - clientId: Custom client ID (auto-generated if not provided)
-    - jsonProfiles: Array of JSON profile strings for value transformation. Each profile maps WinCC OA attributes to JSON keys.
-      Examples:
-      - Value only: {"name":"Value","_value":"Value"}
-      - Value & Timestamp: {"name":"Value & Timestamp","_value":"Value","_stime":"Time"}
-      - Value, Timestamp & Status: {"name":"Value, Timestamp & Status","_value":"Value","_status64":"Status","_stime":"Time"}
-
-    Returns: The auto-generated connection name on success.`,
-    {
-      host: z.string().describe("Hostname or IP address of the MQTT broker"),
-      port: z.number().min(1).max(65535).describe("Port number"),
-      managerNumber: z
-        .number()
-        .min(1)
-        .max(99)
-        .optional()
-        .describe("WinCC OA MQTT driver number (1-99). If not specified, uses lowest available MQTT driver."),
-      username: z.string().describe("Username for authentication"),
-      password: z.string().describe("Encrypted password for authentication (WinCC OA encrypted blob string)"),
       connectionType: z
         .number()
         .min(1)
         .max(4)
         .optional()
-        .describe(
-          "Connection type: 1=Unsecure, 2=TLS, 3=WebSocket, 4=TLS-PSK (default: 1)",
-        ),
+        .describe("Connection type: 1=Unsecure (default), 2=TLS, 3=WebSocket, 4=TLS-PSK"),
+      username: z
+        .string()
+        .optional()
+        .describe("Username for authentication"),
+      password: z
+        .string()
+        .optional()
+        .describe("Encrypted password (WinCC OA encrypted blob string)"),
       certificate: z
         .string()
         .optional()
-        .describe("Broker certificate file for TLS"),
+        .describe("Broker/Root-CA certificate path for TLS, relative to data/mqtt/cert/"),
+      clientCertificate: z
+        .string()
+        .optional()
+        .describe("Client certificate path for mutual TLS, relative to data/mqtt/cert/"),
+      clientKey: z
+        .string()
+        .optional()
+        .describe("Client private key path for mutual TLS, relative to data/mqtt/cert/"),
+      clientCertPassword: z
+        .string()
+        .optional()
+        .describe("Password for client certificate (encrypted WinCC OA blob)"),
+      pskIdentity: z
+        .string()
+        .optional()
+        .describe("PSK Identity for TLS-PSK (required for connectionType=4)"),
+      psk: z
+        .string()
+        .optional()
+        .describe("Pre-Shared Key for TLS-PSK (encrypted, required for connectionType=4)"),
+      managerNumber: z
+        .number()
+        .min(1)
+        .max(99)
+        .optional()
+        .describe("WinCC OA MQTT driver number (1-99). If not specified, uses lowest available MQTT driver."),
       keepAliveInterval: z
         .number()
         .positive()
@@ -230,15 +156,24 @@ export function registerTools(server: any, context: ServerContext): number {
     },
     async (params: any) => {
       try {
-        console.log("Adding MQTT connection with auth:", params);
+        console.log("Adding MQTT connection:", params);
 
         const connType = params.connectionType ?? MqttConnectionType.Unsecure;
 
         // Validate TLS requires certificate
         if (connType === MqttConnectionType.TLS && !params.certificate) {
           return createErrorResponse(
-            "Certificate is required for TLS connections",
+            "Certificate is required for TLS connections (connectionType=2)",
           );
+        }
+
+        // Validate TLS-PSK requires pskIdentity and psk
+        if (connType === MqttConnectionType.TLS_PSK) {
+          if (!params.pskIdentity || !params.psk) {
+            return createErrorResponse(
+              "pskIdentity and psk are required for TLS-PSK connections (connectionType=4)",
+            );
+          }
         }
 
         const result = await mqtt.addConnection({
@@ -248,6 +183,11 @@ export function registerTools(server: any, context: ServerContext): number {
           username: params.username,
           password: params.password,
           certificate: params.certificate,
+          clientCertificate: params.clientCertificate,
+          clientKey: params.clientKey,
+          clientCertPassword: params.clientCertPassword,
+          pskIdentity: params.pskIdentity,
+          psk: params.psk,
           keepAliveInterval: params.keepAliveInterval,
           reconnectInterval: params.reconnectInterval,
           persistentSession: params.persistentSession,
@@ -277,13 +217,13 @@ export function registerTools(server: any, context: ServerContext): number {
           broker: `${params.host}:${params.port}`,
           managerNumber: params.managerNumber ?? "auto-detected",
           connectionType: connTypeNames[connType] ?? "Unknown",
-          username: params.username,
-          message: "MQTT connection with authentication created successfully",
+          username: params.username ?? "(none)",
+          message: "MQTT connection created and configured successfully",
         });
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-        console.error("Error adding MQTT connection with auth:", error);
+        console.error("Error adding MQTT connection:", error);
         return createErrorResponse(
           `Failed to add MQTT connection: ${errorMessage}`,
         );
@@ -514,5 +454,5 @@ export function registerTools(server: any, context: ServerContext): number {
     },
   );
 
-  return 6;
+  return 5;
 }
