@@ -162,6 +162,33 @@ This method uses `cmd` to properly handle paths with spaces in Windows.
 - On Windows: Close Claude through the task-tray menu by selecting "Exit", or end the task in Task Manager if needed
 - On macOS/Linux: Quit Claude Desktop completely and restart
 
+**Remote Host:** When connecting to a remote WinCC OA server (not `localhost`), you must add the `--allow-http` flag to the `mcp-remote` args. Example:
+
+```json
+{
+  "mcpServers": {
+    "winccoa": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://winccoaserver:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE", "--allow-http"]
+    }
+  }
+}
+```
+
+### 5. Connect Claude Code (CLI)
+
+If you are using [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (the CLI), you can add the MCP server directly from your terminal:
+
+```bash
+claude mcp add --transport http winccoa http://localhost:3000/mcp --header "Authorization: Bearer your-secure-token-here"
+```
+
+**Remote Host:** When connecting to a remote WinCC OA server (not `localhost`), add the `--allow-http` flag:
+
+```bash
+claude mcp add --transport http winccoa http://winccoaserver:3000/mcp --header "Authorization: Bearer your-secure-token-here" --allow-http
+```
+
 ## Documentation
 
 - **[📦 Installation Guide](docs/INSTALLATION.md)** - Complete setup instructions
