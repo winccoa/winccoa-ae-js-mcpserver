@@ -1,7 +1,8 @@
 /**
- * Driver Connection Configuration Types
+ * Base Driver Connection Types
  *
- * Base types and specific configurations for different driver types.
+ * Generic types shared by all driver connections.
+ * Note: DpAddressConfig and DpDistribConfig are defined in winccoa/manager.ts
  */
 
 /**
@@ -14,68 +15,38 @@ export interface ConnectionConfig {
 }
 
 /**
- * OPC UA Security Policy
+ * Common connection state values (unified across drivers)
+ * Values < 256 = not connected, >= 256 = connected
  */
-export enum SecurityPolicy {
-  None = 0,
-  Basic128Rsa15 = 2,
-  Basic256 = 3,
-  Basic256Sha256 = 4,
-  Aes128Sha256RsaOaep = 5,
-  Aes256Sha256RsaPss = 6
+export enum CommonConnectionState {
+  /** Not initialized */
+  NotInitialized = -1,
+  /** Undefined state */
+  Undefined = 0,
+  /** Not connected */
+  NotConnected = 1,
+  /** Connecting in progress */
+  Connecting = 2,
+  /** Connection not active */
+  NotActive = 3,
+  /** Disconnecting in progress */
+  Disconnecting = 4,
+  /** Connection failure */
+  Failure = 5,
+  /** Waiting for reconnect */
+  WaitForReconnect = 9,
+  /** Connected (base value) */
+  Connected = 256,
+  /** Connected - First device, first connection active */
+  ConnectedFirstFirst = 257,
+  /** Connected - First device, second connection active */
+  ConnectedFirstSecond = 258,
+  /** Connected - Second device, first connection active */
+  ConnectedSecondFirst = 259,
+  /** Connected - Second device, second connection active */
+  ConnectedSecondSecond = 260,
+  /** General query running */
+  GeneralQueryRunning = 261,
+  /** Info query running */
+  InfoQueryRunning = 262
 }
-
-/**
- * OPC UA Message Security Mode
- */
-export enum MessageSecurityMode {
-  None = 0,
-  Sign = 1,
-  SignAndEncrypt = 2
-}
-
-/**
- * OPC UA Connection Configuration
- */
-export interface OpcUaConnectionConfig extends ConnectionConfig {
-  /** IP address of the OPC UA server */
-  ipAddress: string;
-
-  /** Port of the OPC UA server */
-  port: number;
-
-  /** Manager number of the OPC UA client (e.g., 4 for _OPCUA4) */
-  managerNumber: number;
-
-  /** Reconnect timer in seconds (default: 10) */
-  reconnectTimer?: number;
-
-  /** Security policy (default: None) */
-  securityPolicy?: SecurityPolicy;
-
-  /** Message security mode (default: None) */
-  messageSecurityMode?: MessageSecurityMode;
-
-  /** Username for authentication */
-  username?: string;
-
-  /** Password for authentication */
-  password?: string;
-
-  /** Client certificate name */
-  clientCertificate?: string;
-
-  /** Separator for display names (default: ".") */
-  separator?: string;
-}
-
-/**
- * Default values for OPC UA connections
- */
-export const OPCUA_DEFAULTS = {
-  reconnectTimer: 10,
-  securityPolicy: SecurityPolicy.None,
-  messageSecurityMode: MessageSecurityMode.None,
-  separator: '.',
-  enableConnection: true
-} as const;
