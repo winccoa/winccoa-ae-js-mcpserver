@@ -84,12 +84,59 @@ export class MqttConnection extends BaseConnection {
   }
 
   /**
-   * Get the lowest available MQTT driver number
-   * @returns Lowest MQTT driver number, or 1 if none found
+   * Get all used driver numbers (MQTT, simulation, other drivers)
+   * @returns Array of used driver numbers
+   */
+  async getUsedDriverNumbers(): Promise<number[]> {
+    try {
+      const pmonClient = new PmonClient();
+      const managerList = await pmonClient.getManagerList();
+
+      const usedNums: number[] = [];
+
+      for (const mgr of managerList) {
+        const mgrName = mgr.manager?.toLowerCase() ?? '';
+        // Check for any driver type (sim, mqtt, other drivers)
+        if (mgrName.includes('sim') || mgrName.includes('drv') || mgrName.includes('mqtt')) {
+          const cmdLine = mgr.commandlineOptions ?? '';
+          const numMatch = cmdLine.match(/-num\s+(\d+)/);
+          // If no -num specified, driver uses 1 by default
+          const drvNum = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) : 1;
+          if (!usedNums.includes(drvNum)) {
+            usedNums.push(drvNum);
+          }
+        }
+      }
+
+      return usedNums.sort((a, b) => a - b);
+    } catch (error) {
+      console.warn('Could not get used driver numbers from Pmon:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get the lowest available MQTT driver number (avoiding sim driver conflicts)
+   * @returns Lowest available driver number for MQTT
    */
   async getDefaultMqttDriverNumber(): Promise<number> {
-    const drvNums = await this.getMqttDriverNumbers();
-    return drvNums.length > 0 ? drvNums[0]! : 1;
+    const mqttNums = await this.getMqttDriverNumbers();
+
+    // If MQTT drivers exist, use the lowest one
+    if (mqttNums.length > 0) {
+      return mqttNums[0]!;
+    }
+
+    // No MQTT driver yet - find a free number avoiding sim driver
+    const usedNums = await this.getUsedDriverNumbers();
+
+    // Start at 1, find first unused number
+    let candidate = 1;
+    while (usedNums.includes(candidate) && candidate < 100) {
+      candidate++;
+    }
+
+    return candidate;
   }
 
   /**
@@ -112,6 +159,43 @@ export class MqttConnection extends BaseConnection {
       // Get current manager list
       const managerList = await pmonClient.getManagerList();
       const managerStatus = await pmonClient.getManagerStatus();
+
+      // Collect all used driver numbers (including sim drivers)
+      const usedDriverNumbers: number[] = [];
+      for (const mgr of managerList) {
+        const mgrName = mgr.manager?.toLowerCase() ?? '';
+        // Check for any driver type (sim, mqtt, etc.)
+        if (mgrName.includes('sim') || mgrName.includes('drv') || mgrName.includes('mqtt')) {
+          const cmdLine = mgr.commandlineOptions ?? '';
+          const numMatch = cmdLine.match(/-num\s+(\d+)/);
+          // If no -num specified, driver uses 1 by default
+          const drvNum = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) : 1;
+          usedDriverNumbers.push(drvNum);
+        }
+      }
+
+      // Check if simulation driver is using this number
+      for (const mgr of managerList) {
+        const mgrName = mgr.manager?.toLowerCase() ?? '';
+        if (mgrName.includes('sim')) {
+          const cmdLine = mgr.commandlineOptions ?? '';
+          const numMatch = cmdLine.match(/-num\s+(\d+)/);
+          const simNum = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) : 1;
+
+          if (simNum === managerNumber) {
+            // Find next available number
+            let suggestedNum = 2;
+            while (usedDriverNumbers.includes(suggestedNum) && suggestedNum < 100) {
+              suggestedNum++;
+            }
+            return {
+              success: false,
+              error: `Driver number ${managerNumber} is used by simulation driver. ` +
+                     `Use managerNumber: ${suggestedNum} instead.`
+            };
+          }
+        }
+      }
 
       // Find if MQTT driver with this number exists
       let driverFound = false;
