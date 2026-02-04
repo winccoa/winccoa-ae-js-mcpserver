@@ -378,6 +378,148 @@ This wraps the npx command in Windows Command Prompt, which correctly handles pa
    MCP_SSL_KEY_PATH=/absolute/path/to/key.pem
    ```
 
+## Tool-Specific Issues
+
+### OPC UA Integration Issues
+
+**"Connection not established" when browsing**
+
+**Symptoms:**
+- `opcua-browse` returns error about connection state
+- Error message mentions ConnState < 256
+
+**Solutions:**
+1. **Check connection status**
+   - Connection must have `Common.State.ConnState >= 256` (connected state)
+   - Use `get-datapoints` to check `_OpcUAConnection*.Common.State.ConnState`
+
+2. **Wait for connection establishment**
+   - OPC UA connections take time to establish after creation
+   - Wait 5-10 seconds after `opcua-add-connection` before browsing
+
+3. **Verify OPC UA server accessibility**
+   - Test endpoint URL is reachable from WinCC OA server
+   - Check firewall rules for OPC UA port (default 4840)
+
+**"Browse timeout" or slow responses**
+
+**Symptoms:**
+- Browse operations take >2 minutes
+- Requests time out with no results
+
+**Solutions:**
+1. **Use targeted browsing**
+   - Avoid browsing from root with large depth
+   - Browse specific branches instead of full address space
+
+2. **Understand node limits**
+   - Soft limit: 800 nodes (completes current branch)
+   - Hard limit: 1000 nodes (absolute stop)
+   - Use `offset`/`limit` parameters for pagination
+
+3. **Check OPC UA server performance**
+   - Some servers are slow to respond to browse requests
+   - Consider caching (5-minute cache is built-in)
+
+**"AddServer command failed"**
+
+**Symptoms:**
+- Connection creation succeeds but connection doesn't appear in driver
+- Error in OPC UA driver logs
+
+**Solutions:**
+1. **Verify OPC UA driver is running**
+   - Check manager list for active OPC UA driver
+   - Driver must be running to accept AddServer commands
+
+2. **Check manager number**
+   - Tool auto-detects manager number from existing connections
+   - Manual specification may be needed for first connection
+
+### Dashboard Tool Issues
+
+**"Dashboard tools not available"**
+
+**Symptoms:**
+- Dashboard/widget tools return errors
+- Tools don't appear in tool list
+
+**Solutions:**
+1. **Check WinCC OA version**
+   - Dashboard tools require **WinCC OA 3.21 or higher**
+   - Earlier versions do not support WebUI dashboard API
+
+2. **Verify tools are configured**
+   ```env
+   TOOLS=...,dashboards/dashboard,dashboards/widget
+   ```
+
+**"Widget overlap" or layout issues**
+
+**Symptoms:**
+- Widgets appear on top of each other
+- Layout doesn't match specified positions
+
+**Solutions:**
+1. **Use layout presets**
+   - Presets: "small", "medium", "large", "fullwidth"
+   - These handle positioning automatically
+
+2. **Manual positioning**
+   - Grid is 50 columns × 25 rows
+   - Specify `{x, y, cols, rows}` for custom layouts
+   - Ensure no overlap between widget areas
+
+3. **Recommended widget sizes**
+   - Gauge: 8×8
+   - Trend: 24×8
+   - Chart: 12×8
+
+### Manager Control Issues
+
+**"Pmon connection failed"**
+
+**Symptoms:**
+- Manager tools return connection errors
+- Cannot list or control managers
+
+**Solutions:**
+1. **Check Pmon configuration**
+   ```env
+   WINCCOA_PMON_HOST=localhost
+   WINCCOA_PMON_PORT=4999
+   ```
+
+2. **Verify Pmon is accessible**
+   - Pmon runs on TCP port 4999 by default
+   - Check firewall allows connection to Pmon port
+
+3. **Authentication issues**
+   - If Pmon requires authentication, configure:
+   ```env
+   WINCCOA_PMON_USER=username
+   WINCCOA_PMON_PASSWORD=password
+   ```
+
+**"Cannot start/stop manager"**
+
+**Symptoms:**
+- Start/stop commands return errors
+- Manager state doesn't change
+
+**Solutions:**
+1. **Check manager dependencies**
+   - Some managers depend on others (e.g., drivers need Event Manager)
+   - Start dependencies first
+
+2. **Verify manager exists**
+   - Use `list-managers` to see available managers
+   - Check manager index is valid (1-100)
+
+3. **Check start mode**
+   - Managers with `startMode: "manual"` won't auto-restart
+   - Managers with `startMode: "always"` restart automatically
+
 ## Known Limitations
 
 ### Transport Layer Security

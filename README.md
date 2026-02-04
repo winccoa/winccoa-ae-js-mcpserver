@@ -100,17 +100,17 @@ MCP_API_TOKEN=your-secure-token-here
 WINCCOA_FIELD=default  # or 'oil', 'transport'
 
 # Configure available tools (examples - see docs/TOOLS.md for complete list)
-# Full feature set
-TOOLS=datapoints/dp_basic,datapoints/dp_set,opcua/opcua_connection,dashboards/dashboard,manager/manager_list
+# Default: Read-only monitoring (safe starting point)
+TOOLS=datapoints/dp_basic,datapoints/dp_types,archive/archive_query,common/common_query,pv_range/pv_range_query,manager/manager_list
 
-# Dashboard-focused setup
+# Dashboard-focused setup (includes write operations)
 # TOOLS=datapoints/dp_basic,dashboards/dashboard,dashboards/widget,icons/icon
 
-# Manager control setup
+# Manager control setup (includes write operations)
 # TOOLS=manager/manager_list,manager/manager_control,manager/manager_add
 
-# Read-only monitoring
-# TOOLS=datapoints/dp_basic,archive/archive_query,alarms/alarm_query,manager/manager_list
+# Full feature set (includes all write operations - use with caution)
+# TOOLS=datapoints/dp_basic,datapoints/dp_set,opcua/opcua_connection,dashboards/dashboard,manager/manager_list
 ```
 
 ### 3. Start Server
