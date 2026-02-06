@@ -7,6 +7,7 @@
 
 import { BaseConnection } from './BaseConnection.js';
 import { PmonClient } from '../pmon/PmonClient.js';
+import { ManagerState } from '../../types/pmon/protocol.js';
 import type {
   MqttConnectionConfig,
   MqttAddressParams,
@@ -215,7 +216,7 @@ export class MqttConnection extends BaseConnection {
 
             // Check if running
             const statusEntry = managerStatus.managers.find(m => m.index === mgr.index);
-            driverRunning = statusEntry?.state === 2; // ManagerState.Running = 2
+            driverRunning = statusEntry?.state === ManagerState.Running;
             console.log(`✓ Found MQTT driver at index ${driverIndex}, running: ${driverRunning}`);
             break;
           }
@@ -666,7 +667,9 @@ export class MqttConnection extends BaseConnection {
       }> = [];
 
       for (const dpName of dpNames) {
-        // Skip redundant connections (ending with _2)
+        // In WinCC OA redundant systems, connection datapoints are duplicated
+        // with a "_2" suffix for the redundant partner. We skip these to avoid
+        // listing the same logical connection twice.
         if (dpName.endsWith('_2')) continue;
 
         try {
@@ -680,7 +683,8 @@ export class MqttConnection extends BaseConnection {
               connectionString = address.ConnectionString;
             }
           } catch (e) {
-            // Ignore parse errors
+            // Log warning for debugging - parse errors may indicate corrupt config
+            console.warn(`Warning: Could not parse address config for ${dpName}:`, e);
           }
 
           connections.push({

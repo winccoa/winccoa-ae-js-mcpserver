@@ -262,7 +262,7 @@ export interface MqttAddressParams {
   /** Retain flag for publishing (optional) */
   retain?: boolean;
 
-  /** Transformation type (default: PlainString = 1000) */
+  /** Transformation type (default: PlainString = 1001) */
   transformation?: MqttTransformation;
 
   /** Driver number (1-99). If not provided, auto-detected from connection. */

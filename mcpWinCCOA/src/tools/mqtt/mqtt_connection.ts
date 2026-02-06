@@ -100,15 +100,24 @@ export function registerTools(server: any, context: ServerContext): number {
       certificate: z
         .string()
         .optional()
-        .describe("Broker/Root-CA certificate path for TLS, relative to data/mqtt/cert/"),
+        .describe(
+          "Broker/Root-CA certificate path for TLS, relative to data/mqtt/cert/. " +
+          "Path is validated by WinCC OA driver."
+        ),
       clientCertificate: z
         .string()
         .optional()
-        .describe("Client certificate path for mutual TLS, relative to data/mqtt/cert/"),
+        .describe(
+          "Client certificate path for mutual TLS, relative to data/mqtt/cert/. " +
+          "Path is validated by WinCC OA driver."
+        ),
       clientKey: z
         .string()
         .optional()
-        .describe("Client private key path for mutual TLS, relative to data/mqtt/cert/"),
+        .describe(
+          "Client private key path for mutual TLS, relative to data/mqtt/cert/. " +
+          "Path is validated by WinCC OA driver."
+        ),
       clientCertPassword: z
         .string()
         .optional()
