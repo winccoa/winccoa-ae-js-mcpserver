@@ -208,14 +208,18 @@ Throws WinccoaError if:
 - Reference type (refName) does not exist`,
     {
       typeName: z.string().min(1, "typeName must be a non-empty string"),
-      structure: z
-        .object({
-          name: z.string(),
-          type: z.string(),
-          refName: z.string().optional(),
-          children: z.array(z.any()).optional()
-        })
-        .passthrough()
+      structure: z.object({
+        name: z.string().describe("Element name"),
+        type: z.string().describe("Element type (e.g., Struct, Int, Float, Bool, String)"),
+        refName: z.string().optional().describe("Reference type name for Typeref elements"),
+        children: z.array(
+          z.object({
+            name: z.string().describe("Child element name"),
+            type: z.string().describe("Child element type"),
+            refName: z.string().optional().describe("Reference type name")
+          }).passthrough()
+        ).optional().describe("Array of child elements (supports arbitrary nesting via passthrough)")
+      }).passthrough()
     },
     async ({ typeName, structure }: { typeName: string; structure: JsonDpTypeNode }) => {
       try {
