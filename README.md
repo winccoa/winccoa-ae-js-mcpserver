@@ -25,6 +25,7 @@ This Model Context Protocol (MCP) server connects AI assistants to WinCC OA SCAD
 - **Managers**: `manager/manager_control`, `manager/manager_add`, `manager/manager_remove`, `manager/manager_properties`
 - **Dashboards**: `dashboards/dashboard`, `dashboards/widget`
 - **OPC UA**: `opcua/opcua_connection`, `opcua/opcua_address`
+- **MQTT**: `mqtt/mqtt_connection`
 
 **Note**: Icon tools (`icons/icon`) create/delete SVG files but don't modify SCADA data.
 
@@ -100,6 +101,8 @@ MCP_API_TOKEN=your-secure-token-here
 WINCCOA_FIELD=default  # or 'oil', 'transport'
 
 # Configure available tools (examples - see docs/TOOLS.md for complete list)
+# Full feature set
+TOOLS=datapoints/dp_basic,datapoints/dp_set,opcua/opcua_connection,mqtt/mqtt_connection,dashboards/dashboard,manager/manager_list
 # Default: Read-only monitoring (safe starting point)
 TOOLS=datapoints/dp_basic,datapoints/dp_types,archive/archive_query,common/common_query,pv_range/pv_range_query,manager/manager_list
 
@@ -209,6 +212,7 @@ claude mcp add --transport http winccoa http://winccoaserver:3000/mcp --header "
 
 - **📊 Datapoints** - Read, write, and create datapoints and types
 - **🔗 OPC UA** - Connect to OPC UA servers and browse address spaces
+- **📡 MQTT** - Connect to MQTT brokers and map topics to datapoints
 - **📈 Dashboards & Widgets** - Create and manage visualization dashboards
 - **🚨 Alarms** - Configure alarm thresholds and notifications
 - **📁 Archives** - Query and configure historical data storage

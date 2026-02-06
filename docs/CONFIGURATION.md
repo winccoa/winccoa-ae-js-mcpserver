@@ -161,6 +161,7 @@ TOOLS=datapoints/dp_basic,datapoints/dp_create,datapoints/dp_set,datapoints/dp_t
 **Tool Categories:**
 - `datapoints/*` - Datapoint operations (dp_basic, dp_create, dp_set, dp_types, dp_type_create)
 - `opcua/*` - OPC UA connections (opcua_connection, opcua_address)
+- `mqtt/*` - MQTT broker connection and topic mapping
 - `alarms/*` - Alarm configuration (alarm_set, alarm_delete)
 - `archive/*` - Historical data (archive_query, archive_set, archive_delete)
 - `common/*` - Common attributes (common_query, common_set, common_delete)

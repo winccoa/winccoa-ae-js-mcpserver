@@ -10,3 +10,4 @@ log/
 *.xls
 *.presentations
 mcpWinCCOA/build
+mcpWinCCOA/.env
