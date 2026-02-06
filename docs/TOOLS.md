@@ -93,14 +93,13 @@ The MCP server provides tools that AI assistants can use to interact with WinCC 
   - Auto-detects manager number from connection
   - Creates poll groups automatically
 
-**Note:** When a new OPC UA connection is created using `opcua-add-connection`, the tool automatically triggers the `AddServer` command on the running OPC UA driver. This means the connection becomes immediately available without requiring a driver restart, making the workflow more seamless and automated.
-
-**`opcua/opcua_connection`** - Additional connection management
 - `opcua-delete-connection` - Completely delete an existing OPC UA client connection
   - Removes connection from manager's server list
   - Deletes connection datapoint
   - Auto-cleans up unused manager datapoints
   - Stops and removes OPC UA driver if no connections remain
+
+**Note:** When a new OPC UA connection is created using `opcua-add-connection`, the tool automatically triggers the `AddServer` command on the running OPC UA driver. This means the connection becomes immediately available without requiring a driver restart, making the workflow more seamless and automated.
 
 ### MQTT Tools
 

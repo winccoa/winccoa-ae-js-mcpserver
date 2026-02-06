@@ -135,6 +135,22 @@ WINCCOA_PROJECT_INSTRUCTIONS=./config/my-plant-rules.md
 - Reactor temp: 300-350°C
 ```
 
+### Pmon Configuration
+
+Configure connection to Pmon for manager control tools.
+
+```env
+# Pmon TCP connection (optional - defaults shown)
+WINCCOA_PMON_HOST=localhost
+WINCCOA_PMON_PORT=4999
+
+# Pmon authentication (optional - leave empty for no auth)
+WINCCOA_PMON_USER=
+WINCCOA_PMON_PASSWORD=
+```
+
+**Note:** Pmon configuration is only required when using manager tools (`manager/*`).
+
 ## Tool Configuration
 
 ```env
@@ -143,16 +159,23 @@ TOOLS=datapoints/dp_basic,datapoints/dp_create,datapoints/dp_set,datapoints/dp_t
 ```
 
 **Tool Categories:**
-- `datapoints/*` - Datapoint operations (basic, create, set, types)
-- `opcua/*` - OPC UA connection and address configuration
+- `datapoints/*` - Datapoint operations (dp_basic, dp_create, dp_set, dp_types, dp_type_create)
+- `opcua/*` - OPC UA connections (opcua_connection, opcua_address)
 - `mqtt/*` - MQTT broker connection and topic mapping
+- `alarms/*` - Alarm configuration (alarm_set, alarm_delete)
+- `archive/*` - Historical data (archive_query, archive_set, archive_delete)
+- `common/*` - Common attributes (common_query, common_set, common_delete)
+- `pv_range/*` - Value ranges (pv_range_query, pv_range_set, pv_range_delete)
+- `manager/*` - Process control (manager_list, manager_control, manager_add, manager_remove, manager_properties)
+- `dashboards/*` - Visualization (dashboard, widget)
+- `icons/*` - Icon management (icon)
 
 **Custom Tools:**
-Add your own tools by placing them in `tools/[category]/[name].js` and including `[category]/[name]` in the TOOLS list.
+Add your own tools by placing them in `tools/[category]/[name].ts` and including `[category]/[name]` in the TOOLS list.
 
 ## Example Configurations
 
-### Development Setup
+### Development Setup (Read-Only)
 
 ```env
 MCP_API_TOKEN=dev-token-12345
@@ -160,7 +183,7 @@ MCP_MODE=http
 MCP_HTTP_PORT=3000
 MCP_HTTP_HOST=127.0.0.1
 WINCCOA_FIELD=default
-TOOLS=datapoints/dp_basic,datapoints/dp_set
+TOOLS=datapoints/dp_basic,datapoints/dp_types,archive/archive_query,common/common_query,pv_range/pv_range_query,manager/manager_list
 RATE_LIMIT_ENABLED=false
 ```
 
@@ -168,12 +191,12 @@ RATE_LIMIT_ENABLED=false
 
 ```env
 MCP_API_TOKEN=prod-secure-token-67890
-MCP_MODE=http  
+MCP_MODE=http
 MCP_HTTP_PORT=3000
 MCP_HTTP_HOST=0.0.0.0
 WINCCOA_FIELD=oil
 WINCCOA_PROJECT_INSTRUCTIONS=./config/refinery-rules.md
-TOOLS=datapoints/dp_basic,datapoints/dp_create,datapoints/dp_set,datapoints/dp_types
+TOOLS=datapoints/dp_basic,datapoints/dp_create,datapoints/dp_set,datapoints/dp_types,opcua/opcua_connection,opcua/opcua_address,alarms/alarm_set,archive/archive_query,archive/archive_set,common/common_query,common/common_set
 RATE_LIMIT_ENABLED=true
 RATE_LIMIT_MAX=50
 IP_FILTER_ENABLED=true
