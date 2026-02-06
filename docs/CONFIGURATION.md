@@ -144,6 +144,8 @@ TOOLS=datapoints/dp_basic,datapoints/dp_create,datapoints/dp_set,datapoints/dp_t
 
 **Tool Categories:**
 - `datapoints/*` - Datapoint operations (basic, create, set, types)
+- `opcua/*` - OPC UA connection and address configuration
+- `mqtt/*` - MQTT broker connection and topic mapping
 
 **Custom Tools:**
 Add your own tools by placing them in `tools/[category]/[name].js` and including `[category]/[name]` in the TOOLS list.
