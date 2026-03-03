@@ -101,6 +101,83 @@ The MCP server provides tools that AI assistants can use to interact with WinCC 
 
 **Note:** When a new OPC UA connection is created using `opcua-add-connection`, the tool automatically triggers the `AddServer` command on the running OPC UA driver. This means the connection becomes immediately available without requiring a driver restart, making the workflow more seamless and automated.
 
+### MQTT Tools
+
+**`mqtt/mqtt_connection`** - MQTT broker connection and address management
+
+- `mqtt-add-connection` - Create and configure MQTT client connections to brokers
+  - **Connection naming:** Auto-generates sequential names (_MqttConnection1, _MqttConnection2, etc.)
+  - Automatically registers connection with running MQTT driver (no restart required)
+  - Creates necessary manager datapoints (_MQTT{num})
+  - Configures connection parameters (host, port, security, authentication)
+  - Returns the auto-generated connection name for use with other tools
+  - **Connection Types:**
+    - `1` = Unsecure (default)
+    - `2` = TLS
+    - `3` = WebSocket
+    - `4` = TLS-PSK
+  - **Parameters:**
+    - `host` - Hostname or IP address of the MQTT broker (required)
+    - `port` - Port number, default 1883 (required)
+    - `connectionType` - Connection type 1-4 (optional, default: 1)
+    - `username` - Username for authentication (optional)
+    - `password` - Password for authentication (must be pre-encrypted, optional)
+    - `certificate` - Path to broker/Root-CA certificate for TLS (optional)
+    - `clientCertificate` - Path to client certificate for mutual TLS (optional)
+    - `clientKey` - Path to client private key for mutual TLS (optional)
+    - `pskIdentity` - PSK identity for TLS-PSK authentication (optional)
+    - `psk` - Pre-shared key for TLS-PSK authentication (optional)
+    - `managerNumber` - MQTT driver number 1-99 (optional, auto-detected)
+    - `keepAliveInterval` - Keep-alive interval in seconds (optional)
+    - `reconnectInterval` - Reconnect interval in seconds (optional)
+    - `persistentSession` - Use persistent session (optional, default: true)
+    - `enableConnection` - Enable connection immediately (optional, default: true)
+    - `clientId` - Custom client ID (optional, auto-generated if not provided)
+    - `jsonProfiles` - Array of JSON transformation profiles (optional)
+  - **Note:** Certificate paths are relative to `data/mqtt/cert/` in the WinCC OA project directory
+
+- `mqtt-delete-connection` - Delete an existing MQTT connection
+  - Disables connection before deletion
+  - Removes connection datapoint
+  - **Parameters:**
+    - `connectionName` - Name of the MQTT connection to delete (required)
+
+- `mqtt-list-connections` - List all configured MQTT connections with their states
+  - Returns: name, state, broker address (host:port)
+  - **Connection States:**
+    - `0` = Inactive
+    - `1` = Disconnected
+    - `2` = Connecting
+    - `3` = Connected
+    - `4` = Disconnecting
+    - `5` = Failure
+    - `6` = Listening
+  - **No parameters required**
+
+- `mqtt-get-connection-state` - Get current state of a specific MQTT connection
+  - Returns detailed connection state information
+  - **Parameters:**
+    - `connectionName` - Name of the MQTT connection (required)
+
+- `mqtt-add-address` - Configure MQTT peripheral address for a datapoint element
+  - Links datapoint elements to MQTT topics for publish/subscribe
+  - Auto-detects manager number from connection
+  - **Parameters:**
+    - `dpeName` - Full datapoint element name (required)
+    - `topic` - MQTT topic (required)
+    - `connectionName` - MQTT connection name (required)
+    - `direction` - Communication direction (required)
+      - `1` = Publish (output)
+      - `2` = Subscribe (input)
+      - `6` = Both (publish and subscribe)
+    - `transformation` - Data transformation type (optional, default: 1001)
+      - `1001` = PlainString
+      - `1002` = JsonValue
+      - `1003` = JsonValueTimestamp
+      - `1004` = JsonValueTimestampStatus
+    - `driverNumber` - MQTT driver number (optional, auto-detected)
+    - `oldNewComparison` - Enable old/new value comparison (optional, default: true)
+
 ### Alarm Tools
 
 **`alarms/alarm_set`** - Configure alarm thresholds
@@ -433,6 +510,12 @@ TOOLS=manager/manager_list,manager/manager_control,manager/manager_add,manager/m
 
 # OPC UA integration (recommended: include both for full OPC UA support)
 TOOLS=opcua/opcua_connection,opcua/opcua_address,datapoints/dp_basic
+
+# MQTT integration
+TOOLS=mqtt/mqtt_connection,datapoints/dp_basic
+
+# OPC UA + MQTT integration
+TOOLS=opcua/opcua_connection,opcua/opcua_address,mqtt/mqtt_connection,datapoints/dp_basic
 
 # Alarm and archive configuration
 TOOLS=datapoints/dp_basic,alarms/alarm_set,alarms/alarm_delete,archive/archive_set,archive/archive_delete

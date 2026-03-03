@@ -13,9 +13,15 @@ export * from './winccoa/datapoint.js';
 export * from './winccoa/manager.js';
 export * from './winccoa/constants.js';
 
-// Driver Types
+// Driver Types - Base
 export * from './drivers/connection.js';
-export * from './drivers/browse.js';
+
+// Driver Types - OPC UA
+export * from './drivers/opcua.js';
+export * from './drivers/opcua_browse.js';
+
+// Driver Types - MQTT
+export * from './drivers/mqtt.js';
 
 // Server Types
 export * from './server/context.js';

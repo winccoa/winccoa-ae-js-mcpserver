@@ -5,18 +5,18 @@
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { WinccoaManager } from 'winccoa-manager';
-import { loadAllTools } from './tool_loader.js';
-import { readFileSync } from 'fs';
-import fs from 'fs/promises';
-import path from 'path';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import type { ServerContext } from './types/index.js';
+import { WinccoaManager } from "winccoa-manager";
+import { loadAllTools } from "./tool_loader.js";
+import { readFileSync } from "fs";
+import fs from "fs/promises";
+import path from "path";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import type { ServerContext } from "./types/index.js";
 
 let winccoa: WinccoaManager | null = null;
 let fieldContent: string | null = null;
-let activeFieldName = 'default';
+let activeFieldName = "default";
 let projectContent: string | null = null;
 let systemPrompt: string | null = null;
 
@@ -28,15 +28,15 @@ function loadSystemPrompt(): string | null {
   try {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
-    const systemPromptPath = join(__dirname, 'systemprompt.md');
+    const systemPromptPath = join(__dirname, "systemprompt.md");
 
-    console.log('🔄 Loading system prompt from:', systemPromptPath);
-    const content = readFileSync(systemPromptPath, 'utf8');
-    console.log('✅ System prompt loaded successfully');
+    console.log("🔄 Loading system prompt from:", systemPromptPath);
+    const content = readFileSync(systemPromptPath, "utf8");
+    console.log("✅ System prompt loaded successfully");
     return content;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.warn('⚠️ Could not load system prompt:', errorMessage);
+    console.warn("⚠️ Could not load system prompt:", errorMessage);
     return null;
   }
 }
@@ -49,18 +49,18 @@ function loadSystemPrompt(): string | null {
 async function loadFieldContent(fieldName: string): Promise<string> {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
-  const fieldPath = path.join(__dirname, 'fields', `${fieldName}.md`);
+  const fieldPath = path.join(__dirname, "fields", `${fieldName}.md`);
 
   try {
     // Read the field file
-    const content = await fs.readFile(fieldPath, 'utf8');
+    const content = await fs.readFile(fieldPath, "utf8");
     console.log(`Loaded field content: ${fieldName}`);
     return content;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`Error loading field ${fieldName}:`, errorMessage);
     // Return default content if field not found
-    return '# Default Configuration\n\nNo specific field instructions available.';
+    return "# Default Configuration\n\nNo specific field instructions available.";
   }
 }
 
@@ -72,7 +72,9 @@ async function loadProjectContent(): Promise<string | null> {
   const projectPath = process.env.WINCCOA_PROJECT_INSTRUCTIONS;
 
   if (!projectPath) {
-    console.log('No project configuration specified (WINCCOA_PROJECT_INSTRUCTIONS not set)');
+    console.log(
+      "No project configuration specified (WINCCOA_PROJECT_INSTRUCTIONS not set)",
+    );
     return null;
   }
 
@@ -81,13 +83,16 @@ async function loadProjectContent(): Promise<string | null> {
     const resolvedPath = path.resolve(projectPath);
 
     // Read the project file
-    const content = await fs.readFile(resolvedPath, 'utf8');
+    const content = await fs.readFile(resolvedPath, "utf8");
 
     console.log(`Loaded project content from: ${resolvedPath}`);
     return content;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`Error loading project configuration from ${projectPath}:`, errorMessage);
+    console.error(
+      `Error loading project configuration from ${projectPath}:`,
+      errorMessage,
+    );
     return null;
   }
 }
@@ -97,147 +102,166 @@ async function loadProjectContent(): Promise<string | null> {
  * @returns Configured MCP server
  */
 export async function initializeServer(): Promise<McpServer> {
-  console.log('🔄 Starting MCP server initialization...');
+  console.log("🔄 Starting MCP server initialization...");
 
   try {
     // Initialize WinCC OA manager
-    console.log('🔄 Initializing WinCC OA manager...');
+    console.log("🔄 Initializing WinCC OA manager...");
     winccoa = new WinccoaManager();
-    console.log('✅ WinCC OA manager initialized');
+    console.log("✅ WinCC OA manager initialized");
 
     // Get active field name
-    console.log('🔄 Getting active field...');
-    activeFieldName = process.env.WINCCOA_FIELD || 'default';
-    console.log('✅ Active field:', activeFieldName);
+    console.log("🔄 Getting active field...");
+    activeFieldName = process.env.WINCCOA_FIELD || "default";
+    console.log("✅ Active field:", activeFieldName);
 
     // Load field and project content
-    console.log('🔄 Loading field content...');
+    console.log("🔄 Loading field content...");
     fieldContent = await loadFieldContent(activeFieldName);
-    console.log('✅ Field content loaded');
+    console.log("✅ Field content loaded");
 
-    console.log('🔄 Loading project content...');
+    console.log("🔄 Loading project content...");
     projectContent = await loadProjectContent();
-    console.log('✅ Project content loaded:', projectContent ? 'YES' : 'NO');
+    console.log("✅ Project content loaded:", projectContent ? "YES" : "NO");
 
-    console.log('🔄 Loading system prompt...');
+    console.log("🔄 Loading system prompt...");
     systemPrompt = loadSystemPrompt();
-    console.log('✅ System prompt loaded:', systemPrompt ? 'SUCCESS' : 'NONE');
+    console.log("✅ System prompt loaded:", systemPrompt ? "SUCCESS" : "NONE");
 
     // Create server instance
-    console.log('🔄 Creating MCP server instance...');
+    console.log("🔄 Creating MCP server instance...");
     const server = new McpServer({
       name: "WinCC OA Extended with CNS/UNS",
       version: "3.0.0",
-      capabilities: {
-        resources: {
-          list: true,
-          read: true
-        },
-        tools: {}
-      }
     });
-    console.log('✅ MCP server instance created');
+    console.log("✅ MCP server instance created");
 
     // Create context object for sharing state
-    console.log('🔄 Creating context object...');
+    console.log("🔄 Creating context object...");
     const context: ServerContext = {
       winccoa,
-      fieldContent: fieldContent || '',
+      fieldContent: fieldContent || "",
       activeFieldName,
       projectContent,
-      systemPrompt
+      systemPrompt,
     };
-    console.log('✅ Context object created');
+    console.log("✅ Context object created");
 
     // Register resources for the 3 instruction levels
-    console.log('🔄 Registering resources...');
+    console.log("🔄 Registering resources...");
 
     // Resource: System prompt
     if (systemPrompt) {
-      server.resource("instructions://system", "System-level prompt and instructions", async () => {
-        return {
-          contents: [
-            {
-              uri: "instructions://system",
-              mimeType: "text/markdown",
-              text: systemPrompt!
-            }
-          ]
-        };
-      });
+      server.resource(
+        "instructions://system",
+        "System-level prompt and instructions",
+        async () => {
+          return {
+            contents: [
+              {
+                uri: "instructions://system",
+                mimeType: "text/markdown",
+                text: systemPrompt!,
+              },
+            ],
+          };
+        },
+      );
     }
 
     // Resource: Field instructions
-    server.resource("instructions://field", "Field-specific instructions", async () => {
-      return {
-        contents: [
-          {
-            uri: "instructions://field",
-            mimeType: "text/markdown",
-            text: fieldContent || ''
-          }
-        ]
-      };
-    });
-
-    // Resource: Project instructions
-    if (projectContent) {
-      server.resource("instructions://project", "Project-specific instructions", async () => {
+    server.resource(
+      "instructions://field",
+      "Field-specific instructions",
+      async () => {
         return {
           contents: [
             {
-              uri: "instructions://project",
+              uri: "instructions://field",
               mimeType: "text/markdown",
-              text: projectContent!
-            }
-          ]
+              text: fieldContent || "",
+            },
+          ],
         };
-      });
+      },
+    );
+
+    // Resource: Project instructions
+    if (projectContent) {
+      server.resource(
+        "instructions://project",
+        "Project-specific instructions",
+        async () => {
+          return {
+            contents: [
+              {
+                uri: "instructions://project",
+                mimeType: "text/markdown",
+                text: projectContent!,
+              },
+            ],
+          };
+        },
+      );
     }
 
     // Resource: Combined instructions (all 3 levels merged)
-    server.resource("instructions://combined", "All instructions combined (system + field + project)", async () => {
-      let combined = "";
+    server.resource(
+      "instructions://combined",
+      "All instructions combined (system + field + project)",
+      async () => {
+        let combined = "";
 
-      if (systemPrompt) {
-        combined += "# System Instructions\n\n" + systemPrompt + "\n\n---\n\n";
-      }
+        if (systemPrompt) {
+          combined +=
+            "# System Instructions\n\n" + systemPrompt + "\n\n---\n\n";
+        }
 
-      combined += "# Field Instructions (" + activeFieldName + ")\n\n" + (fieldContent || '');
+        combined +=
+          "# Field Instructions (" +
+          activeFieldName +
+          ")\n\n" +
+          (fieldContent || "");
 
-      if (projectContent) {
-        combined += "\n\n---\n\n# Project Instructions\n\n" + projectContent;
-        combined += "\n\n---\n\n## Note\nProject instructions take precedence over field instructions.";
-      }
+        if (projectContent) {
+          combined += "\n\n---\n\n# Project Instructions\n\n" + projectContent;
+          combined +=
+            "\n\n---\n\n## Note\nProject instructions take precedence over field instructions.";
+        }
 
-      return {
-        contents: [
-          {
-            uri: "instructions://combined",
-            mimeType: "text/markdown",
-            text: combined
-          }
-        ]
-      };
-    });
+        return {
+          contents: [
+            {
+              uri: "instructions://combined",
+              mimeType: "text/markdown",
+              text: combined,
+            },
+          ],
+        };
+      },
+    );
 
-    console.log('✅ Resources registered');
+    console.log("✅ Resources registered");
 
     // Load and register all tools
-    console.log('🔄 Loading and registering tools...');
+    console.log("🔄 Loading and registering tools...");
     await loadAllTools(server, context);
-    console.log('✅ Tools loaded and registered');
+    console.log("✅ Tools loaded and registered");
 
-    console.log(`✅ MCP Server initialized successfully. Active field: ${activeFieldName}`);
+    console.log(
+      `✅ MCP Server initialized successfully. Active field: ${activeFieldName}`,
+    );
     if (projectContent) {
-      console.log(`✅ Project configuration loaded from: ${process.env.WINCCOA_PROJECT_INSTRUCTIONS}`);
+      console.log(
+        `✅ Project configuration loaded from: ${process.env.WINCCOA_PROJECT_INSTRUCTIONS}`,
+      );
     }
 
     return server;
   } catch (error) {
-    console.error('❌ Error during MCP server initialization:', error);
+    console.error("❌ Error during MCP server initialization:", error);
     if (error instanceof Error) {
-      console.error('❌ Initialization error stack:', error.stack);
+      console.error("❌ Initialization error stack:", error.stack);
     }
     throw error;
   }
@@ -250,9 +274,9 @@ export async function initializeServer(): Promise<McpServer> {
 export function getContext(): ServerContext {
   return {
     winccoa: winccoa!,
-    fieldContent: fieldContent || '',
+    fieldContent: fieldContent || "",
     activeFieldName,
     projectContent,
-    systemPrompt
+    systemPrompt,
   };
 }
