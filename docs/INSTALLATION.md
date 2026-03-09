@@ -37,20 +37,29 @@ The WinCC OA JavaScript Manager is required but **not bundled** with the MCP ser
 
 ### 2.1 Locate Your WinCC OA Installation
 
-Find your WinCC OA installation directory (typically):
+Find your WinCC OA installation directory. The default path depends on the version:
+
+**WinCC OA 3.20:**
 - **Windows:** `C:/Siemens/Automation/WinCC_OA/3.20/`
 - **Linux:** `/opt/WinCC_OA/3.20/`
+
+**WinCC OA 3.21:**
+- **Windows:** `C:\Program Files\Siemens\WinCC_OA\3.21\`
+- **Linux:** `/opt/WinCC_OA/3.21/`
 
 ### 2.2 Install Manager Package
 
 Replace the path with your actual WinCC OA installation:
 
 ```bash
-# Windows example
+# Windows - WinCC OA 3.20 example
 npm install file:C:/Siemens/Automation/WinCC_OA/3.20/javascript/winccoa-manager
 
-# Linux example  
-npm install file:/opt/WinCC_OA/3.20/javascript/winccoa-manager
+# Windows - WinCC OA 3.21 example (note: path contains spaces, use quotes)
+npm install file:"C:\Program Files\Siemens\WinCC_OA\3.21\javascript\winccoa-manager"
+
+# Linux example
+npm install file:/opt/WinCC_OA/3.21/javascript/winccoa-manager
 ```
 
 ## Step 3: Basic Configuration
