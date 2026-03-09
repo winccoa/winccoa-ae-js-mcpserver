@@ -1,0 +1,30 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`OPC UA enum values (snapshot) > MessageSecurityMode values match snapshot 1`] = `
+{
+  "None": 0,
+  "Sign": 1,
+  "SignAndEncrypt": 2,
+}
+`;
+
+exports[`OPC UA enum values (snapshot) > SecurityPolicy values match snapshot 1`] = `
+{
+  "Aes128Sha256RsaOaep": 5,
+  "Aes256Sha256RsaPss": 6,
+  "Basic128Rsa15": 2,
+  "Basic256": 3,
+  "Basic256Sha256": 4,
+  "None": 0,
+}
+`;
+
+exports[`OPCUA_DEFAULTS (snapshot) > all default values match snapshot 1`] = `
+{
+  "enableConnection": true,
+  "messageSecurityMode": 0,
+  "reconnectTimer": 10,
+  "securityPolicy": 0,
+  "separator": ".",
+}
+`;

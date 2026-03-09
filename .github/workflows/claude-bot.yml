@@ -31,3 +31,10 @@ jobs:
           show_full_output: true
           additional_permissions: |
             Bash: ["npm install:*", "npm test:*", "npm run:*", "npx:*", "node:*"]
+
+      - name: Run Tests After Bot Changes
+        if: success()
+        working-directory: mcpWinCCOA
+        run: |
+          npm install --ignore-scripts
+          npm test
