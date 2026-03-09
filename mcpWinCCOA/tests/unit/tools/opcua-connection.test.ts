@@ -25,14 +25,19 @@ const mockBrowse = vi.hoisted(() =>
 );
 const mockDeleteConnection = vi.hoisted(() => vi.fn().mockResolvedValue(true));
 
-vi.mock('../../../src/helpers/drivers/OpcUaConnection.js', () => ({
-  OpcUaConnection: vi.fn().mockImplementation(() => ({
+vi.mock('../../../src/helpers/drivers/OpcUaConnection.js', () => {
+  const mockClass = vi.fn().mockImplementation(() => ({
     addConnection: mockAddConnection,
     browse: mockBrowse,
     deleteConnection: mockDeleteConnection,
     addAddressConfig: vi.fn().mockResolvedValue(true)
-  }))
-}));
+  }));
+
+  return {
+    default: mockClass,  // Add default export for tool file import
+    OpcUaConnection: mockClass
+  };
+});
 
 import { registerTools } from '../../../src/tools/opcua/opcua_connection.js';
 
