@@ -27,7 +27,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          branch_prefix: "claude/issue-${{ github.event.issue.number }}-"
+          branch_prefix: "claude/"
           show_full_output: true
           additional_permissions: |
             Bash: ["npm install:*", "npm test:*", "npm run:*", "npx:*", "node:*"]
