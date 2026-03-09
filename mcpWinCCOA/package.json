@@ -13,7 +13,10 @@
     "inspect": "npx @modelcontextprotocol/inspector",
     "start": "node build/index_stdio.js",
     "start:http": "node build/index_http.js",
-    "dev": "tsc && npm start"
+    "dev": "tsc && npm start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [
     "mcp",
@@ -56,7 +59,8 @@
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^18.19.129",
+    "@vitest/coverage-v8": "^2.0.0",
     "typescript": "^5.8.3",
-    "winccoa-manager": "file:C:/Program Files/Siemens/WinCC_OA/3.21/javascript/winccoa-manager"
+    "vitest": "^2.0.0"
   }
 }
