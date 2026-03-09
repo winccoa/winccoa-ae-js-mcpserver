@@ -144,9 +144,11 @@ describe('OpcUaConnection.addAddressConfig — error paths', () => {
   });
 
   it('throws when datatype is out of range (< 750)', async () => {
+    // _OPCUA4 must exist for manager validation to pass before the datatype check
     mock.dpExists.mockImplementation((name: string) =>
-      ['MyDP', '_OpcUAConnection1'].includes(name)
+      ['MyDP', '_OpcUAConnection1', '_OPCUA4'].includes(name)
     );
+    mock.dpGet.mockResolvedValue(['OpcUAConnection1']);
 
     await expect(
       opcua.addAddressConfig('MyDP.Value', '_OpcUAConnection1', 'ns=2;s=Test', 749, 4, true, 4)
@@ -154,9 +156,11 @@ describe('OpcUaConnection.addAddressConfig — error paths', () => {
   });
 
   it('throws when datatype is out of range (> 768)', async () => {
+    // _OPCUA4 must exist for manager validation to pass before the datatype check
     mock.dpExists.mockImplementation((name: string) =>
-      ['MyDP', '_OpcUAConnection1'].includes(name)
+      ['MyDP', '_OpcUAConnection1', '_OPCUA4'].includes(name)
     );
+    mock.dpGet.mockResolvedValue(['OpcUAConnection1']);
 
     await expect(
       opcua.addAddressConfig('MyDP.Value', '_OpcUAConnection1', 'ns=2;s=Test', 769, 4, true, 4)
