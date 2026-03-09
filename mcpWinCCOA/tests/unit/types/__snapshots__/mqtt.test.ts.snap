@@ -1,0 +1,89 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`MQTT enum values (snapshot) > MqttAddressDirection values match snapshot 1`] = `
+{
+  "Both": 6,
+  "Publish": 1,
+  "Subscribe": 2,
+}
+`;
+
+exports[`MQTT enum values (snapshot) > MqttConnectionState values match snapshot 1`] = `
+{
+  "Connected": 3,
+  "Connecting": 2,
+  "Disconnected": 1,
+  "Disconnecting": 4,
+  "Failure": 5,
+  "Inactive": 0,
+  "Listening": 6,
+}
+`;
+
+exports[`MQTT enum values (snapshot) > MqttConnectionType values match snapshot 1`] = `
+{
+  "TLS": 2,
+  "TLS_PSK": 4,
+  "Unsecure": 1,
+  "WebSocket": 3,
+}
+`;
+
+exports[`MQTT enum values (snapshot) > MqttProtocolVersion values match snapshot 1`] = `
+{
+  "Default": 0,
+  "V3_1": 3,
+  "V3_1_1": 4,
+  "V5_0": 5,
+}
+`;
+
+exports[`MQTT enum values (snapshot) > MqttQoS values match snapshot 1`] = `
+{
+  "AtLeastOnce": 1,
+  "AtMostOnce": 0,
+  "ExactlyOnce": 2,
+}
+`;
+
+exports[`MQTT enum values (snapshot) > MqttSslVersion values match snapshot 1`] = `
+{
+  "Any": 5,
+  "Default": 0,
+  "TLS_1_0": 2,
+  "TLS_1_0_OrLater": 8,
+  "TLS_1_1": 3,
+  "TLS_1_1_OrLater": 9,
+  "TLS_1_2": 4,
+  "TLS_1_2_OrLater": 10,
+  "TLS_1_3": 15,
+  "TLS_1_3_OrLater": 16,
+}
+`;
+
+exports[`MQTT enum values (snapshot) > MqttTransformation values match snapshot 1`] = `
+{
+  "JsonValue": 1002,
+  "JsonValueTimestamp": 1003,
+  "JsonValueTimestampStatus": 1004,
+  "PlainString": 1001,
+}
+`;
+
+exports[`MQTT_DEFAULTS (snapshot) > all default values match snapshot 1`] = `
+{
+  "connectionType": 1,
+  "enableConnection": true,
+  "enableStatistics": true,
+  "keepAliveInterval": 20,
+  "lastWillQoS": 0,
+  "lastWillRetain": false,
+  "persistentSession": true,
+  "protocolVersion": 0,
+  "reconnectInterval": 20,
+  "setInvalidBit": false,
+  "sslVersion": 0,
+  "timezoneOffset": 0,
+  "useUtc": true,
+}
+`;
