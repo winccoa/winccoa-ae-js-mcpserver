@@ -64,7 +64,18 @@ Then install the required packages:
 
 ```bash
 npm install @etm-professional-control/winccoa-mcp-server
+```
+
+Install the WinCC OA JavaScript Manager package from your local WinCC OA installation. The path depends on your WinCC OA version and installation:
+
+**WinCC OA 3.20** (default path):
+```bash
 npm install file:C:/Siemens/Automation/WinCC_OA/3.20/javascript/winccoa-manager
+```
+
+**WinCC OA 3.21** (default path):
+```cmd
+npm install file:"C:\Program Files\Siemens\WinCC_OA\3.21\javascript\winccoa-manager"
 ```
 
 ### 2. Configure
