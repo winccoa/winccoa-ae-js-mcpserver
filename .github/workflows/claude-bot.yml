@@ -4,9 +4,6 @@ on:
   # Trigger when someone comments @claude on an issue or PR
   issue_comment:
     types: [created]
-  # Also trigger when the 'claude-code' label is added
-  issues:
-    types: [labeled]
 
 jobs:
   claude-from-comment:
@@ -30,33 +27,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-
-  claude-from-label:
-    # Runs when the 'claude-code' label is added
-    if: >
-      github.event_name == 'issues' &&
-      github.event.label.name == 'claude-code'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      issues: write
-      pull-requests: write
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Claude Code Action
-        uses: anthropics/claude-code-action@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          branch_prefix: "claude/issue-${{ github.event.issue.number }}-"
+          show_full_output: true
           additional_permissions: |
-            Bash: ["git add:*", "git commit:*", "git push:*", "git status:*", "git diff:*", "git log:*", "git branch:*", "git checkout:*"]
-          prompt: |
-            Solve the issue: #${{ github.event.issue.number }}
-            Title: ${{ github.event.issue.title }}
-            Description: ${{ github.event.issue.body }}
-
-            Create a new branch, implement the fix, and open a Pull Request.
+            Bash: ["npm install:*", "npm test:*", "npm run:*", "npx:*", "node:*"]
