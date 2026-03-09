@@ -11,3 +11,5 @@ log/
 *.presentations
 mcpWinCCOA/build
 mcpWinCCOA/.env
+QUICKSTART.md
+.claude/settings.local.json
