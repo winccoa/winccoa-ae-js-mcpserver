@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mcpWinCCOA/package-lock.json
+
+      - name: Install dependencies
+        working-directory: mcpWinCCOA
+        # --ignore-scripts skips postinstall (which requires WinCC OA project context)
+        run: npm install --ignore-scripts
+
+      - name: Type check
+        working-directory: mcpWinCCOA
+        run: npx tsc --noEmit
+
+      - name: Run unit tests
+        working-directory: mcpWinCCOA
+        run: npm test
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mcpWinCCOA/package-lock.json
+
+      - name: Install dependencies
+        working-directory: mcpWinCCOA
+        run: npm install --ignore-scripts
+
+      - name: Run tests with coverage
+        working-directory: mcpWinCCOA
+        run: npm run test:coverage
