@@ -1,0 +1,22 @@
+{
+  "RepoName": "WinCC OA MCP Server",
+  "Keywords": [
+    "javascript",
+    "mcp",
+    "server",
+    "ai",
+    "llm",
+    "integration",
+    "automation",
+    "winccoa"
+  ],
+  "Version": "1.2.0",
+  "Description": "Provides an MCP server for WinCC OA, enabling AI assistants and compatible clients to interact with WinCC OA projects through structured tools, configuration, and HTTP-based integration.",
+  "OaVersions": "^3.20.0",
+  "Libraries": [
+    {
+      "Name": "mcpWinCCOA",
+      "Description": "Core MCP server component for connecting AI clients and external tools with WinCC OA through managed server-side integration."
+    }
+  ]
+}
