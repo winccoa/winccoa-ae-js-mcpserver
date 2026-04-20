@@ -18,8 +18,8 @@ export abstract class BaseConnection {
   /** WinCC OA manager instance */
   protected winccoa: WinccoaManager;
 
-  constructor() {
-    this.winccoa = new WinccoaManager();
+  constructor(winccoa?: any) {
+    this.winccoa = winccoa;
   }
 
   /**
@@ -133,27 +133,35 @@ export abstract class BaseConnection {
     distribConfig: DpDistribConfig
   ): Promise<boolean> {
     try {
-      // Build COMBINED datapoint list for BOTH _distrib AND _address
-      // CRITICAL: Must set _distrib first, then _address (as per reference implementation)
-      const dpes: string[] = [
-        // _distrib config first
-        `${dpName}:_distrib.._type`,
-        `${dpName}:_distrib.._driver`,
-        // _address config
-        `${dpName}:_address.._type`,
-        `${dpName}:_address.._drv_ident`,
-        `${dpName}:_address.._reference`,
-        `${dpName}:_address.._direction`,
-        `${dpName}:_address.._datatype`,
-        `${dpName}:_address.._subindex`,
-        `${dpName}:_address.._internal`
+      const dist = `${dpName}:_distrib..`;
+      const addr = `${dpName}:_address..`;
+
+      // Step 1: _distrib config (driver allocation)
+      console.log(`\n╔════════════════════════════════════════════════════════════════╗`);
+      console.log(`║ Step 1/3: Setting _distrib for ${dpName}`);
+      console.log(`╠════════════════════════════════════════════════════════════════╣`);
+      console.log(`  - Type: ${distribConfig._type}`);
+      console.log(`  - Driver: ${distribConfig._driver}`);
+
+      await this.winccoa.dpSetWait(
+        [dist + '_type', dist + '_driver'],
+        [distribConfig._type, distribConfig._driver]
+      );
+
+      console.log(`  ✓ _distrib set`);
+
+      // Step 2: _address config (all fields EXCEPT _active)
+      const addrDpes: string[] = [
+        addr + '_type',
+        addr + '_drv_ident',
+        addr + '_reference',
+        addr + '_direction',
+        addr + '_datatype',
+        addr + '_subindex',
+        addr + '_internal'
       ];
 
-      const values: any[] = [
-        // _distrib values
-        distribConfig._type,
-        distribConfig._driver,
-        // _address values
+      const addrValues: any[] = [
         addressConfig._type,
         addressConfig._drv_ident,
         addressConfig._reference,
@@ -163,47 +171,37 @@ export abstract class BaseConnection {
         addressConfig._internal
       ];
 
-      // Add optional address fields if provided
+      // Optional address fields
       if (addressConfig._connection !== undefined) {
-        dpes.push(`${dpName}:_address.._connection`);
-        values.push(addressConfig._connection);
+        addrDpes.push(addr + '_connection');
+        addrValues.push(addressConfig._connection);
       }
 
       if (addressConfig._lowlevel !== undefined) {
-        dpes.push(`${dpName}:_address.._lowlevel`);
-        values.push(addressConfig._lowlevel);
+        addrDpes.push(addr + '_lowlevel');
+        addrValues.push(addressConfig._lowlevel);
       }
 
       if (addressConfig._offset !== undefined) {
-        dpes.push(`${dpName}:_address.._offset`);
-        values.push(addressConfig._offset);
+        addrDpes.push(addr + '_offset');
+        addrValues.push(addressConfig._offset);
       }
 
       if (addressConfig._poll_group !== undefined) {
-        dpes.push(`${dpName}:_address.._poll_group`);
-        values.push(addressConfig._poll_group);
+        addrDpes.push(addr + '_poll_group');
+        addrValues.push(addressConfig._poll_group);
       }
 
-      if (addressConfig._active !== undefined) {
-        dpes.push(`${dpName}:_address.._active`);
-        values.push(addressConfig._active);
-      }
-
-      console.log(`\n╔════════════════════════════════════════════════════════════════╗`);
-      console.log(`║ ATOMIC CONFIG: Setting _distrib + _address for ${dpName.padEnd(17)} ║`);
       console.log(`╠════════════════════════════════════════════════════════════════╣`);
-      console.log(`║ _distrib config:                                               ║`);
-      console.log(`  - Type: ${distribConfig._type}`);
-      console.log(`  - Driver: ${distribConfig._driver}`);
+      console.log(`║ Step 2/3: Setting _address for ${dpName}`);
       console.log(`╠════════════════════════════════════════════════════════════════╣`);
-      console.log(`║ _address config:                                               ║`);
       console.log(`  - Type: ${addressConfig._type}`);
-      console.log(`  - Driver: ${addressConfig._drv_ident}`);
+      console.log(`  - Driver Ident: ${addressConfig._drv_ident}`);
       if (addressConfig._connection !== undefined) {
         console.log(`  - Connection: ${addressConfig._connection}`);
       }
       console.log(`  - Reference: ${addressConfig._reference}`);
-      console.log(`  - Datatype: ${addressConfig._datatype} ⚠️  CRITICAL FIELD!`);
+      console.log(`  - Datatype: ${addressConfig._datatype}`);
       console.log(`  - Direction: ${addressConfig._direction}`);
       console.log(`  - Subindex: ${addressConfig._subindex}`);
       console.log(`  - Internal: ${addressConfig._internal}`);
@@ -216,22 +214,26 @@ export abstract class BaseConnection {
       if (addressConfig._poll_group !== undefined) {
         console.log(`  - Poll Group: ${addressConfig._poll_group}`);
       }
+
+      await this.winccoa.dpSetWait(addrDpes, addrValues);
+
+      console.log(`  ✓ _address set`);
+
+      // Step 3: _active (must be separate dpSetWait)
       if (addressConfig._active !== undefined) {
-        console.log(`  - Active: ${addressConfig._active}`);
+        console.log(`╠════════════════════════════════════════════════════════════════╣`);
+        console.log(`║ Step 3/3: Setting _active = ${addressConfig._active}`);
+
+        await this.winccoa.dpSetWait(
+          [addr + '_active'],
+          [addressConfig._active]
+        );
+
+        console.log(`  ✓ _active set`);
       }
 
-      console.log(`╠════════════════════════════════════════════════════════════════╣`);
-      console.log(`║ Executing SINGLE ATOMIC dpSetWait with ${dpes.length} attributes:        ║`);
       console.log(`╚════════════════════════════════════════════════════════════════╝`);
-      for (let i = 0; i < dpes.length; i++) {
-        console.log(`  [${i.toString().padStart(2)}] ${dpes[i]} = ${JSON.stringify(values[i])}`);
-      }
-      console.log(`════════════════════════════════════════════════════════════════\n`);
-
-      // Apply BOTH configurations using a SINGLE dpSetWait call (ATOMIC OPERATION)
-      await this.winccoa.dpSetWait(dpes, values);
-
-      console.log(`✓ Successfully configured _distrib + _address atomically for ${dpName}\n`);
+      console.log(`✓ Successfully configured _distrib + _address for ${dpName}\n`);
       return true;
     } catch (error) {
       console.error(`✗ Error configuring _distrib + _address for ${dpName}:`, error);

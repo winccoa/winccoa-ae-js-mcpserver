@@ -23,6 +23,9 @@ export * from './drivers/opcua_browse.js';
 // Driver Types - MQTT
 export * from './drivers/mqtt.js';
 
+// Driver Types - S7Plus
+export * from './drivers/s7plus.js';
+
 // Server Types
 export * from './server/context.js';
 export * from './server/config.js';
