@@ -18,7 +18,7 @@ export abstract class BaseConnection {
   /** WinCC OA manager instance */
   protected winccoa: WinccoaManager;
 
-  constructor(winccoa?: any) {
+  constructor(winccoa: WinccoaManager) {
     this.winccoa = winccoa;
   }
 

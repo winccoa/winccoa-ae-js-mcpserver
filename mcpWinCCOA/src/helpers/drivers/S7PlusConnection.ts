@@ -9,6 +9,7 @@
  */
 
 import { BaseConnection } from './BaseConnection.js';
+import { WinccoaManager } from 'winccoa-manager';
 import { PmonClient } from '../pmon/PmonClient.js';
 import { ManagerState } from '../../types/pmon/protocol.js';
 import type {
@@ -50,7 +51,7 @@ export {
  */
 export class S7PlusConnection extends BaseConnection {
 
-  constructor(winccoa?: any) {
+  constructor(winccoa: WinccoaManager) {
     super(winccoa);
   }
 
