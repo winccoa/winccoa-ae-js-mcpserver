@@ -1,90 +1,90 @@
-# S7Plus TLS und Sicherheit
+# S7Plus TLS and Security
 
-## Überblick
+## Overview
 
-S7Plus-Verbindungen können mit TLS (Transport Layer Security) verschlüsselt werden. Dies ist wichtig in Umgebungen, in denen die Netzwerksicherheit relevant ist.
+S7Plus connections can be encrypted with TLS (Transport Layer Security). This is important in environments where network security is relevant.
 
-## TLS-Konfiguration
+## TLS Configuration
 
-### TLS aktivieren
+### Enabling TLS
 
-Am Verbindungsdatenpunkt:
+On the connection datapoint:
 ```
 Config.UseTls            = true
-Config.Certificate       = "my_plc_cert.pem"    (optional: Server-Zertifikat)
-Config.LegitimationLevel = 0                     (wird automatisch gesetzt)
+Config.Certificate       = "my_plc_cert.pem"    (optional: server certificate)
+Config.LegitimationLevel = 0                     (set automatically)
 ```
 
-### Voraussetzungen
+### Prerequisites
 
-Bevor eine TLS-Verbindung erstellt wird:
+Before creating a TLS connection:
 
-1. **Mindestens ein CA-Zertifikat** muss in der Vertrauensliste sein (`_S7PlusConfig.CaCertificates`)
-2. **Zertifikatsdateien** müssen im Zertifikatsverzeichnis des WinCC OA Projekts liegen (`data/s7plus/cert`)
+1. **At least one CA certificate** must be in the trust list (`_S7PlusConfig.CaCertificates`)
+2. **Certificate files** must be located in the certificate directory of the WinCC OA project (`data/s7plus/cert`)
 
 ### Legitimation Level
 
-Der `Config.UseTls`-Parameter wird intern auf `Config.LegitimationLevel` abgebildet:
-- `UseTls = true` → LegitimationLevel = 0 (Failsafe)
-- `UseTls = false` → LegitimationLevel = -1 (Invalid)
+The `Config.UseTls` parameter is internally mapped to `Config.LegitimationLevel`:
+- `UseTls = true` -> LegitimationLevel = 0 (Failsafe)
+- `UseTls = false` -> LegitimationLevel = -1 (Invalid)
 
-Der LegitimationLevel-Enum hat weitere Werte (Full=1, ReadWrite=2, ReadOnly=3, InactiveAccess=4) für SPS-Zugriffsberechtigungen. Siehe Konfigurationswerte-Dokument.
+The LegitimationLevel enum has additional values (Full=1, ReadWrite=2, ReadOnly=3, InactiveAccess=4) for PLC access permissions. See the configuration values document.
 
-## CA-Zertifikatsverwaltung
+## CA Certificate Management
 
-CA-Zertifikate werden in `_S7PlusConfig.CaCertificates` gespeichert — der Root-Vertrauensliste, die **für alle S7Plus-Verbindungen** im Projekt gilt.
+CA certificates are stored in `_S7PlusConfig.CaCertificates` — the root trust list that applies **to all S7Plus connections** in the project.
 
-### Aktionen
+### Actions
 
-| Aktion | Beschreibung |
+| Action | Description |
 |--------|-------------|
-| Auflisten | `_S7PlusConfig.CaCertificates` lesen |
-| Hinzufügen | Dateinamen zur `CaCertificates`-Liste hinzufügen (Duplikate werden übersprungen) |
-| Entfernen | Dateinamen aus der `CaCertificates`-Liste entfernen |
+| List | Read `_S7PlusConfig.CaCertificates` |
+| Add | Add file names to the `CaCertificates` list (duplicates are skipped) |
+| Remove | Remove file names from the `CaCertificates` list |
 
-Zertifikatsdateien müssen im Verzeichnis `data/s7plus/cert` des WinCC OA Projekts vorhanden sein.
+Certificate files must be present in the `data/s7plus/cert` directory of the WinCC OA project.
 
-## Zertifikatstypen
+## Certificate Types
 
-| Zertifikat | Speicherort | Zweck |
-|-----------|-------------|-------|
-| **CA-Zertifikat** | `_S7PlusConfig.CaCertificates` | Root-Vertrauensliste — validiert die Identität der SPS. Gilt für alle Verbindungen. |
-| **Server-Zertifikat** | `Config.Certificate` (pro Verbindung) | Spezifische Zertifikatsdatei für diese Verbindung. Optional. |
+| Certificate | Location | Purpose |
+|------------|----------|---------|
+| **CA Certificate** | `_S7PlusConfig.CaCertificates` | Root trust list — validates the identity of the PLC. Applies to all connections. |
+| **Server Certificate** | `Config.Certificate` (per connection) | Specific certificate file for this connection. Optional. |
 
-Es gibt keine Client-Zertifikats-Verifizierung — die SPS verifiziert den WinCC OA Client nicht.
+There is no client certificate verification — the PLC does not verify the WinCC OA client.
 
-## TLS-Einrichtungs-Workflow
+## TLS Setup Workflow
 
 ```
-1. Zertifikatsdateien nach data/s7plus/cert kopieren
+1. Copy certificate files to data/s7plus/cert
 
-2. CA-Zertifikate zur Vertrauensliste hinzufügen:
+2. Add CA certificates to the trust list:
    _S7PlusConfig.CaCertificates = ["root_ca.pem"]
 
-3. Verbindung mit TLS erstellen:
+3. Create connection with TLS:
    Config.Address   = "192.168.1.100"
    Config.PLCType   = 16
    Config.UseTls    = true
    Config.Certificate = "plc_cert.pem"   (optional)
 
-4. Verbindung aktivieren und Status prüfen:
+4. Activate connection and check status:
    State.ConnState = 3 (Connected)
 ```
 
-## SPS-Passwortschutz
+## PLC Password Protection
 
-Zusätzlich zu TLS können SPSen ein Passwort für den Zugriff erfordern:
+In addition to TLS, PLCs can require a password for access:
 
 ```
 Config.Password = "myPLCpassword"
 ```
 
-Das Passwort ist unabhängig von TLS — beides kann einzeln oder kombiniert verwendet werden.
+The password is independent of TLS — both can be used individually or in combination.
 
-## Sicherheits-Best-Practices
+## Security Best Practices
 
-- TLS für alle Produktionsverbindungen verwenden, besonders bei Netzwerkübergängen
-- CA-Zertifikate vor Ablauf rotieren
-- Separate Server-Zertifikate pro Verbindung verwenden
-- TLS mit SPS-Passwortschutz kombinieren (Defense in Depth)
-- Verbindungsstatus auf unerwartete `Failure`-Zustände überwachen (können auf Zertifikatsprobleme hinweisen)
+- Use TLS for all production connections, especially across network boundaries
+- Rotate CA certificates before expiration
+- Use separate server certificates per connection
+- Combine TLS with PLC password protection (defense in depth)
+- Monitor connection status for unexpected `Failure` states (may indicate certificate issues)

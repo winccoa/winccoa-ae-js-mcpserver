@@ -1,56 +1,56 @@
-# S7Plus Verbindungsverwaltung
+# S7Plus Connection Management
 
-## Verbindungs-Lebenszyklus
+## Connection Lifecycle
 
 ```
-[Keine Verbindung] 
-    │ _S7PlusConnection Datenpunkt erstellen + Config setzen
-    ▼
-[Erstellt - Inaktiv] 
-    │ EstablishmentMode = 1 (AutomaticActive) + Command.Enable = true
-    ▼
+[No Connection] 
+    | Create _S7PlusConnection datapoint + set Config
+    v
+[Created - Inactive] 
+    | EstablishmentMode = 1 (AutomaticActive) + Command.Enable = true
+    v
 [Connecting] 
-    │ Erfolgreicher Handshake mit SPS
-    ▼
-[Connected] ◄──── normaler Betriebszustand
-    │
-    ├── Config ändern → [Temporär deaktiviert] → [Wieder aktiviert]
-    │
-    └── Datenpunkt löschen → [Gelöscht]
+    | Successful handshake with PLC
+    v
+[Connected] <---- normal operating state
+    |
+    |-- Change Config -> [Temporarily disabled] -> [Re-enabled]
+    |
+    +-- Delete datapoint -> [Deleted]
 ```
 
-## Voraussetzungen
+## Prerequisites
 
-**Der S7Plus-Treiber muss in Pmon registriert sein.** Die Registrierung erfolgt in der WinCC OA Console:
+**The S7Plus driver must be registered in Pmon.** Registration is done in the WinCC OA Console:
 
-1. WinCC OA Console öffnen
-2. Manager `WCCOAs7plusdrv` hinzufügen
-3. Optionen: `-num 1` (Treibernummer 1-99)
-4. Startmodus: `always`
+1. Open WinCC OA Console
+2. Add manager `WCCOAs7plusdrv`
+3. Options: `-num 1` (driver number 1-99)
+4. Start mode: `always`
 
-Wenn der Treiber registriert aber gestoppt ist, wird er automatisch gestartet sobald eine Verbindung aktiviert wird.
+If the driver is registered but stopped, it will be started automatically as soon as a connection is activated.
 
-## Verbindung erstellen
+## Creating a Connection
 
-### Datenpunkt anlegen
+### Create Datapoint
 
-Ein Datenpunkt vom Typ `_S7PlusConnection` wird benötigt (z.B. `_S7PlusConnection1`).
+A datapoint of type `_S7PlusConnection` is required (e.g., `_S7PlusConnection1`).
 
-### Konfiguration setzen
+### Set Configuration
 
-**Pflichtfelder:**
+**Required fields:**
 ```
-Config.Address    = "192.168.1.100"       (IP-Adresse der SPS)
-Config.PLCType    = 16                     (SPS-Typ, z.B. 16 = S7-1500)
-Config.DrvNumber  = 1                      (Treibernummer)
+Config.Address    = "192.168.1.100"       (IP address of the PLC)
+Config.PLCType    = 16                     (PLC type, e.g., 16 = S7-1500)
+Config.DrvNumber  = 1                      (driver number)
 ```
 
-**Optionale Felder (mit Standardwerten):**
+**Optional fields (with default values):**
 ```
 Config.AccessPoint           = "S7ONLINE"
 Config.ConnType              = 0           (Single)
-Config.KeepAliveTimeout      = 20          (Sekunden)
-Config.ReconnectTimeout      = 20          (Sekunden)
+Config.KeepAliveTimeout      = 20          (seconds)
+Config.ReconnectTimeout      = 20          (seconds)
 Config.UseUtc                = true
 Config.Timezone              = 0
 Config.SetInvalidBit         = false
@@ -59,18 +59,18 @@ Config.EnableDiagnostics     = false
 Config.ReadOpState           = false
 Config.AcquireValuesOnConnect = true
 Config.TimeSyncMode          = 0           (Inactive)
-Config.TimeSyncInterval      = 86400       (24 Stunden)
+Config.TimeSyncInterval      = 86400       (24 hours)
 ```
 
-### CheckConn konfigurieren
+### Configure CheckConn
 
-Jede Verbindung benötigt eine interne CheckConn-Adresse. Diese wird am `CheckConn`-Unterelement des Verbindungsdatenpunkts konfiguriert — über den gleichen Drei-Schritt-Mechanismus wie normale Adressen:
+Each connection requires an internal CheckConn address. This is configured on the `CheckConn` sub-element of the connection datapoint — using the same three-step mechanism as regular addresses:
 
-1. `_distrib` setzen (Treiberzuordnung)
-2. `_address` setzen (ohne `_active`)
-3. `_active = true` setzen (separater `dpSetWait`)
+1. Set `_distrib` (driver assignment)
+2. Set `_address` (without `_active`)
+3. Set `_active = true` (separate `dpSetWait`)
 
-### Verbindung aktivieren
+### Activate Connection
 
 ```
 Config.EstablishmentMode = 1               (AutomaticActive)
@@ -79,91 +79,91 @@ Command.GQ               = false
 Command.IGQ              = false
 ```
 
-### Browse-Modus
+### Browse Mode
 
-Der Browse-Modus wird über `Config.StationName` gesteuert und ist **nach Erstellung fixiert**:
+The browse mode is controlled via `Config.StationName` and is **fixed after creation**:
 
-- **Online:** `Config.StationName` enthält `"S7Plus$Online|Online"` → Browse einer laufenden SPS
-- **Offline:** `Config.StationName` enthält `"ExportName|StationName"` → Browse eines TIA Portal Exports
+- **Online:** `Config.StationName` contains `"S7Plus$Online|Online"` — browse a running PLC
+- **Offline:** `Config.StationName` contains `"ExportName|StationName"` — browse a TIA Portal export
 
-Wenn beide Modi benötigt werden, müssen zwei separate Verbindungen erstellt werden.
+If both modes are needed, two separate connections must be created.
 
-## Verbindung ändern
+## Modifying a Connection
 
-Zum Ändern einer bestehenden Verbindung:
+To modify an existing connection:
 
-1. Verbindung deaktivieren: `Config.EstablishmentMode = 0`, `Command.Enable = false`
-2. Config-Felder ändern
-3. Verbindung wieder aktivieren
+1. Disable the connection: `Config.EstablishmentMode = 0`, `Command.Enable = false`
+2. Change Config fields
+3. Re-activate the connection
 
-**Achtung:** Wird `Config.EstablishmentMode` nach der Änderung wieder auf 1 gesetzt, wird die Verbindung immer aktiviert — auch wenn sie vorher manuell deaktiviert war.
+**Note:** If `Config.EstablishmentMode` is set back to 1 after the change, the connection will always be activated — even if it was previously manually disabled.
 
-Alle bestehenden `_address`-Konfigurationen an Datenpunkten bleiben bei Änderungen erhalten.
+All existing `_address` configurations on datapoints are preserved when changes are made.
 
-## Verbindung löschen
+## Deleting a Connection
 
-**Warnung:** Das Löschen des `_S7PlusConnection`-Datenpunkts zerstört alle `_address`-Konfigurationen, die diese Verbindung referenzieren. Dies kann nicht rückgängig gemacht werden.
+**Warning:** Deleting the `_S7PlusConnection` datapoint destroys all `_address` configurations that reference this connection. This cannot be undone.
 
-Empfohlene Reihenfolge:
-1. Verbindung deaktivieren
-2. `_S7PlusConnection`-Datenpunkt löschen
+Recommended sequence:
+1. Disable the connection
+2. Delete the `_S7PlusConnection` datapoint
 
-## Treibernummern-Verwaltung
+## Driver Number Management
 
-### Funktionsweise
+### How It Works
 
-- Jede S7Plus-Treiberinstanz hat eine eindeutige Nummer (1-99)
-- Die Nummer wird mit dem `-num` Parameter in der Manager-Kommandozeile angegeben
-- Mehrere Verbindungen können die gleiche Treiberinstanz teilen
-- Treibernummern dürfen nicht mit anderen Treibertypen im Projekt kollidieren
+- Each S7Plus driver instance has a unique number (1-99)
+- The number is specified with the `-num` parameter in the manager command line
+- Multiple connections can share the same driver instance
+- Driver numbers must not conflict with other driver types in the project
 
-### Treiber-Auflösungslogik
+### Driver Resolution Logic
 
-1. Pmon nach registrierten Managern abfragen
-2. S7Plus-Treiber (`WCCOAs7plusdrv`) finden und `-num` Parameter auslesen
-3. Wenn ein Treiber mit der gewünschten Nummer existiert, diesen verwenden (starten falls gestoppt)
-4. Wenn kein Treiber mit dieser Nummer existiert aber andere S7Plus-Treiber registriert sind, den ersten verfügbaren verwenden
-5. Wenn kein S7Plus-Treiber registriert ist → **Fehler** — Treiber muss erst in Pmon hinzugefügt werden
+1. Query Pmon for registered managers
+2. Find S7Plus drivers (`WCCOAs7plusdrv`) and read the `-num` parameter
+3. If a driver with the desired number exists, use it (start if stopped)
+4. If no driver with this number exists but other S7Plus drivers are registered, use the first available one
+5. If no S7Plus driver is registered — **error** — the driver must first be added to Pmon
 
-## Datenpunktstruktur _S7PlusConnection
+## Datapoint Structure _S7PlusConnection
 
 ```
 _S7PlusConnection1
-├── Config
-│   ├── Address                (string: IP-Adresse)
-│   ├── PLCType                (int: SPS-Typ)
-│   ├── AccessPoint            (string: z.B. "S7ONLINE")
-│   ├── DrvNumber              (int: Treibernummer)
-│   ├── ConnType               (int: 0=Single, 1=ReduLan)
-│   ├── KeepAliveTimeout       (int: Sekunden)
-│   ├── ReconnectTimeout       (int: Sekunden)
-│   ├── UseUtc                 (bool)
-│   ├── Timezone               (int: Offset)
-│   ├── SetInvalidBit          (bool)
-│   ├── EnableStatistics       (bool)
-│   ├── EnableDiagnostics      (bool)
-│   ├── ReadOpState            (bool)
-│   ├── AcquireValuesOnConnect (bool)
-│   ├── TimeSyncMode           (int: 0=Inaktiv, 1=SyncPLCtoOA)
-│   ├── TimeSyncInterval       (int: Sekunden)
-│   ├── Password               (string)
-│   ├── StationName            (string: Browse-Pfad)
-│   ├── Codepage               (int)
-│   ├── UseTls                 (bool)
-│   ├── Certificate            (string: Zertifikatsdatei)
-│   ├── EstablishmentMode      (int: 0=Inaktiv, 1=AutomaticActive)
-│   ├── LegitimationLevel      (int: Zugriffsebene)
-│   ├── ReduAddress            (string: sekundäre IP)
-│   ├── ReduAccessPoint        (string)
-│   ├── SwitchCondition        (int: Redundanz-Umschaltung)
-│   └── SwitchTag              (string: SPS-Variable für Umschaltung)
-├── Command
-│   ├── Enable                 (bool: Verbindung starten/stoppen)
-│   ├── GQ                     (bool: General Query)
-│   └── IGQ                    (bool: Initial General Query)
-├── State
-│   └── ConnState              (int: aktueller Verbindungsstatus)
-└── CheckConn                  (intern: Verbindungsüberwachung)
-    ├── _address                (Peripherie-Adresskonfiguration)
-    └── _distrib                (Treiberzuordnung)
++-- Config
+|   +-- Address                (string: IP address)
+|   +-- PLCType                (int: PLC type)
+|   +-- AccessPoint            (string: e.g., "S7ONLINE")
+|   +-- DrvNumber              (int: driver number)
+|   +-- ConnType               (int: 0=Single, 1=ReduLan)
+|   +-- KeepAliveTimeout       (int: seconds)
+|   +-- ReconnectTimeout       (int: seconds)
+|   +-- UseUtc                 (bool)
+|   +-- Timezone               (int: offset)
+|   +-- SetInvalidBit          (bool)
+|   +-- EnableStatistics       (bool)
+|   +-- EnableDiagnostics      (bool)
+|   +-- ReadOpState            (bool)
+|   +-- AcquireValuesOnConnect (bool)
+|   +-- TimeSyncMode           (int: 0=Inactive, 1=SyncPLCtoOA)
+|   +-- TimeSyncInterval       (int: seconds)
+|   +-- Password               (string)
+|   +-- StationName            (string: browse path)
+|   +-- Codepage               (int)
+|   +-- UseTls                 (bool)
+|   +-- Certificate            (string: certificate file)
+|   +-- EstablishmentMode      (int: 0=Inactive, 1=AutomaticActive)
+|   +-- LegitimationLevel      (int: access level)
+|   +-- ReduAddress            (string: secondary IP)
+|   +-- ReduAccessPoint        (string)
+|   +-- SwitchCondition        (int: redundancy switchover)
+|   +-- SwitchTag              (string: PLC variable for switchover)
++-- Command
+|   +-- Enable                 (bool: start/stop connection)
+|   +-- GQ                     (bool: General Query)
+|   +-- IGQ                    (bool: Initial General Query)
++-- State
+|   +-- ConnState              (int: current connection status)
++-- CheckConn                  (internal: connection monitoring)
+    +-- _address                (peripheral address configuration)
+    +-- _distrib                (driver assignment)
 ```

@@ -1,90 +1,90 @@
 # S7Plus Quickstart — End-to-End Workflow
 
-Schritt-für-Schritt-Anleitung: von einem leeren WinCC OA Projekt bis zum Empfang von SPS-Werten über den S7Plus-Treiber.
+Step-by-step guide: from an empty WinCC OA project to receiving PLC values via the S7Plus driver.
 
-## Voraussetzungen
+## Prerequisites
 
-1. **WinCC OA Projekt läuft** mit Event Manager und Data Manager
-2. **S7Plus-Treiber ist in Pmon registriert** (WinCC OA Console)
-3. **SPS ist im Netzwerk erreichbar** (Ping-Test)
-4. **TIA Portal Export** ist im Projektverzeichnis vorhanden (nur für Offline-Browse)
-5. **Datenpunkte existieren** in WinCC OA, um SPS-Werte zu empfangen
+1. **WinCC OA project is running** with Event Manager and Data Manager active
+2. **S7Plus driver is registered in Pmon** (WinCC OA Console)
+3. **PLC is reachable** over the network (ping test)
+4. **TIA Portal export** is available in the project directory (only needed for offline browsing)
+5. **Datapoints exist** in WinCC OA to receive PLC values
 
-## Schritt 1: S7Plus-Treiber registrieren
+## Step 1: Register the S7Plus Driver
 
-Der S7Plus-Treiber (`WCCOAs7plusdrv`) muss in Pmon registriert sein, bevor Verbindungen erstellt werden können.
+The S7Plus driver (`WCCOAs7plusdrv`) must be registered in Pmon before connections can be created.
 
-1. WinCC OA Console öffnen
-2. Neuen Manager vom Typ `WCCOAs7plusdrv` hinzufügen
-3. Kommandozeilenoptionen setzen: `-num 1` (Treibernummer)
-4. Startmodus: `always` (automatischer Neustart bei Absturz)
+1. Open WinCC OA Console
+2. Add a new manager of type `WCCOAs7plusdrv`
+3. Set command line options: `-num 1` (driver number)
+4. Start mode: `always` (automatic restart on crash)
 
-Der Treiber muss nicht manuell gestartet werden — er wird automatisch gestartet, wenn eine Verbindung erstellt wird.
+The driver does not need to be started manually — it is started automatically when a connection is created.
 
-## Schritt 2: Verbindung erstellen
+## Step 2: Create a Connection
 
-### Online-Verbindung (zu einer laufenden SPS)
+### Online Connection (to a live PLC)
 
-Einen `_S7PlusConnection` Datenpunkt erstellen und konfigurieren:
-
-```
-Config.Address          = "192.168.1.100"
-Config.PLCType          = 16               (S7-1500)
-Config.DrvNumber        = 1
-Config.AccessPoint      = "S7ONLINE"
-Config.EstablishmentMode = 1               (AutomaticActive)
-Command.Enable          = true
-```
-
-### Offline-Verbindung (zu einem TIA Portal Export)
+Create a `_S7PlusConnection` datapoint and configure it:
 
 ```
-Config.Address          = "0.0.0.0"
-Config.PLCType          = 1                (Automatic)
-Config.DrvNumber        = 1
-Config.StationName      = "MyExport|PLC_1"
-Config.EstablishmentMode = 0               (Inactive)
+Config.Address           = "192.168.1.100"
+Config.PLCType           = 16               (S7-1500)
+Config.DrvNumber         = 1
+Config.AccessPoint       = "S7ONLINE"
+Config.EstablishmentMode = 1                (AutomaticActive)
+Command.Enable           = true
 ```
 
-## Schritt 3: Verbindungsstatus prüfen
+### Offline Connection (to a TIA Portal export)
 
-Den Wert von `_S7PlusConnection1.State.ConnState` prüfen:
+```
+Config.Address           = "0.0.0.0"
+Config.PLCType           = 1                (Automatic)
+Config.DrvNumber         = 1
+Config.StationName       = "MyExport|PLC_1"
+Config.EstablishmentMode = 0                (Inactive)
+```
 
-| Wert | Bedeutung |
-|------|-----------|
-| 0 | Inaktiv |
-| 1 | Getrennt |
-| 2 | Verbindungsaufbau |
-| **3** | **Verbunden** (Zielzustand) |
-| 4 | Verbindungsabbau |
-| 5 | Fehler |
+## Step 3: Verify Connection State
 
-Bei `Failure` (5) prüfen:
-- Stimmt die IP-Adresse?
-- Passt der SPS-Typ? (PLCSim=768, S7-1500=16)
-- Blockiert eine Firewall TCP Port 102?
+Check the value of `_S7PlusConnection1.State.ConnState`:
 
-## Schritt 4: SPS-Struktur browsen
+| Value | Meaning |
+|-------|---------|
+| 0 | Inactive |
+| 1 | Disconnected |
+| 2 | Connecting |
+| **3** | **Connected** (target state) |
+| 4 | Disconnecting |
+| 5 | Failure |
 
-Über den Browse-Mechanismus des S7Plus-Treibers die verfügbaren Variablen der SPS ermitteln. Der Browse liefert für jede Variable:
+If `Failure` (5), check:
+- Is the IP address correct?
+- Does the PLC type match? (PLCSim=768, S7-1500=16)
+- Is a firewall blocking TCP port 102?
 
-- `path` — der symbolische Pfad (wird als `_reference` in der Adresskonfiguration verwendet)
-- `valueType` — der SPS-Datentyp (hilft bei der Wahl der Transformation)
-- `hasChildren` — ob tiefer navigiert werden kann
+## Step 4: Browse the PLC Structure
 
-Beispiel-Ergebnis:
+Use the S7Plus driver's browse mechanism to discover available PLC variables. The browse returns for each variable:
+
+- `path` — the symbolic path (used as `_reference` in the address configuration)
+- `valueType` — the PLC data type (helps choose the right transformation)
+- `hasChildren` — whether deeper navigation is possible
+
+Example result node:
 ```
 path:        "DataBlock1.Temperature"
 valueType:   "Real"
 hasChildren: false
 ```
 
-## Schritt 5: Datenpunkte in WinCC OA anlegen
+## Step 5: Create Datapoints in WinCC OA
 
-Die Ziel-Datenpunkte müssen in WinCC OA existieren, bevor Adressen konfiguriert werden. Anlegen über das PARA-Modul oder per CTRL-Script. Der WinCC OA Datentyp sollte zum SPS-Typ passen:
+Target datapoints must exist in WinCC OA before addresses can be configured. Create them using the PARA module or via CTRL scripts. The WinCC OA data type should match the PLC variable type:
 
-| SPS-Typ | WinCC OA Typ |
-|---------|--------------|
+| PLC Type | WinCC OA Type |
+|----------|---------------|
 | Bool | bool |
 | Int, DInt, USInt, UInt, etc. | int |
 | Real | float |
@@ -92,11 +92,11 @@ Die Ziel-Datenpunkte müssen in WinCC OA existieren, bevor Adressen konfiguriert
 | String, WString | string |
 | Date, DateTime, Time | time |
 
-## Schritt 6: Adresse konfigurieren
+## Step 6: Configure the Address
 
-Die Adresskonfiguration verknüpft ein Datenpunktelement (DPE) mit einer SPS-Variable. Die Konfiguration erfolgt über `_address` und `_distrib` am DPE.
+The address configuration links a datapoint element (DPE) to a PLC variable. Configuration is done via `_address` and `_distrib` on the DPE.
 
-### Polling (zyklisches Lesen/Schreiben)
+### Polling (cyclic read/write)
 
 ```
 _distrib:
@@ -109,66 +109,66 @@ _address:
   _connection = "_S7PlusConnection1"
   _reference  = "DataBlock1.Temperature"
   _direction  = 7                          (IOPoll)
-  _datatype   = 1001                       (DEFAULT = Auto-Erkennung)
+  _datatype   = 1001                       (DEFAULT = auto-detect)
   _poll_group = "_S7Plus_Poll_1s"
-  _active     = true                       (MUSS separat gesetzt werden!)
+  _active     = true                       (MUST be set separately!)
 ```
 
-### Subscription (ereignisgesteuert, nur bei Änderung)
+### Subscription (event-driven, only on change)
 
-Gleich wie Polling (Direction 7), aber zusätzlich Registrierung in `_S7PlusConfig.Subscriptions`. Der Unterschied liegt nicht in der Direction, sondern in der Subscription-Registrierung.
+Same as polling (direction 7), but additionally registered in `_S7PlusConfig.Subscriptions`. The difference lies not in the direction but in the subscription registration.
 
-### Nur Schreiben (Sollwerte an die SPS senden)
+### Write-only (send setpoints to PLC)
 
 ```
 _address:
   _direction = 1                           (Output)
 ```
 
-## Schritt 7: Datenfluss verifizieren
+## Step 7: Verify Data Flow
 
-Nach der Adresskonfiguration sollte WinCC OA SPS-Werte empfangen. Prüfung über:
-- **PARA-Modul** (Datenpunktwert kontrollieren)
-- **CTRL-Script** mit `dpGet()` oder `dpConnect()`
-- **GEDI-Modul** (Panel mit dem Datenpunkt erstellen)
+After address configuration, WinCC OA should start receiving PLC values. Verify using:
+- **PARA module** (check the datapoint value)
+- **CTRL script** with `dpGet()` or `dpConnect()`
+- **GEDI module** (create a panel with the datapoint)
 
-## Häufige Fehler
+## Common Mistakes
 
-| Fehler | Symptom | Lösung |
-|--------|---------|--------|
-| Falscher SPS-Typ | Verbindung zeigt `Failure` | Korrekten Typ verwenden (16=S7-1500, 768=PLCSim) |
-| Kein S7Plus-Treiber in Pmon | Verbindung kann nicht aufgebaut werden | `WCCOAs7plusdrv` in WinCC OA Console hinzufügen |
-| DPE existiert nicht | Adresskonfiguration schlägt fehl | Datenpunkt zuerst in PARA anlegen |
-| Falscher symbolischer Pfad | Keine Daten kommen an | Browse verwenden um korrekten Pfad zu finden |
-| Subscription ohne Registrierung | Verhält sich wie Polling | In `_S7PlusConfig.Subscriptions` registrieren |
-| `_active` zusammen mit `_address` gesetzt | Race Condition, fehlerhafte Daten | `_active` immer in separatem `dpSetWait` setzen |
+| Mistake | Symptom | Fix |
+|---------|---------|-----|
+| Wrong PLC type | Connection shows `Failure` | Use correct type (16=S7-1500, 768=PLCSim) |
+| No S7Plus driver in Pmon | Connection cannot be established | Add `WCCOAs7plusdrv` in WinCC OA Console |
+| DPE does not exist | Address configuration fails | Create the datapoint first in PARA |
+| Wrong symbolic path | No data arrives | Use browse to find the correct path |
+| Subscription without registration | Behaves like polling | Register in `_S7PlusConfig.Subscriptions` |
+| `_active` set together with `_address` | Race condition, corrupt data | Always set `_active` in a separate `dpSetWait` |
 
-## Komplettbeispiel: Temperaturüberwachung
+## Complete Example: Temperature Monitoring
 
 ```
-1. Treiber registrieren:
-   WCCOAs7plusdrv in Pmon mit -num 1 hinzufügen
+1. Register driver:
+   Add WCCOAs7plusdrv to Pmon with -num 1
 
-2. Datenpunkt anlegen:
-   "Furnace.Temperature.actual" in WinCC OA (Typ: float)
+2. Create datapoint:
+   "Furnace.Temperature.actual" in WinCC OA (type: float)
 
-3. Verbindung erstellen:
-   _S7PlusConnection1 mit IP 192.168.1.100, PLCType 16, DrvNumber 1
+3. Create connection:
+   _S7PlusConnection1 with IP 192.168.1.100, PLCType 16, DrvNumber 1
 
-4. Verbindung prüfen:
+4. Verify connection:
    State.ConnState = 3 (Connected)
 
-5. Variable finden:
+5. Find variable:
    Browse → path="FurnaceDB.Temperature", valueType="Real"
 
-6. Adresse konfigurieren:
-   Am DPE "Furnace.Temperature.actual":
+6. Configure address:
+   On DPE "Furnace.Temperature.actual":
    _distrib: _driver=1
    _address: _drv_ident="S7PLUS", _connection="_S7PlusConnection1",
              _reference="FurnaceDB.Temperature", _direction=7,
              _datatype=1015 (REAL), _poll_group="_S7Plus_Subscr"
-   _active: true (separater dpSetWait)
-   In _S7PlusConfig.Subscriptions registrieren für Subscription-Modus
+   _active: true (separate dpSetWait)
+   Register in _S7PlusConfig.Subscriptions for subscription mode
 
-7. WinCC OA empfängt jetzt Temperatur-Updates von der SPS bei jeder Wertänderung.
+7. WinCC OA now receives temperature updates from the PLC on every value change.
 ```

@@ -1,123 +1,123 @@
-# S7Plus Architektur in WinCC OA
+# S7Plus Architecture in WinCC OA
 
-## Systemarchitektur
-
-```
-┌─────────────────────────────────────────┐
-│  WinCC OA Runtime                       │
-│  ├── Event Manager                      │
-│  ├── Data Manager                       │
-│  ├── S7Plus-Treiber (WCCOAs7plusdrv)   │
-│  └── Pmon (Process Monitor)            │
-└─────────────────────────────────────────┘
-         │                    │
-         │ dpSetWait/dpGet    │ S7Plus-Protokoll (TCP 102)
-         ▼                    ▼
-   WinCC OA Datenpunkte    Siemens SPS (S7-1200/1500)
-```
-
-## Ablauf: Verbindung erstellen
+## System Architecture
 
 ```
-1. S7Plus-Treiber in Pmon prüfen
-   - Ist ein Treiber mit der gewünschten Nummer registriert?
-   - Wenn ja: verwenden (starten falls gestoppt)
-   - Wenn nein: Fehler — Treiber muss erst registriert werden
++------------------------------------------+
+|  WinCC OA Runtime                        |
+|  +-- Event Manager                      |
+|  +-- Data Manager                       |
+|  +-- S7Plus Driver (WCCOAs7plusdrv)      |
+|  +-- Pmon (Process Monitor)             |
++------------------------------------------+
+         |                    |
+         | dpSetWait/dpGet    | S7Plus Protocol (TCP 102)
+         v                    v
+   WinCC OA Datapoints    Siemens PLC (S7-1200/1500)
+```
 
-2. _S7PlusConnection Datenpunkt erstellen
+## Flow: Creating a Connection
 
-3. Config-Werte setzen
+```
+1. Check S7Plus driver in Pmon
+   - Is a driver with the desired number registered?
+   - If yes: use it (start if stopped)
+   - If no: error — driver must be registered first
+
+2. Create _S7PlusConnection datapoint
+
+3. Set Config values
    - Config.Address, Config.PLCType, Config.DrvNumber, ...
-   - Config.EstablishmentMode, Timeouts, TLS, Redundanz
+   - Config.EstablishmentMode, timeouts, TLS, redundancy
 
-4. CheckConn konfigurieren (Drei-Schritt)
-   - _distrib → _address → _active
+4. Configure CheckConn (three-step)
+   - _distrib -> _address -> _active
 
-5. Verbindung aktivieren
+5. Activate connection
    - Config.EstablishmentMode = 1 (AutomaticActive)
    - Command.Enable = true
 
-6. S7Plus-Treiber verbindet sich zur SPS
-   - State.ConnState wechselt auf 3 (Connected)
+6. S7Plus driver connects to the PLC
+   - State.ConnState transitions to 3 (Connected)
 ```
 
-## Ablauf: Adresse konfigurieren
+## Flow: Configuring an Address
 
 ```
-1. DPE-Existenz in WinCC OA prüfen
+1. Verify DPE existence in WinCC OA
 
-2. Modus bestimmen (Polling vs. Subscription)
+2. Determine mode (polling vs. subscription)
 
-3. Pollgruppe erstellen falls nötig
-   - _PollGroup Datenpunkt mit PollInterval
+3. Create poll group if needed
+   - _PollGroup datapoint with PollInterval
 
-4. Bei Subscription: in _S7PlusConfig registrieren
-   - Subscriptions.Names, Pollgroups, Options (synchron halten)
+4. For subscription: register in _S7PlusConfig
+   - Subscriptions.Names, Pollgroups, Options (keep in sync)
 
-5. Adresse konfigurieren (Drei-Schritt)
-   - Schritt 1: dpSetWait → _distrib
-   - Schritt 2: dpSetWait → _address (ohne _active)
-   - Schritt 3: dpSetWait → _active = true
+5. Configure address (three-step)
+   - Step 1: dpSetWait -> _distrib
+   - Step 2: dpSetWait -> _address (without _active)
+   - Step 3: dpSetWait -> _active = true
 
-6. S7Plus-Treiber beginnt SPS-Variable zu lesen
-   - DPE-Wert im Data Manager wird aktualisiert
+6. S7Plus driver begins reading the PLC variable
+   - DPE value in Data Manager is updated
 ```
 
-## Drei-Schritt-Adressmuster
+## Three-Step Address Pattern
 
-Dieses fundamentale Muster gilt für alle Adresskonfigurationen in WinCC OA:
+This fundamental pattern applies to all address configurations in WinCC OA:
 
 ```
-Schritt 1: _distrib     → Weist das DPE einem bestimmten Treiber zu
-Schritt 2: _address     → Konfiguriert wie die SPS-Variable gelesen/geschrieben wird
-Schritt 3: _active=true → Aktiviert die Adresse (MUSS separater dpSetWait sein)
+Step 1: _distrib     -> Assigns the DPE to a specific driver
+Step 2: _address     -> Configures how the PLC variable is read/written
+Step 3: _active=true -> Activates the address (MUST be a separate dpSetWait)
 ```
 
-**Warum ist _active separat?**
-WinCC OA verarbeitet _address-Änderungen wenn _active auf true wechselt. Werden beide gleichzeitig gesetzt, kann der Treiber eine unvollständig konfigurierte Adresse verwenden — Fehler oder Datenverfälschung sind die Folge.
+**Why is _active separate?**
+WinCC OA processes _address changes when _active transitions to true. If both are set simultaneously, the driver may use an incompletely configured address — errors or data corruption are the result.
 
 ## Pmon (Process Monitor)
 
-Pmon ist der Prozessmanager von WinCC OA. Der S7Plus-Treiber interagiert mit Pmon für:
+Pmon is the process manager of WinCC OA. The S7Plus driver interacts with Pmon for:
 
-- **Manager auflisten**: Welche S7Plus-Treiber sind registriert und laufen
-- **Treibernummern auslesen**: `-num` Parameter aus der Manager-Kommandozeile
-- **Gestoppte Treiber starten**: Registrierte aber gestoppte Treiber starten
-- **Konflikte erkennen**: Sicherstellen, dass Treibernummern nicht mit anderen Treibern kollidieren
+- **Listing managers**: Which S7Plus drivers are registered and running
+- **Reading driver numbers**: `-num` parameter from the manager command line
+- **Starting stopped drivers**: Starting registered but stopped drivers
+- **Detecting conflicts**: Ensuring driver numbers do not conflict with other drivers
 
-### Treiber registrieren
+### Registering a Driver
 
-Der S7Plus-Treiber wird in Pmon wie folgt registriert:
+The S7Plus driver is registered in Pmon as follows:
 
 ```
 Manager:     WCCOAs7plusdrv
-Position:    (Position in der Startreihenfolge)
-Startmodus:  always (automatischer Neustart bei Absturz)
-Optionen:    -num 1 (Treibernummer)
-SecKill:     30 (Sekunden bis SIGKILL)
-RestartCount: 3 (Neustartversuche)
-ResetMin:    5 (Minuten zum Zurücksetzen des Neustartzählers)
+Position:    (position in the startup order)
+Start mode:  always (automatic restart on crash)
+Options:     -num 1 (driver number)
+SecKill:     30 (seconds until SIGKILL)
+RestartCount: 3 (restart attempts)
+ResetMin:    5 (minutes to reset the restart counter)
 ```
 
-## Wichtige WinCC OA Datenpunkte für S7Plus
+## Important WinCC OA Datapoints for S7Plus
 
-| Datenpunkt | Typ | Geltungsbereich | Zweck |
-|-----------|-----|----------------|-------|
-| `_S7PlusConnection<n>` | _S7PlusConnection | Pro Verbindung | Verbindungskonfiguration, Status, Kommandos |
-| `_S7PlusConnection<n>_2` | _S7PlusConnection | Pro redundante Verbindung | Automatisch erstellte Backup-Verbindung |
-| `_S7PlusConfig` | _S7PlusConfig | Global (einmal pro Projekt) | CA-Zertifikate und Subscription-Registrierung |
-| `_S7Plus_Poll_1s` | _PollGroup | Global | Standard-Pollgruppe für Polling (1000ms) |
-| `_S7Plus_Subscr` | _PollGroup | Global | Standard-Pollgruppe für Subscriptions |
+| Datapoint | Type | Scope | Purpose |
+|-----------|------|-------|---------|
+| `_S7PlusConnection<n>` | _S7PlusConnection | Per connection | Connection configuration, status, commands |
+| `_S7PlusConnection<n>_2` | _S7PlusConnection | Per redundant connection | Automatically created backup connection |
+| `_S7PlusConfig` | _S7PlusConfig | Global (once per project) | CA certificates and subscription registration |
+| `_S7Plus_Poll_1s` | _PollGroup | Global | Default poll group for polling (1000ms) |
+| `_S7Plus_Subscr` | _PollGroup | Global | Default poll group for subscriptions |
 
-## S7Plus-Verhalten im Überblick
+## S7Plus Behavior at a Glance
 
-| Aspekt | Verhalten |
+| Aspect | Behavior |
 |--------|----------|
-| Treiber-Auto-Erstellung | Nein — muss vorher in Pmon registriert sein |
-| Treiber-Auto-Start | Ja — startet einen gestoppten Treiber automatisch |
-| Subscription-Mechanismus | Über `_S7PlusConfig.Subscriptions`-Registrierung |
-| Browse-Fähigkeit | Ja — online (laufende SPS) und offline (TIA Export) |
-| TIA Portal Integration | Ja — Browse und Erkennung von TIA Exports |
-| Redundanz-Unterstützung | Ja — ReduLan + verschiedene Umschaltbedingungen |
-| Protokoll | S7Plus über TCP Port 102 |
-| Adressierung | Ausschließlich symbolisch (keine Byte/Bit-Adressen) |
+| Driver auto-creation | No — must be registered in Pmon beforehand |
+| Driver auto-start | Yes — automatically starts a stopped driver |
+| Subscription mechanism | Via `_S7PlusConfig.Subscriptions` registration |
+| Browse capability | Yes — online (running PLC) and offline (TIA export) |
+| TIA Portal integration | Yes — browse and detection of TIA exports |
+| Redundancy support | Yes — ReduLan + various switch conditions |
+| Protocol | S7Plus over TCP port 102 |
+| Addressing | Exclusively symbolic (no byte/bit addresses) |

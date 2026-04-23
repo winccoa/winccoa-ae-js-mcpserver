@@ -1,59 +1,59 @@
-# S7Plus-Treiber — Überblick
+# S7Plus Driver — Overview
 
-## Was ist S7Plus?
+## What is S7Plus?
 
-S7Plus ist das Kommunikationsprotokoll für Siemens S7-1200 und S7-1500 SPSen (Speicherprogrammierbare Steuerungen). In WinCC OA stellt der S7Plus-Treiber (`WCCOAs7plusdrv`) die native Verbindung zu diesen SPSen her.
+S7Plus is the communication protocol for Siemens S7-1200 and S7-1500 PLCs (Programmable Logic Controllers). In WinCC OA, the S7Plus driver (`WCCOAs7plusdrv`) provides native connectivity to these PLCs.
 
-S7Plus unterstützt **keine** Legacy-Geräte wie S7-300/400 — diese benötigen den klassischen S7-Treiber.
+S7Plus does **not** support legacy devices such as S7-300/400 — those require the classic S7 driver.
 
-## Unterstützte SPS-Typen
+## Supported PLC Types
 
-| SPS-Typ | Wert | Beschreibung |
-|---------|------|-------------|
-| Automatic | 1 | Auto-Erkennung aus TIA Portal Projekt |
-| RH | 2 | Redundant High Availability (zwei SPSen). System-IP verwenden. |
-| RH_Single | 3 | Einzelne SPS in einem R/H-System. Individuelle CPU-IP verwenden. |
+| PLC Type | Value | Description |
+|----------|-------|-------------|
+| Automatic | 1 | Auto-detection from TIA Portal project |
+| RH | 2 | Redundant High Availability (two PLCs). Use the System-IP. |
+| RH_Single | 3 | Single PLC in an R/H system. Use the individual CPU IP. |
 | S7_1500 | 16 | Siemens S7-1500 |
 | S7_1200 | 272 | Siemens S7-1200 |
-| S7_1500_SoftCtrl | 528 | S7-1500 Software Controller (virtuelle SPS) |
-| PLCSim | 768 | PLCSIM Simulationsumgebung |
+| S7_1500_SoftCtrl | 528 | S7-1500 Software Controller (virtual PLC) |
+| PLCSim | 768 | PLCSIM simulation environment |
 
-**Häufiger Fehler:** PLCSim (768) und S7_1500 (16) werden oft verwechselt. Wenn die Verbindung `Failure` zeigt, als erstes den SPS-Typ prüfen.
+**Common mistake:** PLCSim (768) and S7_1500 (16) are often confused. If the connection shows `Failure`, check the PLC type first.
 
-## Grundkonzepte
+## Key Concepts
 
-### Symbolische Adressierung
-S7Plus verwendet **symbolische Adressen** (z.B. `"MyDB.MyVar"`, `"DataBlock1.Temperature"`) statt numerischer Byte/Bit-Adressen. Diese entsprechen den Variablennamen im TIA Portal Projekt.
+### Symbolic Addressing
+S7Plus uses **symbolic addresses** (e.g., `"MyDB.MyVar"`, `"DataBlock1.Temperature"`) instead of numeric byte/bit addresses. These correspond to the variable names defined in the TIA Portal project.
 
-### Verbindungsdatenpunkte
-Jede S7Plus-Verbindung wird als WinCC OA Datenpunkt vom Typ `_S7PlusConnection` abgebildet. Der Datenpunkt enthält Unterelemente für Konfiguration (`Config.*`), Kommandos (`Command.*`) und Status (`State.*`).
+### Connection Datapoints
+Each S7Plus connection is represented as a WinCC OA datapoint of type `_S7PlusConnection`. The datapoint contains sub-elements for configuration (`Config.*`), commands (`Command.*`), and state (`State.*`).
 
-### Treiberverwaltung
-Der S7Plus-Treiber läuft als WinCC OA Manager-Prozess (`WCCOAs7plusdrv`). Jede Treiberinstanz wird durch eine **Treibernummer** (1-99) identifiziert. Mehrere Verbindungen können sich eine Treiberinstanz teilen.
+### Driver Management
+The S7Plus driver runs as a WinCC OA manager process (`WCCOAs7plusdrv`). Each driver instance is identified by a **driver number** (1-99). Multiple connections can share the same driver instance.
 
-**Wichtig:** Der S7Plus-Treiber muss in Pmon registriert sein, bevor Verbindungen erstellt werden können.
+**Important:** The S7Plus driver must be registered in Pmon before connections can be created.
 
-### Treibernummern
-Treibernummern (1-99) identifizieren die Treiberinstanz. Sie werden projekt-weit über alle Treibertypen geteilt — eine Nummer, die von einem anderen Treiber (z.B. Simulation) verwendet wird, kann nicht gleichzeitig für S7Plus genutzt werden.
+### Driver Numbers
+Driver numbers (1-99) identify the driver instance. They are shared project-wide across all driver types — a number used by another driver (e.g., simulation) cannot also be used by S7Plus.
 
 ### CheckConn
-Jede Verbindung benötigt eine interne `CheckConn`-Adresskonfiguration. Dies ist ein Kontrollmechanismus, den WinCC OA zur Überwachung der Verbindungsgesundheit nutzt. CheckConn wird automatisch bei der Verbindungserstellung konfiguriert.
+Every connection requires an internal `CheckConn` address configuration. This is a control mechanism that WinCC OA uses to monitor connection health. CheckConn is configured automatically when creating a connection.
 
-### _S7PlusConfig — Globaler Konfigurationsdatenpunkt
-`_S7PlusConfig` ist ein Systemdatenpunkt, der **einmal pro WinCC OA Projekt** existiert (nicht pro Verbindung). Er speichert:
+### _S7PlusConfig — Global Configuration Datapoint
+`_S7PlusConfig` is a system datapoint that exists **once per WinCC OA project** (not per connection). It stores:
 
-- `CaCertificates` — TLS CA-Zertifikats-Vertrauensliste (für alle S7Plus-Verbindungen)
-- `Subscriptions.Names` — registrierte Subscription-Pollgruppen-Namen
-- `Subscriptions.Pollgroups` — Pollgruppen-Datenpunkt-Referenzen
-- `Subscriptions.Options` — Subscription-Optionen (z.B. onlyChanges-Flags)
+- `CaCertificates` — TLS CA certificate trust list (for all S7Plus connections)
+- `Subscriptions.Names` — registered subscription poll group names
+- `Subscriptions.Pollgroups` — poll group datapoint references
+- `Subscriptions.Options` — subscription options (e.g., onlyChanges flags)
 
 ## S7Plus Features
 
-- **Symbolische Adressierung** — Variablennamen statt Byte/Bit-Adressen
-- **Subscription-Modus** über `_S7PlusConfig.Subscriptions` — ereignisgesteuerte Updates von der SPS
-- **TIA Portal Browsing** — online (laufende SPS) und offline (TIA Export)
-- **TIA-Projekt-Erkennung** — automatische Auflistung von Exports und Stationen
-- **Zeitsynchronisation** zwischen SPS und WinCC OA
-- **Redundanzumschaltung** mit verschiedenen Bedingungen (OpState, ConnState, SwitchTag)
-- **TLS-Zertifikatsverwaltung** auf Treiberebene
-- **Drei-Schritt-Adresskonfiguration** (`_distrib` → `_address` → `_active`)
+- **Symbolic addressing** — variable names instead of byte/bit addresses
+- **Subscription mode** via `_S7PlusConfig.Subscriptions` — event-driven updates from the PLC
+- **TIA Portal browsing** — online (live PLC) and offline (TIA export)
+- **TIA project discovery** — automated listing of exports and stations
+- **Time synchronization** between PLC and WinCC OA
+- **Redundancy switching** with multiple conditions (OpState, ConnState, SwitchTag)
+- **TLS certificate management** at driver level
+- **Three-step address configuration** (`_distrib` → `_address` → `_active`)

@@ -1,205 +1,205 @@
-# S7Plus Konfigurationswerte und Datentypen
+# S7Plus Configuration Values and Data Types
 
-## SPS-Typ (Config.PLCType)
+## PLC Type (Config.PLCType)
 
-Bestimmt die Ziel-SPS-Hardware. Muss mit der tatsächlichen SPS übereinstimmen.
+Determines the target PLC hardware. Must match the actual PLC.
 
-| Name | Wert | Beschreibung |
-|------|------|-------------|
-| Automatic | 1 | Auto-Erkennung aus TIA Projekt (erfordert Offline-Browse) |
-| RH | 2 | Redundant High Availability — zwei SPSen |
-| RH_Single | 3 | Einzelne SPS in einem redundanten System |
+| Name | Value | Description |
+|------|-------|-------------|
+| Automatic | 1 | Auto-detection from TIA project (requires offline browse) |
+| RH | 2 | Redundant High Availability — two PLCs |
+| RH_Single | 3 | Single PLC in a redundant system |
 | S7_1500 | 16 | Standard S7-1500 |
 | S7_1200 | 272 | S7-1200 |
-| S7_1500_SoftCtrl | 528 | Software-basierter S7-1500 Controller |
-| PLCSim | 768 | PLCSIM Simulationsumgebung |
+| S7_1500_SoftCtrl | 528 | Software-based S7-1500 controller |
+| PLCSim | 768 | PLCSIM simulation environment |
 
-## Verbindungstyp (Config.ConnType)
+## Connection Type (Config.ConnType)
 
-| Name | Wert | Beschreibung |
-|------|------|-------------|
-| Single | 0 | Einzelne Netzwerkverbindung (Standard) |
-| ReduLan | 1 | Redundantes LAN — zwei unabhängige Netzwerkpfade |
+| Name | Value | Description |
+|------|-------|-------------|
+| Single | 0 | Single network connection (default) |
+| ReduLan | 1 | Redundant LAN — two independent network paths |
 
-ReduLan erfordert eine sekundäre IP-Adresse (`Config.ReduAddress`) und optional einen separaten Access Point (`Config.ReduAccessPoint`).
+ReduLan requires a secondary IP address (`Config.ReduAddress`) and optionally a separate access point (`Config.ReduAccessPoint`).
 
-## Verbindungsstatus (State.ConnState)
+## Connection Status (State.ConnState)
 
-| Name | Wert | Beschreibung |
-|------|------|-------------|
-| Inactive | 0 | Verbindung nicht initialisiert |
-| Disconnected | 1 | Konfiguriert aber nicht aktiv |
-| Connecting | 2 | Verbindungsaufbau läuft |
-| Connected | 3 | Erfolgreich verbunden |
-| Disconnecting | 4 | Kontrollierter Verbindungsabbau |
-| Failure | 5 | Verbindung fehlgeschlagen (WinCC OA Log prüfen) |
+| Name | Value | Description |
+|------|-------|-------------|
+| Inactive | 0 | Connection not initialized |
+| Disconnected | 1 | Configured but not active |
+| Connecting | 2 | Connection establishment in progress |
+| Connected | 3 | Successfully connected |
+| Disconnecting | 4 | Controlled disconnection in progress |
+| Failure | 5 | Connection failed (check WinCC OA log) |
 
-## Aufbaumodus (Config.EstablishmentMode)
+## Establishment Mode (Config.EstablishmentMode)
 
-| Name | Wert | Beschreibung |
-|------|------|-------------|
-| Inactive | 0 | Verbindung muss manuell aktiviert werden |
-| AutomaticActive | 1 | Verbindung wird automatisch beim Serverstart aktiviert |
+| Name | Value | Description |
+|------|-------|-------------|
+| Inactive | 0 | Connection must be activated manually |
+| AutomaticActive | 1 | Connection is automatically activated on server start |
 
-Bei `EstablishmentMode = 1` und `Command.Enable = true` wird die Verbindung automatisch aufgebaut.
+With `EstablishmentMode = 1` and `Command.Enable = true`, the connection is established automatically.
 
-## Zeitsynchronisation (Config.TimeSyncMode)
+## Time Synchronization (Config.TimeSyncMode)
 
-| Name | Wert | Beschreibung |
-|------|------|-------------|
-| Inactive | 0 | Keine Zeitsynchronisation |
-| SyncPLCtoOA | 1 | SPS-Uhr an WinCC OA-Uhr synchronisieren |
+| Name | Value | Description |
+|------|-------|-------------|
+| Inactive | 0 | No time synchronization |
+| SyncPLCtoOA | 1 | Synchronize PLC clock to WinCC OA clock |
 
-Synchronisationsintervall konfigurierbar (Standard: 86400 Sekunden = 24 Stunden).
+Synchronization interval is configurable (default: 86400 seconds = 24 hours).
 
-## SPS-Betriebszustand (State.Connections.OpState)
+## PLC Operating State (State.Connections.OpState)
 
-Nur verfügbar wenn `Config.ReadOpState = true`.
+Only available when `Config.ReadOpState = true`.
 
-| Name | Wert | Beschreibung |
-|------|------|-------------|
-| Stop | 4 | SPS im Stop-Modus |
-| Startup | 6 | SPS startet hoch |
-| Run | 8 | SPS läuft normal |
-| RunRedundant | 9 | SPS läuft im redundanten Modus |
-| RunODIS | 18 | SPS läuft mit Online-Diagnose (ODIS) |
+| Name | Value | Description |
+|------|-------|-------------|
+| Stop | 4 | PLC in stop mode |
+| Startup | 6 | PLC is starting up |
+| Run | 8 | PLC is running normally |
+| RunRedundant | 9 | PLC is running in redundant mode |
+| RunODIS | 18 | PLC is running with online diagnostics (ODIS) |
 
-## SPS-Login-Status (State.Connections.State)
+## PLC Login Status (State.Connections.State)
 
-| Name | Wert | Beschreibung |
-|------|------|-------------|
-| LoggedOut | 0 | Nicht authentifiziert |
-| LoggingIn | 1 | Authentifizierung läuft |
-| LoggedIn | 2 | Erfolgreich authentifiziert |
-| LoggingOut | 3 | Abmeldung läuft |
+| Name | Value | Description |
+|------|-------|-------------|
+| LoggedOut | 0 | Not authenticated |
+| LoggingIn | 1 | Authentication in progress |
+| LoggedIn | 2 | Successfully authenticated |
+| LoggingOut | 3 | Logout in progress |
 
 ## Legitimation Level (Config.LegitimationLevel)
 
-Steuert die Zugriffsebene zur SPS. Dies ist **nicht** einfach ein TLS an/aus — es definiert die Berechtigungsstufe.
+Controls the access level to the PLC. This is **not** simply a TLS on/off switch — it defines the authorization level.
 
-| Name | Wert | Beschreibung |
-|------|------|-------------|
-| Invalid | -1 | Ungültige/fehlgeschlagene Authentifizierung (auch für "kein TLS") |
-| Failsafe | 0 | Failsafe-Zugriff, minimale Rechte (auch bei `useTls: true`) |
-| Full | 1 | Vollzugriff auf alle SPS-Ressourcen |
-| ReadWrite | 2 | Lese- und Schreibzugriff |
-| ReadOnly | 3 | Nur Lesezugriff |
-| InactiveAccess | 4 | Inaktiv (kein Zugriff) |
+| Name | Value | Description |
+|------|-------|-------------|
+| Invalid | -1 | Invalid/failed authentication (also for "no TLS") |
+| Failsafe | 0 | Failsafe access, minimal permissions (also with `useTls: true`) |
+| Full | 1 | Full access to all PLC resources |
+| ReadWrite | 2 | Read and write access |
+| ReadOnly | 3 | Read-only access |
+| InactiveAccess | 4 | Inactive (no access) |
 
-Bei TLS: LegitimationLevel = 0 (Failsafe). Ohne TLS: LegitimationLevel = -1 (Invalid).
+With TLS: LegitimationLevel = 0 (Failsafe). Without TLS: LegitimationLevel = -1 (Invalid).
 
-## Redundanz-Umschaltbedingung (Config.SwitchCondition)
+## Redundancy Switch Condition (Config.SwitchCondition)
 
-| Name | Wert | Beschreibung |
-|------|------|-------------|
-| Disabled | 0 | Keine automatische Redundanzumschaltung |
-| OpState | 1 | Umschalten bei Änderung des SPS-Betriebszustands |
-| ConnState | 2 | Umschalten bei Verbindungsverlust |
-| Both | 3 | Umschalten bei OpState ODER ConnState |
-| SwitchTag | 4 | Umschalten basierend auf einer booleschen SPS-Variable |
+| Name | Value | Description |
+|------|-------|-------------|
+| Disabled | 0 | No automatic redundancy switchover |
+| OpState | 1 | Switch on PLC operating state change |
+| ConnState | 2 | Switch on connection loss |
+| Both | 3 | Switch on OpState OR ConnState |
+| SwitchTag | 4 | Switch based on a boolean PLC variable |
 
-SwitchTag (4) erfordert `Config.SwitchTag` mit dem Namen der SPS-Variable.
+SwitchTag (4) requires `Config.SwitchTag` with the name of the PLC variable.
 
-## Adressrichtung (_address._direction)
+## Address Direction (_address._direction)
 
-| Name | Wert | Verwendung |
-|------|------|------------|
-| Output | 1 | Nur Schreiben zur SPS |
-| InputSpont | 2 | **NICHT UNTERSTÜTZT** bei S7Plus |
-| InputSQuery | 3 | Einmalige Leseanfrage |
-| InputPoll | 4 | Zyklisches Lesen |
-| OutputSingle | 5 | Einmaliges Schreiben |
-| IOSpont | 6 | **NICHT UNTERSTÜTZT** bei S7Plus |
-| IOPoll | 7 | Bidirektionales Polling — **auch für Subscriptions** |
-| IOSQuery | 8 | Bidirektionale Einmalanfrage |
+| Name | Value | Usage |
+|------|-------|-------|
+| Output | 1 | Write only to PLC |
+| InputSpont | 2 | **NOT SUPPORTED** with S7Plus |
+| InputSQuery | 3 | Single read request |
+| InputPoll | 4 | Cyclic reading |
+| OutputSingle | 5 | Single write |
+| IOSpont | 6 | **NOT SUPPORTED** with S7Plus |
+| IOPoll | 7 | Bidirectional polling — **also used for subscriptions** |
+| IOSQuery | 8 | Bidirectional single request |
 
-**Kritisch:** Direction 7 (IOPoll) dient doppelt. Sowohl Polling als auch Subscription verwenden diesen Wert. Der Unterschied liegt in der Registrierung in `_S7PlusConfig.Subscriptions`. Siehe Adresskonfiguration für Details.
+**Critical:** Direction 7 (IOPoll) serves a dual purpose. Both polling and subscription use this value. The difference lies in the registration in `_S7PlusConfig.Subscriptions`. See address configuration for details.
 
-Spontane Modi (2, 6) funktionieren bei S7Plus nicht — das Protokoll erfordert Polling oder explizite Subscription.
+Spontaneous modes (2, 6) do not work with S7Plus — the protocol requires polling or explicit subscription.
 
-## Datentyptransformation (_address._datatype)
+## Data Type Transformation (_address._datatype)
 
-Mappt SPS-Datentypen auf WinCC OA Datentypen. Wertebereich: 1001-1027.
+Maps PLC data types to WinCC OA data types. Value range: 1001-1027.
 
-| Name | Wert | SPS-Typ | WinCC OA Typ |
-|------|------|---------|--------------|
-| DEFAULT | 1001 | Auto-Erkennung (empfohlen) | automatisch |
+| Name | Value | PLC Type | WinCC OA Type |
+|------|-------|----------|---------------|
+| DEFAULT | 1001 | Auto-detection (recommended) | automatic |
 | BOOL | 1002 | Boolean | bool |
-| BYTE | 1003 | 8-Bit unsigned | int |
-| WORD | 1004 | 16-Bit unsigned | int |
-| DWORD | 1005 | 32-Bit unsigned | int |
-| LWORD | 1006 | 64-Bit unsigned | int |
-| USINT | 1007 | Unsigned 8-Bit Integer | int |
-| UINT | 1008 | Unsigned 16-Bit Integer | int |
-| UDINT | 1009 | Unsigned 32-Bit Integer | int |
-| ULINT | 1010 | Unsigned 64-Bit Integer | int |
-| SINT | 1011 | Signed 8-Bit Integer | int |
-| INT | 1012 | Signed 16-Bit Integer | int |
-| DINT | 1013 | Signed 32-Bit Integer | int |
-| LINT | 1014 | Signed 64-Bit Integer | int |
-| REAL | 1015 | 32-Bit Float | float |
-| LREAL | 1016 | 64-Bit Double | float |
-| DATE | 1017 | Datum (Tage seit 1970-01-01) | time |
-| DATETIME | 1018 | Datum und Uhrzeit | time |
-| TIME | 1019 | Zeit in Millisekunden (32-Bit) | time |
-| TIME_OF_DAY | 1020 | Tageszeit in ms seit Mitternacht | time |
-| LDATETIME | 1021 | Langes Datum und Uhrzeit | time |
-| LTIME | 1022 | Lange Zeit in Nanosekunden (64-Bit) | time |
-| LTOD | 1023 | Lange Tageszeit (64-Bit) | time |
-| DTL | 1024 | Date and Time Long (12-Byte Struct) | time |
-| S5TIME | 1025 | S5-kompatible Zeit (16-Bit) | time |
-| STRING | 1026 | ASCII-String | string |
-| WSTRING | 1027 | Wide (Unicode) String | string |
+| BYTE | 1003 | 8-bit unsigned | int |
+| WORD | 1004 | 16-bit unsigned | int |
+| DWORD | 1005 | 32-bit unsigned | int |
+| LWORD | 1006 | 64-bit unsigned | int |
+| USINT | 1007 | Unsigned 8-bit integer | int |
+| UINT | 1008 | Unsigned 16-bit integer | int |
+| UDINT | 1009 | Unsigned 32-bit integer | int |
+| ULINT | 1010 | Unsigned 64-bit integer | int |
+| SINT | 1011 | Signed 8-bit integer | int |
+| INT | 1012 | Signed 16-bit integer | int |
+| DINT | 1013 | Signed 32-bit integer | int |
+| LINT | 1014 | Signed 64-bit integer | int |
+| REAL | 1015 | 32-bit float | float |
+| LREAL | 1016 | 64-bit double | float |
+| DATE | 1017 | Date (days since 1970-01-01) | time |
+| DATETIME | 1018 | Date and time | time |
+| TIME | 1019 | Time in milliseconds (32-bit) | time |
+| TIME_OF_DAY | 1020 | Time of day in ms since midnight | time |
+| LDATETIME | 1021 | Long date and time | time |
+| LTIME | 1022 | Long time in nanoseconds (64-bit) | time |
+| LTOD | 1023 | Long time of day (64-bit) | time |
+| DTL | 1024 | Date and Time Long (12-byte struct) | time |
+| S5TIME | 1025 | S5-compatible time (16-bit) | time |
+| STRING | 1026 | ASCII string | string |
+| WSTRING | 1027 | Wide (Unicode) string | string |
 
-Für STRING und WSTRING: `_address._offset` bzw. `itemLength` auf die maximale Stringlänge setzen.
+For STRING and WSTRING: set `_address._offset` or `itemLength` to the maximum string length.
 
-## Verbindungsparameter
+## Connection Parameters
 
-### Pflichtparameter
+### Required Parameters
 
-| Parameter | Datenpunktfeld | Beschreibung |
-|-----------|---------------|-------------|
-| IP-Adresse | Config.Address | IPv4-Adresse der SPS |
-| SPS-Typ | Config.PLCType | SPS-Hardware-Typ (siehe Tabelle oben) |
-| Treibernummer | Config.DrvNumber | S7Plus-Treibernummer (1-99) |
+| Parameter | Datapoint Field | Description |
+|-----------|----------------|-------------|
+| IP Address | Config.Address | IPv4 address of the PLC |
+| PLC Type | Config.PLCType | PLC hardware type (see table above) |
+| Driver Number | Config.DrvNumber | S7Plus driver number (1-99) |
 
-### Optionale Parameter
+### Optional Parameters
 
-| Parameter | Datenpunktfeld | Standard | Beschreibung |
-|-----------|---------------|---------|-------------|
-| Access Point | Config.AccessPoint | "S7ONLINE" | Netzwerk-Zugangspunkt |
-| Verbindungstyp | Config.ConnType | 0 (Single) | Verbindungstyp |
-| Verbindung aktivieren | Config.EstablishmentMode | 0 | 0=Inaktiv, 1=AutomaticActive |
-| Keep-Alive | Config.KeepAliveTimeout | 20 | Keep-Alive in Sekunden |
-| Reconnect | Config.ReconnectTimeout | 20 | Reconnect-Intervall in Sekunden |
-| UTC verwenden | Config.UseUtc | true | UTC-Zeitstempel |
-| Zeitzone | Config.Timezone | 0 | Zeitzonen-Offset |
-| Invalid-Bit | Config.SetInvalidBit | false | Invalid-Bit bei Kommunikationsfehlern |
-| Statistik | Config.EnableStatistics | true | Treiberstatistik |
-| Diagnose | Config.EnableDiagnostics | false | Diagnose aktivieren |
-| OpState lesen | Config.ReadOpState | false | SPS-Betriebszustand lesen |
-| Werte bei Connect | Config.AcquireValuesOnConnect | true | Alle Werte bei Verbindung lesen |
-| Zeitsync-Modus | Config.TimeSyncMode | 0 (Inaktiv) | Zeitsynchronisation |
-| Zeitsync-Intervall | Config.TimeSyncInterval | 86400 | Sync-Intervall in Sekunden |
-| Passwort | Config.Password | — | SPS-Zugangspasswort |
-| TLS | Config.UseTls | false | TLS-Verschlüsselung |
-| Zertifikat | Config.Certificate | — | Server-Zertifikatsdatei |
-| Stationsname | Config.StationName | — | TIA-Stationsname für Browse |
-| Codepage | Config.Codepage | — | Zeichencodierung |
-| Redu-Adresse | Config.ReduAddress | — | Sekundäre SPS-IP |
-| Redu-AccessPoint | Config.ReduAccessPoint | — | Sekundärer Zugangspunkt |
-| Umschaltbedingung | Config.SwitchCondition | 0 (Disabled) | Redundanz-Umschaltung |
-| Switch-Tag | Config.SwitchTag | — | SPS-Variable für SwitchTag |
+| Parameter | Datapoint Field | Default | Description |
+|-----------|----------------|---------|-------------|
+| Access Point | Config.AccessPoint | "S7ONLINE" | Network access point |
+| Connection Type | Config.ConnType | 0 (Single) | Connection type |
+| Enable Connection | Config.EstablishmentMode | 0 | 0=Inactive, 1=AutomaticActive |
+| Keep-Alive | Config.KeepAliveTimeout | 20 | Keep-alive in seconds |
+| Reconnect | Config.ReconnectTimeout | 20 | Reconnect interval in seconds |
+| Use UTC | Config.UseUtc | true | UTC timestamps |
+| Timezone | Config.Timezone | 0 | Timezone offset |
+| Invalid Bit | Config.SetInvalidBit | false | Invalid bit on communication errors |
+| Statistics | Config.EnableStatistics | true | Driver statistics |
+| Diagnostics | Config.EnableDiagnostics | false | Enable diagnostics |
+| Read OpState | Config.ReadOpState | false | Read PLC operating state |
+| Values on Connect | Config.AcquireValuesOnConnect | true | Read all values on connection |
+| Time Sync Mode | Config.TimeSyncMode | 0 (Inactive) | Time synchronization |
+| Time Sync Interval | Config.TimeSyncInterval | 86400 | Sync interval in seconds |
+| Password | Config.Password | — | PLC access password |
+| TLS | Config.UseTls | false | TLS encryption |
+| Certificate | Config.Certificate | — | Server certificate file |
+| Station Name | Config.StationName | — | TIA station name for browse |
+| Codepage | Config.Codepage | — | Character encoding |
+| Redu Address | Config.ReduAddress | — | Secondary PLC IP |
+| Redu AccessPoint | Config.ReduAccessPoint | — | Secondary access point |
+| Switch Condition | Config.SwitchCondition | 0 (Disabled) | Redundancy switchover |
+| Switch Tag | Config.SwitchTag | — | PLC variable for SwitchTag |
 
-## Browse-Ergebnisfelder
+## Browse Result Fields
 
-Jeder Browse-Knoten enthält:
+Each browse node contains:
 
-| Feld | Beschreibung |
-|------|-------------|
-| path | Symbolischer Pfad (als `_reference` in der Adresskonfiguration verwenden) |
-| comment | Beschreibung aus dem TIA Portal Projekt |
-| systemType | SPS-Systemtyp-Identifier |
-| valueType | Datentyp (z.B. "Int", "Real", "Bool", "String") |
-| itemLength | Stringlänge für STRING/WSTRING (0 bei anderen Typen) |
-| hasChildren | Wenn true, kann tiefer navigiert werden |
+| Field | Description |
+|-------|-------------|
+| path | Symbolic path (use as `_reference` in address configuration) |
+| comment | Description from the TIA Portal project |
+| systemType | PLC system type identifier |
+| valueType | Data type (e.g., "Int", "Real", "Bool", "String") |
+| itemLength | String length for STRING/WSTRING (0 for other types) |
+| hasChildren | If true, deeper navigation is possible |

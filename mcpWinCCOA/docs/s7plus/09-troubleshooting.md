@@ -1,199 +1,199 @@
-# S7Plus Fehlerbehebung
+# S7Plus Troubleshooting
 
-## Einrichtungsprobleme
+## Setup Issues
 
-### Kein S7Plus-Treiber im Projekt
+### No S7Plus Driver in the Project
 
-**Ursache:** Kein S7Plus-Treiber in Pmon registriert.
+**Cause:** No S7Plus driver registered in Pmon.
 
-**Lösung:** Treiber registrieren:
-1. WinCC OA Console öffnen
-2. Manager `WCCOAs7plusdrv` hinzufügen
-3. Optionen: `-num 1` (Treibernummer)
-4. Startmodus: `always`
+**Solution:** Register the driver:
+1. Open WinCC OA Console
+2. Add manager `WCCOAs7plusdrv`
+3. Options: `-num 1` (driver number)
+4. Start mode: `always`
 
-### Treibernummer X wird von Simulationstreiber verwendet
+### Driver Number X is Used by Simulation Driver
 
-**Ursache:** Die gewünschte Treibernummer kollidiert mit einem Simulationstreiber (`WCCOAsimudrv`).
+**Cause:** The desired driver number conflicts with a simulation driver (`WCCOAsimudrv`).
 
-**Lösung:** Andere Treibernummer verwenden. Nächste verfügbare Nummer über Pmon ermitteln.
+**Solution:** Use a different driver number. Determine the next available number via Pmon.
 
-## Verbindungsprobleme
+## Connection Issues
 
-### Verbindung bleibt im Status "Connecting"
+### Connection Stays in "Connecting" Status
 
-**Mögliche Ursachen:**
-- SPS nicht erreichbar (falsche IP-Adresse oder Netzwerkproblem)
-- Falscher SPS-Typ konfiguriert (z.B. S7_1500 statt PLCSim)
-- Access Point nicht verfügbar ("S7ONLINE" nicht in Windows konfiguriert)
-- Firewall blockiert S7Plus-Kommunikation (TCP Port 102)
+**Possible causes:**
+- PLC not reachable (wrong IP address or network problem)
+- Wrong PLC type configured (e.g., S7_1500 instead of PLCSim)
+- Access point not available ("S7ONLINE" not configured in Windows)
+- Firewall blocking S7Plus communication (TCP port 102)
 
-**Lösungsschritte:**
-1. SPS-Erreichbarkeit prüfen: IP-Adresse pingen
-2. SPS-Typ prüfen: stimmt `Config.PLCType` mit der tatsächlichen Hardware überein?
-3. Access Point in den PG/PC-Schnittstelleneinstellungen prüfen
-4. Firewall-Regeln für TCP Port 102 kontrollieren
+**Resolution steps:**
+1. Check PLC reachability: ping the IP address
+2. Check PLC type: does `Config.PLCType` match the actual hardware?
+3. Check the access point in the PG/PC interface settings
+4. Check firewall rules for TCP port 102
 
-### Verbindung zeigt "Failure"
+### Connection Shows "Failure"
 
-**Mögliche Ursachen:**
-- SPS-Typ-Mismatch (häufigster Fehler bei PLCSim)
-- TLS-Zertifikatsprobleme
-- SPS-Passwort falsch
-- Treiber läuft nicht
+**Possible causes:**
+- PLC type mismatch (most common error with PLCSim)
+- TLS certificate issues
+- Incorrect PLC password
+- Driver not running
 
-**Lösungsschritte:**
-1. WinCC OA Log auf detaillierte Fehlermeldungen prüfen
-2. Bei PLCSim: SPS-Typ muss `768` sein, nicht `16` (S7_1500)
-3. Bei TLS: CA-Zertifikate in der Vertrauensliste prüfen
-4. Treiber-Status in Pmon prüfen
+**Resolution steps:**
+1. Check the WinCC OA log for detailed error messages
+2. For PLCSim: PLC type must be `768`, not `16` (S7_1500)
+3. For TLS: check CA certificates in the trust list
+4. Check driver status in Pmon
 
-### Verbindung hat funktioniert, jetzt nicht mehr
+### Connection Was Working, Now It Is Not
 
-**Mögliche Ursachen:**
-- SPS wurde neu gestartet oder IP geändert
-- TLS-Zertifikat abgelaufen
-- Netzwerkinfrastruktur geändert
-- Treiber abgestürzt
+**Possible causes:**
+- PLC was restarted or IP changed
+- TLS certificate expired
+- Network infrastructure changed
+- Driver crashed
 
-**Lösungsschritte:**
-1. `State.ConnState` prüfen
-2. SPS-Erreichbarkeit verifizieren
-3. WinCC OA Log auf Treiber-Absturzmeldungen prüfen
-4. Verbindung deaktivieren und wieder aktivieren (Reconnect)
+**Resolution steps:**
+1. Check `State.ConnState`
+2. Verify PLC reachability
+3. Check WinCC OA log for driver crash messages
+4. Disable and re-enable the connection (reconnect)
 
-## Adresskonfigurationsprobleme
+## Address Configuration Issues
 
-### Keine Daten nach Adresskonfiguration
+### No Data After Address Configuration
 
-**Mögliche Ursachen:**
-- Falscher symbolischer Pfad (Tippfehler im SPS-Variablennamen)
-- Falsche Direction (Output statt IOPoll)
-- Falsche Treibernummer (Adresse zeigt auf anderen Treiber)
-- Verbindung nicht im Status "Connected"
-- Pollgruppe nicht aktiv
+**Possible causes:**
+- Wrong symbolic path (typo in PLC variable name)
+- Wrong direction (Output instead of IOPoll)
+- Wrong driver number (address points to a different driver)
+- Connection not in "Connected" status
+- Poll group not active
 
-**Lösungsschritte:**
-1. Symbolischen Pfad per Browse verifizieren
-2. Direction prüfen (IOPoll/7 für die meisten Anwendungsfälle)
-3. Treibernummer muss mit `Config.DrvNumber` der Verbindung übereinstimmen
-4. `State.ConnState = 3` bestätigen
-5. `_PollGroup.Active = true` prüfen
+**Resolution steps:**
+1. Verify the symbolic path via browse
+2. Check direction (IOPoll/7 for most use cases)
+3. Driver number must match the `Config.DrvNumber` of the connection
+4. Confirm `State.ConnState = 3`
+5. Check `_PollGroup.Active = true`
 
-### Subscription löst keine Updates aus
+### Subscription Does Not Trigger Updates
 
-**Mögliche Ursachen:**
-- Adresse nicht in `_S7PlusConfig.Subscriptions` registriert
-- SPS-Wert ändert sich tatsächlich nicht
+**Possible causes:**
+- Address not registered in `_S7PlusConfig.Subscriptions`
+- PLC value is actually not changing
 
-**Lösungsschritte:**
-1. `_S7PlusConfig.Subscriptions.Names` auf Pollgruppen-Eintrag prüfen
-2. SPS-Wert manuell ändern zum Testen
+**Resolution steps:**
+1. Check `_S7PlusConfig.Subscriptions.Names` for poll group entry
+2. Manually change the PLC value for testing
 
-### Falsche Datentypen / verfälschte Werte
+### Wrong Data Types / Corrupted Values
 
-**Mögliche Ursachen:**
-- Transformationstyp passt nicht zum SPS-Variablentyp
-- Stringlänge (`itemLength`) zu kurz für STRING/WSTRING
+**Possible causes:**
+- Transformation type does not match the PLC variable type
+- String length (`itemLength`) too short for STRING/WSTRING
 
-**Lösungsschritte:**
-1. Browse verwenden um `valueType` der Variable zu prüfen
-2. Transformation 1001 (DEFAULT) für Auto-Erkennung verwenden
-3. Bei Strings: `itemLength` auf die Stringlänge der SPS-Definition setzen
+**Resolution steps:**
+1. Use browse to check the `valueType` of the variable
+2. Use transformation 1001 (DEFAULT) for auto-detection
+3. For strings: set `itemLength` to the string length of the PLC definition
 
-## Browse-Probleme
+## Browse Issues
 
-### Browse liefert keine Ergebnisse
+### Browse Returns No Results
 
-**Mögliche Ursachen:**
-- Verbindung nicht aufgebaut (bei Online-Browse)
-- Falscher TIA-Exportname oder Stationsname (bei Offline-Browse)
-- `Config.StationName` passt nicht zum Browse-Modus
-- Kategorie-Filter zu restriktiv
+**Possible causes:**
+- Connection not established (for online browse)
+- Wrong TIA export name or station name (for offline browse)
+- `Config.StationName` does not match the browse mode
+- Category filter too restrictive
 
-**Lösungsschritte:**
-1. Online: `State.ConnState = 3` sicherstellen
-2. Offline: Root-Browse zur Ermittlung korrekter Namen verwenden
-3. `Config.StationName` prüfen (Online: `S7Plus$Online|Online`, Offline: `Export|Station`)
-4. Browse mit Kategorie "All" versuchen
+**Resolution steps:**
+1. Online: ensure `State.ConnState = 3`
+2. Offline: use root browse to determine correct names
+3. Check `Config.StationName` (Online: `S7Plus$Online|Online`, Offline: `Export|Station`)
+4. Try browse with category "All"
 
-### Browse-Timeout (60 Sekunden)
+### Browse Timeout (60 Seconds)
 
-**Mögliche Ursachen:**
-- SPS antwortet langsam (hohe Last)
-- Netzwerk-Latenz
-- Sehr großes SPS-Programm mit vielen Variablen
+**Possible causes:**
+- PLC responding slowly (high load)
+- Network latency
+- Very large PLC program with many variables
 
-**Lösungsschritte:**
-1. Browse mit spezifischer Kategorie einschränken
-2. Paginierung mit kleinerem Limit verwenden
-3. Netzwerk-Latenz zur SPS prüfen
-4. Offline-Browse für große Projekte erwägen
+**Resolution steps:**
+1. Narrow browse with a specific category
+2. Use pagination with a smaller limit
+3. Check network latency to the PLC
+4. Consider offline browse for large projects
 
-### Online-Verbindung kann nicht offline browsen (oder umgekehrt)
+### Online Connection Cannot Browse Offline (or Vice Versa)
 
-**Ursache:** Der Browse-Modus ist durch `Config.StationName` bei der Verbindungserstellung fixiert.
+**Cause:** The browse mode is fixed by `Config.StationName` at connection creation.
 
-**Lösung:** Separate Verbindung mit dem gewünschten Browse-Modus erstellen. Es können beide gleichzeitig existieren.
+**Solution:** Create a separate connection with the desired browse mode. Both can exist simultaneously.
 
-## TLS-Probleme
+## TLS Issues
 
-### Keine CA-Zertifikate bei Verbindungserstellung
+### No CA Certificates When Creating a Connection
 
-**Lösung:** CA-Zertifikate vor der Verbindungserstellung zur Vertrauensliste hinzufügen:
+**Solution:** Add CA certificates to the trust list before creating the connection:
 ```
 _S7PlusConfig.CaCertificates = ["root_ca.pem"]
 ```
 
-### TLS-Handshake schlägt fehl
+### TLS Handshake Fails
 
-**Mögliche Ursachen:**
-- CA-Zertifikat passt nicht zur Zertifikatskette der SPS
-- Zertifikat abgelaufen
-- Zertifikatsdatei nicht im Projektverzeichnis (`data/s7plus/cert`)
+**Possible causes:**
+- CA certificate does not match the PLC certificate chain
+- Certificate expired
+- Certificate file not in the project directory (`data/s7plus/cert`)
 
-**Lösungsschritte:**
-1. Zertifikatskette prüfen (Root-CA + Intermediate)
-2. Ablaufdaten der Zertifikate prüfen
-3. Zertifikatsdateien in `data/s7plus/cert` verifizieren
+**Resolution steps:**
+1. Check the certificate chain (root CA + intermediate)
+2. Check certificate expiration dates
+3. Verify certificate files in `data/s7plus/cert`
 
-## Treiberprobleme
+## Driver Issues
 
-### Treibernummern-Konflikt
+### Driver Number Conflict
 
-**Symptom:** Fehlermeldung über bereits belegte Treibernummer.
+**Symptom:** Error message about an already occupied driver number.
 
-**Lösung:** Andere Treibernummer wählen. Belegte Nummern über Pmon ermitteln.
+**Solution:** Choose a different driver number. Determine occupied numbers via Pmon.
 
-### Treiber startet nicht
+### Driver Does Not Start
 
-**Mögliche Ursachen:**
-- WinCC OA Lizenz enthält keinen S7Plus-Treiber
-- Maximale Anzahl Manager erreicht
-- Konfliktierende Treiberkonfiguration
+**Possible causes:**
+- WinCC OA license does not include the S7Plus driver
+- Maximum number of managers reached
+- Conflicting driver configuration
 
-**Lösungsschritte:**
-1. WinCC OA Lizenz auf S7Plus-Treiber-Support prüfen
-2. Pmon auf maximale Manager-Anzahl prüfen
-3. WinCC OA Log auf Treiber-Startfehler prüfen
+**Resolution steps:**
+1. Check the WinCC OA license for S7Plus driver support
+2. Check Pmon for maximum manager count
+3. Check the WinCC OA log for driver startup errors
 
-## Tipps
+## Tips
 
-### Empfohlene Einrichtungsreihenfolge
-1. S7Plus-Treiber in Pmon registrieren
-2. CA-Zertifikate hinzufügen (bei TLS)
-3. Verbindung erstellen
-4. Auf "Connected" warten
-5. SPS-Struktur browsen
-6. Adressen konfigurieren
+### Recommended Setup Order
+1. Register the S7Plus driver in Pmon
+2. Add CA certificates (for TLS)
+3. Create the connection
+4. Wait for "Connected"
+5. Browse the PLC structure
+6. Configure addresses
 
-### Testen mit PLCSim
-- Immer SPS-Typ `768` (PLCSim) verwenden
-- PLCSim kann andere Timing-Eigenschaften als reale Hardware haben
-- Manche Features (z.B. TLS) sind in der Simulation nicht verfügbar
+### Testing with PLCSim
+- Always use PLC type `768` (PLCSim)
+- PLCSim may have different timing characteristics than real hardware
+- Some features (e.g., TLS) are not available in simulation
 
 ### Performance
-- Subscription für Werte verwenden, die sich selten ändern
-- Polling mit angemessenem Intervall für sich schnell ändernde Werte
-- Zusammengehörige Variablen auf die gleiche Pollgruppe für konsistentes Timing
-- 800-Knoten-Paginierungslimit bei großen SPS-Programmen beachten
+- Use subscription for values that change infrequently
+- Use polling with an appropriate interval for rapidly changing values
+- Place related variables on the same poll group for consistent timing
+- Note the 800-node pagination limit for large PLC programs

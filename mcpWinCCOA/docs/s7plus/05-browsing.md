@@ -1,146 +1,146 @@
-# S7Plus SPS-Browsing
+# S7Plus PLC Browsing
 
-## Überblick
+## Overview
 
-Die Browse-Funktionalität ermöglicht die Navigation durch die Variablenstruktur der SPS. Damit werden verfügbare Datenbausteine, Tags und deren Typen ermittelt. Dies ist essenziell für die Adresskonfiguration, da der exakte symbolische Pfad der SPS-Variable benötigt wird.
+The browse functionality enables navigation through the variable structure of the PLC. It is used to determine available data blocks, tags, and their types. This is essential for address configuration, as the exact symbolic path of the PLC variable is required.
 
-## Browse-Modi
+## Browse Modes
 
-### Online-Browse
-Verbindet sich mit einer laufenden SPS und liest deren aktuelle Variablenstruktur in Echtzeit.
+### Online Browse
+Connects to a running PLC and reads its current variable structure in real time.
 
-**Voraussetzungen:**
-- Verbindung muss im Status `Connected` sein
-- SPS muss über das Netzwerk erreichbar sein
-- `Config.StationName` muss `"S7Plus$Online|Online"` enthalten
+**Prerequisites:**
+- Connection must be in `Connected` status
+- PLC must be reachable over the network
+- `Config.StationName` must contain `"S7Plus$Online|Online"`
 
-### Offline-Browse
-Liest die Variablenstruktur aus einem TIA Portal Export im WinCC OA Projekt. Erfordert keine laufende SPS.
+### Offline Browse
+Reads the variable structure from a TIA Portal export in the WinCC OA project. Does not require a running PLC.
 
-**Voraussetzungen:**
-- TIA Portal Projekt muss aus TIA Portal exportiert und im Datenverzeichnis des WinCC OA Projekts abgelegt sein
-- `Config.StationName` muss `"ExportName|Stationsname"` enthalten
-- Die `.zip`-Endung wird automatisch entfernt
+**Prerequisites:**
+- TIA Portal project must be exported from TIA Portal and placed in the data directory of the WinCC OA project
+- `Config.StationName` must contain `"ExportName|StationName"`
+- The `.zip` extension is automatically removed
 
-### Root-Browse
-Listet verfügbare TIA Portal Exports auf der obersten Ebene. Verwende dies zuerst um herauszufinden, welche Exports vorhanden sind.
+### Root Browse
+Lists available TIA Portal exports at the top level. Use this first to find out which exports are available.
 
-### AccessPoints-Browse
-Listet verfügbare Zugangspunkte für die S7Plus-Kommunikation.
+### AccessPoints Browse
+Lists available access points for S7Plus communication.
 
-## Browse-Pfadkonstruktion
+## Browse Path Construction
 
-Intern konstruiert das Browse-System pipe-getrennte Pfade für den S7Plus-Treiber:
+Internally, the browse system constructs pipe-separated paths for the S7Plus driver:
 
-| Modus | Internes Pfadmuster |
-|-------|-------------------|
-| Online (ohne Kategorie) | `S7Plus$Online` |
-| Online (Kategorie=All) | `S7Plus$Online\|Online` |
-| Online (Kategorie=Blocks) | `S7Plus$Online\|Online\|Blocks` |
-| Online (tief) | `S7Plus$Online\|Online\|Blocks\|MyDB\|SubStruct` |
+| Mode | Internal Path Pattern |
+|------|-----------------------|
+| Online (without category) | `S7Plus$Online` |
+| Online (Category=All) | `S7Plus$Online\|Online` |
+| Online (Category=Blocks) | `S7Plus$Online\|Online\|Blocks` |
+| Online (deep) | `S7Plus$Online\|Online\|Blocks\|MyDB\|SubStruct` |
 | Offline (Root) | `MyExport\|PLC_1` |
-| Offline (Kategorie) | `MyExport\|PLC_1\|Blocks` |
-| Root | (leerer String) |
+| Offline (Category) | `MyExport\|PLC_1\|Blocks` |
+| Root | (empty string) |
 | AccessPoints | `S7Plus$AccessPoints` |
 
-Die `.zip`-Endung wird automatisch von TIA-Exportnamen entfernt.
+The `.zip` extension is automatically removed from TIA export names.
 
-## Kategorie-Filter
+## Category Filter
 
-| Kategorie | Beschreibung |
-|-----------|-------------|
-| All | Alles anzeigen (Standard) |
-| Blocks | Datenbausteine, Funktionsbausteine, Organisationsbausteine |
-| Tags | SPS-Tags (globale Variablen) |
-| Types | Benutzerdefinierte Datentypen (UDTs) |
-| Alarms | SPS-Alarmdefinitionen |
+| Category | Description |
+|----------|-------------|
+| All | Show everything (default) |
+| Blocks | Data blocks, function blocks, organization blocks |
+| Tags | PLC tags (global variables) |
+| Types | User-defined data types (UDTs) |
+| Alarms | PLC alarm definitions |
 
-## Paginierung
+## Pagination
 
-Browse-Ergebnisse werden paginiert. Maximum pro Seite: **800 Knoten**.
+Browse results are paginated. Maximum per page: **800 nodes**.
 
-Ergebnis-Struktur:
+Result structure:
 ```
-nodes:      [...]              Knoten der aktuellen Seite
-totalNodes: 1500               Gesamtzahl verfügbarer Knoten
-hasMore:    true               Weitere Seiten vorhanden
-nextOffset: 800                Offset für nächste Seite (null wenn keine)
-isPartial:  true               Ergebnis wurde abgeschnitten
-warning:    "showing 1-800 of 1500"   Lesbare Meldung
-```
-
-## Navigation in die Tiefe
-
-Um in die Kinder eines Knotens zu navigieren, wird der Pfad erweitert:
-
-```
-1. Datenbausteine auflisten:
-   Pfad: S7Plus$Online|Online|Blocks
-   → Ergebnis enthält: path="MyDB", hasChildren=true
-
-2. In MyDB navigieren:
-   Pfad: S7Plus$Online|Online|Blocks|MyDB
-   → Ergebnis enthält: path="MyDB.SubStruct", hasChildren=true
-
-3. Tiefer navigieren:
-   Pfad: S7Plus$Online|Online|Blocks|MyDB|SubStruct
-   → Ergebnis enthält: path="MyDB.SubStruct.Temperature", hasChildren=false
+nodes:      [...]              Nodes of the current page
+totalNodes: 1500               Total number of available nodes
+hasMore:    true               More pages available
+nextOffset: 800                Offset for next page (null if none)
+isPartial:  true               Result was truncated
+warning:    "showing 1-800 of 1500"   Human-readable message
 ```
 
-## Browse-Ergebnis-Format
+## Navigating Deeper
 
-Jeder Browse-Knoten enthält:
+To navigate into the children of a node, the path is extended:
 
-| Feld | Beschreibung |
-|------|-------------|
-| path | Symbolischer Pfad (als `_reference` in der Adresskonfiguration verwenden) |
-| comment | Beschreibung aus dem TIA Portal Projekt |
-| systemType | SPS-Systemtyp-Identifier |
-| valueType | Datentyp (z.B. "Int", "Real", "Bool", "String") |
-| itemLength | Stringlänge bei STRING/WSTRING (0 bei anderen Typen) |
-| hasChildren | Wenn true, kann tiefer navigiert werden |
+```
+1. List data blocks:
+   Path: S7Plus$Online|Online|Blocks
+   -> Result contains: path="MyDB", hasChildren=true
 
-## TIA-Projekt-Erkennung
+2. Navigate into MyDB:
+   Path: S7Plus$Online|Online|Blocks|MyDB
+   -> Result contains: path="MyDB.SubStruct", hasChildren=true
 
-Zum automatisierten Erkennen verfügbarer TIA Portal Exports:
+3. Navigate deeper:
+   Path: S7Plus$Online|Online|Blocks|MyDB|SubStruct
+   -> Result contains: path="MyDB.SubStruct.Temperature", hasChildren=false
+```
 
-1. Temporäre Offline-Verbindung erstellen (IP 0.0.0.0, PLCType Automatic)
-2. Root-Browse durchführen → listet alle TIA Exports
-3. Für jeden Export: Stationsname setzen und nach enthaltenen Stationen browsen
-4. Ergebnis: Exportnamen und deren Stationen
-5. Temporäre Verbindung aufräumen
+## Browse Result Format
 
-Ergebnis-Beispiel:
+Each browse node contains:
+
+| Field | Description |
+|-------|-------------|
+| path | Symbolic path (use as `_reference` in address configuration) |
+| comment | Description from the TIA Portal project |
+| systemType | PLC system type identifier |
+| valueType | Data type (e.g., "Int", "Real", "Bool", "String") |
+| itemLength | String length for STRING/WSTRING (0 for other types) |
+| hasChildren | If true, deeper navigation is possible |
+
+## TIA Project Detection
+
+For automated detection of available TIA Portal exports:
+
+1. Create a temporary offline connection (IP 0.0.0.0, PLCType Automatic)
+2. Perform root browse — lists all TIA exports
+3. For each export: set station name and browse for contained stations
+4. Result: export names and their stations
+5. Clean up temporary connection
+
+Example result:
 ```
 Exports:
   - Name: MyTIAProject_Export
-    Stationen: [PLC_1, PLC_2]
+    Stations: [PLC_1, PLC_2]
   - Name: AnotherExport
-    Stationen: [CPU_315]
+    Stations: [CPU_315]
 ```
 
-## Timeout-Schutz
+## Timeout Protection
 
-Browse-Operationen haben ein **60-Sekunden-Timeout**. Wenn die SPS nicht rechtzeitig antwortet:
-- Browse wird abgebrochen
-- Ressourcen werden aufgeräumt
-- Fehler wird zurückgegeben
+Browse operations have a **60-second timeout**. If the PLC does not respond in time:
+- Browse is aborted
+- Resources are cleaned up
+- An error is returned
 
-## Typischer Browse-Workflow
+## Typical Browse Workflow
 
 ```
-1. TIA Exports ermitteln (bei Offline-Modus):
-   Root-Browse → Exportnamen und Stationen herausfinden
+1. Determine TIA exports (for offline mode):
+   Root browse -> find export names and stations
 
-2. Oberste Struktur browsen:
-   Online/Blocks oder Offline/Blocks → verfügbare Datenbausteine sehen
+2. Browse top-level structure:
+   Online/Blocks or Offline/Blocks -> see available data blocks
 
-3. In Datenbausteine navigieren:
-   Pfad erweitern um "MyDB" → Variablen im Baustein sehen
+3. Navigate into data blocks:
+   Extend path with "MyDB" -> see variables in the block
 
-4. Variable finden:
-   Ergebnis: path="MyDB.Temperature", valueType="Real"
+4. Find variable:
+   Result: path="MyDB.Temperature", valueType="Real"
 
-5. Adresse konfigurieren:
-   _reference="MyDB.Temperature" am gewünschten DPE setzen
+5. Configure address:
+   Set _reference="MyDB.Temperature" on the desired DPE
 ```
