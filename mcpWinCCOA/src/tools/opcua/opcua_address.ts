@@ -17,7 +17,7 @@ import { OpcUaDatatype, DpAddressDirection } from '../../types/index.js';
  * @returns Number of tools registered
  */
 export function registerTools(server: any, context: ServerContext): number {
-  const opcua = new OpcUaConnection();
+  const opcua = new OpcUaConnection(context.winccoa);
 
   server.tool(
     "opcua-add-address-config",

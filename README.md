@@ -26,6 +26,7 @@ This Model Context Protocol (MCP) server connects AI assistants to WinCC OA SCAD
 - **Dashboards**: `dashboards/dashboard`, `dashboards/widget`
 - **OPC UA**: `opcua/opcua_connection`, `opcua/opcua_address`
 - **MQTT**: `mqtt/mqtt_connection`
+- **S7Plus**: `s7plus/s7plus_connection`, `s7plus/s7plus_address`
 
 **Note**: Icon tools (`icons/icon`) create/delete SVG files but don't modify SCADA data.
 
@@ -113,7 +114,7 @@ WINCCOA_FIELD=default  # or 'oil', 'transport'
 
 # Configure available tools (examples - see docs/TOOLS.md for complete list)
 # Full feature set
-TOOLS=datapoints/dp_basic,datapoints/dp_set,opcua/opcua_connection,mqtt/mqtt_connection,dashboards/dashboard,manager/manager_list
+TOOLS=datapoints/dp_basic,datapoints/dp_set,opcua/opcua_connection,mqtt/mqtt_connection,s7plus/s7plus_connection,s7plus/s7plus_address,dashboards/dashboard,manager/manager_list
 # Default: Read-only monitoring (safe starting point)
 TOOLS=datapoints/dp_basic,datapoints/dp_types,archive/archive_query,common/common_query,pv_range/pv_range_query,manager/manager_list
 
@@ -224,6 +225,7 @@ claude mcp add --transport http winccoa http://winccoaserver:3000/mcp --header "
 - **📊 Datapoints** - Read, write, and create datapoints and types
 - **🔗 OPC UA** - Connect to OPC UA servers and browse address spaces
 - **📡 MQTT** - Connect to MQTT brokers and map topics to datapoints
+- **🔌 S7Plus** - Connect to Siemens S7-1200/S7-1500 PLCs via S7Plus driver
 - **📈 Dashboards & Widgets** - Create and manage visualization dashboards
 - **🚨 Alarms** - Configure alarm thresholds and notifications
 - **📁 Archives** - Query and configure historical data storage
