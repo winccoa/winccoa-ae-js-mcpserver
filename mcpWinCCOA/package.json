@@ -59,8 +59,8 @@
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^18.19.129",
-    "@vitest/coverage-v8": "^2.0.0",
+    "@vitest/coverage-v8": "^2.1.9",
     "typescript": "^5.8.3",
-    "vitest": "^2.0.0"
+    "vitest": "^2.1.9"
   }
 }

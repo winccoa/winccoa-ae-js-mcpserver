@@ -1,0 +1,121 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`S7PLUS_DEFAULTS (snapshot) > all default values match snapshot 1`] = `
+{
+  "accessPoint": "S7ONLINE",
+  "acquireValuesOnConnect": true,
+  "connType": 0,
+  "enableConnection": true,
+  "enableDiagnostics": false,
+  "enableStatistics": true,
+  "keepAliveTimeout": 20,
+  "readOpState": false,
+  "reconnectTimeout": 20,
+  "reduSwitchCondition": 0,
+  "setInvalidBit": false,
+  "timeSyncInterval": 86400,
+  "timeSyncMode": 0,
+  "timezoneOffset": 0,
+  "useTls": false,
+  "useUtc": true,
+}
+`;
+
+exports[`S7Plus enum values (snapshot) > S7PlusAddressDirection values match snapshot 1`] = `
+{
+  "IOPoll": 7,
+  "IOSQuery": 8,
+  "IOSpont": 6,
+  "InputPoll": 4,
+  "InputSQuery": 3,
+  "InputSpont": 2,
+  "Output": 1,
+  "OutputSingle": 5,
+}
+`;
+
+exports[`S7Plus enum values (snapshot) > S7PlusConnType values match snapshot 1`] = `
+{
+  "ReduLan": 1,
+  "Single": 0,
+}
+`;
+
+exports[`S7Plus enum values (snapshot) > S7PlusConnectionState values match snapshot 1`] = `
+{
+  "Connected": 3,
+  "Connecting": 2,
+  "Disconnected": 1,
+  "Disconnecting": 4,
+  "Failure": 5,
+  "Inactive": 0,
+}
+`;
+
+exports[`S7Plus enum values (snapshot) > S7PlusEstablishmentMode values match snapshot 1`] = `
+{
+  "AutomaticActive": 1,
+  "Inactive": 0,
+}
+`;
+
+exports[`S7Plus enum values (snapshot) > S7PlusPlcType values match snapshot 1`] = `
+{
+  "Automatic": 1,
+  "PLCSim": 768,
+  "RH": 2,
+  "RH_Single": 3,
+  "S7_1200": 272,
+  "S7_1500": 16,
+  "S7_1500_SoftCtrl": 528,
+}
+`;
+
+exports[`S7Plus enum values (snapshot) > S7PlusSwitchCondition values match snapshot 1`] = `
+{
+  "Both": 3,
+  "ConnState": 2,
+  "Disabled": 0,
+  "OpState": 1,
+  "SwitchTag": 4,
+}
+`;
+
+exports[`S7Plus enum values (snapshot) > S7PlusTimeSyncMode values match snapshot 1`] = `
+{
+  "Inactive": 0,
+  "SyncPLCtoOA": 1,
+}
+`;
+
+exports[`S7Plus enum values (snapshot) > S7PlusTransformation values match snapshot 1`] = `
+{
+  "BOOL": 1002,
+  "BYTE": 1003,
+  "DATE": 1017,
+  "DATETIME": 1018,
+  "DEFAULT": 1001,
+  "DINT": 1013,
+  "DTL": 1024,
+  "DWORD": 1005,
+  "INT": 1012,
+  "LDATETIME": 1021,
+  "LINT": 1014,
+  "LREAL": 1016,
+  "LTIME": 1022,
+  "LTOD": 1023,
+  "LWORD": 1006,
+  "REAL": 1015,
+  "S5TIME": 1025,
+  "SINT": 1011,
+  "STRING": 1026,
+  "TIME": 1019,
+  "TIME_OF_DAY": 1020,
+  "UDINT": 1009,
+  "UINT": 1008,
+  "ULINT": 1010,
+  "USINT": 1007,
+  "WORD": 1004,
+  "WSTRING": 1027,
+}
+`;
