@@ -10,13 +10,15 @@
     "automation",
     "winccoa"
   ],
-  "Version": "1.2.0",
+  "Version": "1.4.0",
   "Description": "Provides an MCP server for WinCC OA, enabling AI assistants and compatible clients to interact with WinCC OA projects through structured tools, configuration, and HTTP-based integration.",
   "OaVersions": "^3.20.0",
   "Libraries": [
     {
-      "Name": "mcpWinCCOA",
+      "Name": "@etm-professional-control/winccoa-mcp-server",
+      "Directory": "mcpWinCCOA",
       "Description": "Core MCP server component for connecting AI clients and external tools with WinCC OA through managed server-side integration."
     }
   ]
+  
 }
