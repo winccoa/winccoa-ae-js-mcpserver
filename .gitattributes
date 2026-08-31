@@ -1,6 +1,41 @@
-# WinCC OA files for language classification
-* linguist-detectable=false
+# Line-ending policy
+# ------------------
+# Normalise every text file to LF, both in the repository and on checkout.
+#
+# Without this, Git clients disagree: Git for Windows ships core.autocrlf=true
+# while Linux/WSL clients default to false, so one physical checkout reports
+# either 0 or ~90 modified files depending on which client reads it. For the
+# same reason the committed blobs had drifted into a mix of LF and CRLF, which
+# turned small edits into whole-file diffs.
+* text=auto eol=lf
 
+# Shell scripts must be LF on every platform: a CRLF shebang makes the script
+# unexecutable ("bad interpreter: /bin/bash^M").
+*.sh text eol=lf
+
+# Windows batch files are the one thing that genuinely requires CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary types: never diff, never convert line endings. None are tracked today,
+# but task 8 of #231342 adds a .docx/.pdf pair and these must not be mangled.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+*.zip  binary
+*.gz   binary
+*.tgz  binary
+*.woff binary
+*.woff2 binary
+
+# Language detection (GitHub linguist)
+* linguist-detectable=false
 *.ctl linguist-language=Control-Control++
 *.ctc linguist-language=Control-Control++
 *.pnl linguist-language=WinCCOA-Panel
