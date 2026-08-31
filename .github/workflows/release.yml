@@ -32,9 +32,6 @@ jobs:
           echo "Release version: $VERSION"
           
           
-      - name: Install TypeScript globally
-        run: npm install -g typescript
-          
       - name: Install dependencies
         run: |
           cd mcpWinCCOA
@@ -52,15 +49,12 @@ jobs:
           echo "TypeScript configuration found"
         
       - name: Build project
-        run: |
-          cd mcpWinCCOA
-          # Compile TypeScript to JavaScript
-          tsc
-          
-          # Make main entry points executable
-          chmod 755 build/index_stdio.js
-          chmod 755 build/index_http.js
-          
+        working-directory: mcpWinCCOA
+        # Single shared build recipe (build.mjs): compiles TypeScript, copies the
+        # runtime assets (fields, system prompt, demo instructions) and sets the
+        # executable bits. Do not inline the steps here - it drifts.
+        run: npm run build
+
       - name: Update package.json for publishing
         run: |
           cd mcpWinCCOA

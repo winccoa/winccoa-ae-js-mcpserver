@@ -31,6 +31,24 @@ npm install @etm-professional-control/winccoa-mcp-server
 
 **Note for Windows users:** You may need to run Command Prompt as Administrator for npm install commands.
 
+### 1.3 Alternative: build from source
+
+Most users should install the published package as shown above. To build from a clone of the
+repository instead:
+
+```bash
+cd mcpWinCCOA
+npm install --ignore-scripts
+npm run build
+```
+
+`npm run build` runs `build.mjs`, which is plain Node and needs **no shell** - it works identically
+in cmd, PowerShell, Git Bash and on Linux. It compiles TypeScript and copies the runtime assets
+(`fields/`, `systemprompt.md`, `config/demo-project-instructions.md`) into `build/`.
+
+Do not substitute a bare `npx tsc`: it skips those copies, and the server will start but fail to
+find its field definitions and system prompt.
+
 ## Step 2: Install WinCC OA Manager
 
 The WinCC OA JavaScript Manager is required but **not bundled** with the MCP server for licensing reasons.
@@ -68,7 +86,8 @@ npm install file:/opt/WinCC_OA/3.21/javascript/winccoa-manager
 
 ```bash
 # Copy example configuration
-cp .env.example .env
+copy .env.example .env    # Windows (cmd)
+cp .env.example .env      # Linux / macOS / Git Bash
 
 # Edit configuration file
 notepad .env        # Windows

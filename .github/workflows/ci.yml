@@ -8,8 +8,15 @@ on:
 
 jobs:
   test:
-    name: Unit Tests
-    runs-on: ubuntu-latest
+    name: Unit Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows is a first-class target: WinCC OA ships on it, and the build
+        # must stay shell-free. Do not drop this leg.
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -32,6 +39,22 @@ jobs:
       - name: Run unit tests
         working-directory: mcpWinCCOA
         run: npm test
+
+      - name: Build
+        working-directory: mcpWinCCOA
+        run: npm run build
+
+      - name: Verify build output
+        working-directory: mcpWinCCOA
+        # Guards the assets tsc does not emit - a bare `tsc` leaves these out and
+        # the server then fails at runtime looking for its fields/system prompt.
+        shell: bash
+        run: |
+          for f in build/index_http.js build/index_stdio.js build/systemprompt.md \
+                   build/fields/default.md build/config/demo-project-instructions.md; do
+            test -f "$f" || { echo "missing build output: $f"; exit 1; }
+          done
+          echo "build output complete"
 
   coverage:
     name: Coverage

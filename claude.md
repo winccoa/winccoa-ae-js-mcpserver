@@ -73,11 +73,21 @@ The individual functions of WinCC OA run in so-called **managers**. Relevant man
 
 ## Build Instructions
 
-**IMPORTANT**: When building this project, use `npx tsc` instead of `npm run build`.
+**Always build with `npm run build`.**
 
-**Reason**: The `npm run build` script may include additional steps that are not always necessary or appropriate for the current development workflow.
-
-**Command to use**:
 ```bash
-npx tsc
+cd mcpWinCCOA
+npm run build
 ```
+
+This runs `build.mjs`, which is plain Node and works on Windows, Linux and macOS with no shell.
+It compiles TypeScript **and** copies the runtime assets that `tsc` does not emit:
+
+- `src/fields/*.md` -> `build/fields/`
+- `src/systemprompt.md` -> `build/systemprompt.md`
+- `config/demo-project-instructions.md` -> `build/config/`
+
+**Do not build with a bare `npx tsc`.** It skips those copies, so the server starts but cannot find
+its field definitions or system prompt. (An earlier version of this file recommended `npx tsc` as a
+workaround for the old bash-only `build.sh`; `build.sh` has been removed and the workaround no longer
+applies.)
