@@ -23,7 +23,7 @@ import type { ServerContext } from "../../types/index.js";
  * @returns Number of tools registered
  */
 export function registerTools(server: any, context: ServerContext): number {
-  const mqtt = new MqttConnection();
+  const mqtt = new MqttConnection(context.winccoa);
 
   // ============================================================================
   // Tool 1: Add MQTT Connection (unified for all connection types)
