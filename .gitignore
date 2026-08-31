@@ -1,6 +1,11 @@
 node_modules/
 log/
 
+# Test coverage output
+coverage/
+.nyc_output/
+*.lcov
+
 *.sqlite-*
 *.bak
 *.tmp
