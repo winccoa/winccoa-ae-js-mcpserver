@@ -30,13 +30,17 @@ const mockAddAddressConfig = vi.hoisted(() =>
 );
 
 vi.mock('../../../src/helpers/drivers/MqttConnection.js', () => ({
-  MqttConnection: vi.fn().mockImplementation(() => ({
-    addConnection: mockAddConnection,
-    deleteConnection: mockDeleteConnection,
-    listConnections: mockListConnections,
-    getConnectionState: mockGetConnectionState,
-    addAddressConfig: mockAddAddressConfig
-  })),
+  // Must be a function expression, not an arrow: vitest >=4 constructs the mock
+  // implementation with `new`, and arrow functions are not constructors.
+  MqttConnection: vi.fn().mockImplementation(function () {
+    return {
+      addConnection: mockAddConnection,
+      deleteConnection: mockDeleteConnection,
+      listConnections: mockListConnections,
+      getConnectionState: mockGetConnectionState,
+      addAddressConfig: mockAddAddressConfig
+    };
+  }),
   MqttConnectionType: { Unsecure: 1, TLS: 2, WebSocket: 3, TLS_PSK: 4 },
   MQTT_DEFAULTS: {
     connectionType: 1,

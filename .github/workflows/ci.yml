@@ -56,6 +56,30 @@ jobs:
           done
           echo "build output complete"
 
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mcpWinCCOA/package-lock.json
+
+      - name: Install dependencies
+        working-directory: mcpWinCCOA
+        run: npm ci
+
+      - name: Audit dependencies
+        working-directory: mcpWinCCOA
+        # Fails the build on any high or critical advisory. Direct dependencies are
+        # pinned to exact versions, so a new finding here means a real new advisory
+        # rather than drift - triage it, do not relax the threshold.
+        run: npm audit --audit-level=high
+
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
