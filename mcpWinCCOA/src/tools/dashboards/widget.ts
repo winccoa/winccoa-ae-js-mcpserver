@@ -292,10 +292,10 @@ IMPORTANT LAYOUT GUIDELINES:
 - Only use explicit coordinates if you have a specific layout design and verify no overlaps exist
 - Example explicit layout: {"x": 25, "y": 0, "cols": 25, "rows": 13} places widget in right half
 
-AVAILABLE WIDGET TYPES ARE READ-ONLY BY DESIGN: gauge, label, trend, pie, progressbar, barchart.
+AVAILABLE WIDGET TYPES ARE READ-ONLY: gauge, label, trend, pie, progressbar, barchart.
 Command widgets (buttons, switches, setpoint inputs and anything else that writes to a datapoint or
-triggers a control action) are intentionally NOT available through this tool, for Siemens compliance
-reasons. Do not attempt to emulate one. Build command elements in the WinCC OA UI instead.`,
+triggers a control action) are not currently supported by this tool. Do not attempt to emulate one.
+Build command elements in the WinCC OA UI instead.`,
     {
       dashboardId: z.string().min(1, 'Dashboard ID is required'),
       type: z.enum(['gauge', 'label', 'trend', 'pie', 'progressbar', 'barchart'], {
@@ -303,8 +303,8 @@ reasons. Do not attempt to emulate one. Build command elements in the WinCC OA U
           message:
             'Widget type must be gauge, label, trend, pie, progressbar, or barchart. ' +
             'These are all read-only visualisations. Command widgets that write to datapoints ' +
-            'or trigger control actions are intentionally unavailable for Siemens compliance ' +
-            'reasons - build those in the WinCC OA UI instead.'
+            'or trigger control actions are not supported by this tool - build those in the ' +
+            'WinCC OA UI instead.'
         })
       }),
       title: z.string().min(1, 'Widget title is required'),
