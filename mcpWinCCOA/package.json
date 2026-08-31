@@ -14,7 +14,7 @@
     "inspect": "npx @modelcontextprotocol/inspector",
     "start": "node build/index_stdio.js",
     "start:http": "node build/index_http.js",
-    "dev": "tsc && npm start",
+    "dev": "npm run build && npm start",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
