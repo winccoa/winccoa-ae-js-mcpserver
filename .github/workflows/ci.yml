@@ -80,6 +80,33 @@ jobs:
         # rather than drift - triage it, do not relax the threshold.
         run: npm audit --audit-level=high
 
+      - name: Generate SBOM
+        working-directory: mcpWinCCOA
+        run: npm run sbom
+
+      - name: Check SBOM excludes proprietary and unlicensed components
+        working-directory: mcpWinCCOA
+        # winccoa-manager is proprietary Siemens code supplied by the WinCC OA
+        # installation and must never appear in a distributed SBOM. A component
+        # with no license, or a leaked local build path, also fails the SVM review.
+        run: |
+          node -e "
+            const s = require('./sbom.json');
+            const c = s.components || [];
+            const fail = m => { console.error('SBOM check failed: ' + m); process.exit(1); };
+            if (c.some(x => x.name === 'winccoa-manager')) fail('winccoa-manager is present');
+            const noLicense = c.filter(x => !(x.licenses || []).length).map(x => x.name);
+            if (noLicense.length) fail('components without a license: ' + noLicense.join(', '));
+            if (JSON.stringify(s).includes('Program Files')) fail('a local build path leaked');
+            console.log('SBOM OK: ' + c.length + ' components, all licensed');
+          "
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: mcpWinCCOA/sbom.json
+
   coverage:
     name: Coverage
     runs-on: ubuntu-latest

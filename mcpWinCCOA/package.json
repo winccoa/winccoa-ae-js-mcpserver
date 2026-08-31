@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "node build.mjs",
+    "sbom": "cyclonedx-npm --omit dev --omit peer --output-format JSON --output-file sbom.json",
     "postinstall": "node postinstall.cjs",
     "inspect": "npx @modelcontextprotocol/inspector",
     "start": "node build/index_stdio.js",
@@ -57,6 +58,7 @@
     }
   },
   "devDependencies": {
+    "@cyclonedx/cyclonedx-npm": "6.0.1",
     "@types/express": "5.0.6",
     "@types/node": "20.19.43",
     "@vitest/coverage-v8": "4.1.11",
