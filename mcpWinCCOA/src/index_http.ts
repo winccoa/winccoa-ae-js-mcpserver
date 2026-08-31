@@ -94,7 +94,12 @@ try {
   console.log('✅ All modules imported successfully');
 } catch (importError) {
   console.error('❌ Error importing modules:', importError);
-  process.exit(1);
+  // Throw rather than process.exit(): this runs at module scope, and exiting
+  // here takes down any host that merely imports the module - including a test
+  // worker, where it surfaces as an unexplained failure with no error shown.
+  // The direct-invocation guard at the bottom of this file turns it into an
+  // exit code for the real entry point.
+  throw importError;
 }
 
 // Process-wide context (one WinccoaManager). The McpServer is NOT shared:
@@ -361,7 +366,7 @@ async function start(): Promise<void> {
   if (configErrors.length > 0) {
     console.error('Configuration errors:');
     configErrors.forEach(error => console.error(`  - ${error}`));
-    process.exit(1);
+    throw new Error(`Invalid configuration:\n  - ${configErrors.join('\n  - ')}`);
   }
 
   // Build the SCADA handle and instruction content once, up front, so a
@@ -375,8 +380,9 @@ async function start(): Promise<void> {
   if (serverConfig.http.ssl.enabled) {
     const sslConfig = loadSSLConfig();
     if (!sslConfig) {
-      console.error('SSL is enabled but certificates could not be loaded');
-      process.exit(1);
+      // validateConfig() above already reports which variable or path is at
+      // fault, so reaching here means the files changed underneath us.
+      throw new Error('SSL is enabled but certificates could not be loaded');
     }
     httpServer = https.createServer(sslConfig, app);
   } else {

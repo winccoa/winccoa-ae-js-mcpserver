@@ -35,6 +35,17 @@ Example read-only configuration:
 TOOLS=datapoints/dp_basic,datapoints/dp_types,archive/archive_query,common/common_query,pv_range/pv_range_query,manager/manager_list,opcua/opcua_connection
 ```
 
+## 🔐 Cybersecurity information
+
+In order to protect plants, systems, machines and networks against cyber threats, it is necessary to
+implement – and continuously maintain – a holistic, state-of-the-art industrial cybersecurity concept.
+Siemens' products and solutions constitute one element of such a concept. For more information about
+industrial cybersecurity, please visit www.siemens.com/cybersecurity-industry.
+
+See [LEGAL_INFO.md](LEGAL_INFO.md) for the full cybersecurity information and the application-example
+terms of use. Note in particular that this server's HTTP transport is **unencrypted by default** — see
+[Transport security](#remote-host-transport-security) below.
+
 ## ℹ️ Version Requirements
 
 **Dashboard Tools Requirement:** The dashboard-related tools require **WinCC OA version 3.21 or higher**. If you are using an earlier version of WinCC OA, these tools will not be available. Other tools and features will continue to work with earlier versions.

@@ -21,11 +21,13 @@ delete process.env.TOOLS;
 
 let app: any;
 let secretsMatch: (a: string | undefined, b: string | undefined) => boolean;
+let start: () => Promise<void>;
 
 beforeAll(async () => {
   const mod = await import('../../../src/index_http.js');
   app = mod.app;
   secretsMatch = mod.secretsMatch;
+  start = mod.start;
 });
 
 describe('module import', () => {
@@ -110,5 +112,54 @@ describe('no token material is logged', () => {
     expect(output).not.toContain('wrong-token-value-here');
     // ...but the rejection itself must be visible to an operator.
     expect(output).toContain('Authentication failed');
+  });
+});
+
+describe('failure reporting', () => {
+  // Regression test. This module used to call process.exit(1) both at import
+  // scope (on an import error) and inside start() (on a config error). Under
+  // vitest that kills the worker, so the file was reported as failed with all
+  // its tests "skipped" and the underlying error never printed - observed once
+  // as an unreproducible flake. Failures must propagate as exceptions; only the
+  // direct-invocation guard turns them into an exit code.
+  it('start() rejects on invalid configuration instead of exiting', async () => {
+    const saved = process.env.MCP_API_TOKEN;
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      delete process.env.MCP_API_TOKEN;
+      vi.resetModules();
+      const mod = await import('../../../src/index_http.js');
+
+      // If this exits instead of rejecting, the worker dies and the whole file
+      // is reported as failed - which is exactly the bug being pinned.
+      await expect(mod.start()).rejects.toThrow(/Invalid configuration/);
+    } finally {
+      spy.mockRestore();
+      if (saved === undefined) delete process.env.MCP_API_TOKEN;
+      else process.env.MCP_API_TOKEN = saved;
+      vi.resetModules();
+    }
+  });
+
+  it('has no process.exit outside the direct-invocation guard', async () => {
+    // Cheap structural guard: a reintroduced module-scope exit would make this
+    // suite fail in a way that is very hard to diagnose from CI output.
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(
+      new URL('../../../src/index_http.ts', import.meta.url),
+      'utf8'
+    );
+    // Strip comments first: this file legitimately *mentions* process.exit() in
+    // a comment explaining why it is not used at module scope.
+    const code = src
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .split('\n')
+      .filter(line => !line.trim().startsWith('//'))
+      .join('\n');
+
+    const occurrences = code.match(/process\.exit\(/g) ?? [];
+    expect(occurrences).toHaveLength(1);
+    expect(src).toMatch(/if \(invokedDirectly\) \{[\s\S]*process\.exit\(1\)/);
   });
 });
