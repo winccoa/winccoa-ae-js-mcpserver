@@ -32,22 +32,57 @@ jobs:
           echo "Release version: $VERSION"
           
           
+      - name: Verify version consistency
+        # This workflow used to derive the version from the tag and then use it
+        # only for the tarball filename, so `npm publish` shipped whatever
+        # package.json happened to say. Tagging v1.5.0 while package.json read
+        # 1.4.0 republished 1.4.0 - or collided.
+        #
+        # The repository is now the source of truth: the tag must match both
+        # manifests. That keeps the version in git history, where an audit can
+        # find it, instead of being injected at publish time. Bump both files in
+        # a commit, then tag.
+        run: |
+          TAG_VERSION="${{ steps.get_version.outputs.version }}"
+          PKG_VERSION=$(node -p "require('./mcpWinCCOA/package.json').version")
+          SIOS_VERSION=$(node -p "require('./package.winccoa.json').Version")
+
+          echo "tag                  : $TAG_VERSION"
+          echo "package.json         : $PKG_VERSION"
+          echo "package.winccoa.json : $SIOS_VERSION"
+
+          FAILED=0
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Release tag ($TAG_VERSION) does not match mcpWinCCOA/package.json ($PKG_VERSION)."
+            FAILED=1
+          fi
+          if [ "$TAG_VERSION" != "$SIOS_VERSION" ]; then
+            echo "::error::Release tag ($TAG_VERSION) does not match package.winccoa.json ($SIOS_VERSION). The SIOS manifest must be bumped in lockstep."
+            FAILED=1
+          fi
+          [ "$FAILED" -eq 0 ] || exit 1
+          echo "Versions are consistent."
+
       - name: Install dependencies
         run: |
           cd mcpWinCCOA
           # Use --ignore-scripts to prevent postinstall from running during build
           # postinstall should only run when users install the published package
           npm install --ignore-scripts
+
+      - name: Type check
+        working-directory: mcpWinCCOA
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        working-directory: mcpWinCCOA
+        # docs/dev/release.md always claimed the release ran the tests. It did not.
+        run: npm test
+
+      - name: Audit dependencies
+        working-directory: mcpWinCCOA
+        run: npm audit --audit-level=high
           
-      - name: Verify TypeScript config
-        run: |
-          cd mcpWinCCOA
-          if [ ! -f tsconfig.json ]; then
-            echo "Error: tsconfig.json not found!"
-            exit 1
-          fi
-          echo "TypeScript configuration found"
-        
       - name: Build project
         working-directory: mcpWinCCOA
         # Single shared build recipe (build.mjs): compiles TypeScript, copies the
@@ -55,45 +90,14 @@ jobs:
         # executable bits. Do not inline the steps here - it drifts.
         run: npm run build
 
-      - name: Update package.json for publishing
+      - name: Stage root documents for the package
+        working-directory: mcpWinCCOA
+        # npm cannot include files from outside the package directory, so the
+        # OSS disclosure documents are copied in. They are listed in the
+        # committed `files` array in package.json.
         run: |
-          cd mcpWinCCOA
-          # Update binary entries to point to correct files
-          npm pkg set bin.winccoa-mcp-stdio="./build/index_stdio.js"
-          npm pkg set bin.winccoa-mcp-http="./build/index_http.js"
-          
-    
-          
-          # Add package metadata
-          npm pkg set name="@etm-professional-control/winccoa-mcp-server"
-          npm pkg set description="MCP Server for WinCC OA with field-specific configurations"
-          npm pkg set keywords[0]="mcp"
-          npm pkg set keywords[1]="winccoa"
-          npm pkg set keywords[2]="scada"
-          npm pkg set keywords[3]="automation"
-          npm pkg set author="ETM Control GesmbH"
-          npm pkg set license="ISC"
-          npm pkg set repository.type="git"
-          
-          npm pkg set repository.url="git+https://github.com/winccoa/winccoa-ae-js-mcpserver.git"
-          #npm pkg set repository.url="git+https://github.com/uebelmar/oa-mcp.git"
-          
-          npm pkg set homepage="https://github.com/winccoa/winccoa-ae-js-mcpserver#readme"
-          npm pkg set bugs.url="https://github.com/winccoa/winccoa-ae-js-mcpserver/issues"
-          
-          # Add files to include in package
-          npm pkg set files[0]="build"
-          npm pkg set files[1]="src/fields"
-          npm pkg set files[2]="config"
-          npm pkg set files[3]="README.md"
-          npm pkg set files[4]=".env.example"
-          npm pkg set files[5]="postinstall.cjs"
-          npm pkg set files[6]="src/systemprompt.md"
-          
-      - name: Copy README for npm
-        run: |
-          cd mcpWinCCOA
-          cp ../README.md README.md
+          cp ../README.md ../OSS.md ../LEGAL_INFO.md ../LICENSE.md .
+          ls -la README.md OSS.md LEGAL_INFO.md LICENSE.md
           
       - name: Verify build
         run: |

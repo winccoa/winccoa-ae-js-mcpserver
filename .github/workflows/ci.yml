@@ -56,6 +56,29 @@ jobs:
           done
           echo "build output complete"
 
+  versions:
+    name: Manifest Versions
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: package.json and package.winccoa.json must agree
+        # package.winccoa.json is the SIOS manifest and carries its own Version.
+        # It has to move in lockstep with the npm package version; the release
+        # workflow refuses to publish when they disagree, and this catches it on
+        # the PR instead.
+        run: |
+          PKG=$(node -p "require('./mcpWinCCOA/package.json').version")
+          SIOS=$(node -p "require('./package.winccoa.json').Version")
+          echo "package.json         : $PKG"
+          echo "package.winccoa.json : $SIOS"
+          if [ "$PKG" != "$SIOS" ]; then
+            echo "::error::Version mismatch: mcpWinCCOA/package.json is $PKG but package.winccoa.json is $SIOS. Bump both."
+            exit 1
+          fi
+          echo "Versions match."
+
   audit:
     name: Dependency Audit
     runs-on: ubuntu-latest

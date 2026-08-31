@@ -18,3 +18,10 @@ mcpWinCCOA/build
 mcpWinCCOA/.env
 QUICKSTART.md
 .claude/settings.local.json
+
+# Root documents copied into the package dir at release time (see release.yml).
+# Never commit these duplicates - the originals live at the repo root.
+mcpWinCCOA/README.md
+mcpWinCCOA/OSS.md
+mcpWinCCOA/LEGAL_INFO.md
+mcpWinCCOA/LICENSE.md
