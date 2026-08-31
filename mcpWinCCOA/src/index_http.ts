@@ -8,6 +8,7 @@
 
 import type { Request, Response, NextFunction } from 'express';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { ServerContext } from './types/index.js';
 
 // Try to load dotenv if available BEFORE importing config
 try {
@@ -50,7 +51,8 @@ console.log('🔄 Starting module imports...');
 
 let StreamableHTTPServerTransport: any;
 let express: any;
-let initializeServer: () => Promise<McpServer>;
+let initContext: () => Promise<ServerContext>;
+let createServer: (context: ServerContext) => Promise<McpServer>;
 let serverConfig: any;
 let loadSSLConfig: () => any;
 let validateConfig: () => string[];
@@ -68,7 +70,7 @@ try {
   console.log('✅ Express imported');
 
   console.log('🔄 Importing server.js...');
-  ({ initializeServer } = await import('./server.js'));
+  ({ initContext, createServer } = await import('./server.js'));
   console.log('✅ server.js imported');
 
   console.log('🔄 Importing server.config.js...');
@@ -90,7 +92,9 @@ try {
   process.exit(1);
 }
 
-let server: McpServer;
+// Process-wide context (one WinccoaManager). The McpServer is NOT shared:
+// each request builds its own, see the /mcp handler below.
+let context: ServerContext;
 
 // ==================== EXPRESS SERVER SETUP ====================
 
@@ -239,15 +243,31 @@ app.post('/mcp', authenticate, async (req: Request, res: Response) => {
   console.log('🔍 Request headers:', Object.keys(req.headers));
 
   try {
-    console.log('🔄 Creating StreamableHTTPServerTransport...');
+    // A fresh McpServer per request. Sharing one instance across requests is the
+    // subject of a HIGH advisory against @modelcontextprotocol/sdk
+    // ("cross-client data leak via shared server/transport instance reuse") and
+    // is the same defect as GitHub issue #33: Protocol.close() closes whichever
+    // transport is currently attached, so one request's res.on('close') - which
+    // also fires on a plain client abort - would tear down another request's
+    // transport mid-flight.
+    const server = await createServer(context);
+
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined
     });
 
+    // Guarded so a close/abort/error cannot dispose the pair twice.
+    let disposed = false;
+    const dispose = (): void => {
+      if (disposed) return;
+      disposed = true;
+      void Promise.resolve(transport.close()).catch(() => {});
+      void Promise.resolve(server.close()).catch(() => {});
+    };
+
     res.on('close', () => {
       console.log('📪 Request closed');
-      transport.close();
-      server.close();
+      dispose();
     });
 
     console.log('🔄 Connecting server to transport...');
@@ -327,7 +347,9 @@ async function start(): Promise<void> {
     process.exit(1);
   }
 
-  server = await initializeServer();
+  // Build the SCADA handle and instruction content once, up front, so a
+  // misconfiguration fails at boot rather than on the first request.
+  context = await initContext();
 
   const { host, port } = serverConfig.http;
 

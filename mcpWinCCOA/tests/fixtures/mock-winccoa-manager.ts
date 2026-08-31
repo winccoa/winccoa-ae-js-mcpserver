@@ -8,7 +8,34 @@
 
 import { vi } from 'vitest';
 
+/**
+ * Construction bookkeeping.
+ *
+ * The real WinccoaManager is a SCADA handle with no close()/dispose(), so
+ * exactly one may exist per process. Tests assert on `constructions` to prove
+ * the per-request server refactor did not turn it into a per-request handle.
+ *
+ * `failNextConstruction` makes the next `new WinccoaManager()` throw, so the
+ * memoisation-must-not-cache-failures path can be exercised.
+ */
+export const managerStats = {
+  constructions: 0,
+  failNextConstruction: false,
+  reset(): void {
+    this.constructions = 0;
+    this.failNextConstruction = false;
+  }
+};
+
 export class WinccoaManager {
+  constructor() {
+    if (managerStats.failNextConstruction) {
+      managerStats.failNextConstruction = false;
+      throw new Error('mock WinccoaManager: construction failed on purpose');
+    }
+    managerStats.constructions++;
+  }
+
   dpExists = vi.fn().mockReturnValue(false);
   dpCreate = vi.fn().mockResolvedValue(true);
   dpDelete = vi.fn().mockResolvedValue(true);
