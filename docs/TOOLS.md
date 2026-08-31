@@ -408,8 +408,26 @@ The MCP server provides tools that AI assistants can use to interact with WinCC 
   - Returns: id, dashboardNumber, name, description, widgetCount, isPublished
 
 **`dashboards/widget`** - Widget management
+
+> **🔒 Read-only by design.** The six widget types below are all visualisations. **Command widgets** —
+> buttons, switches, setpoint inputs, or anything else that writes to a datapoint or triggers a
+> control action — are intentionally **not** available through this tool, and will not be added.
+>
+> The reason is Siemens compliance: an AI assistant must not be able to create UI elements that
+> actuate the process. Read access lets a model report on the plant; write-capable UI would let it
+> hand an operator a control it authored unsupervised, with no engineering review of the resulting
+> interaction. Build command elements in the WinCC OA UI instead.
+>
+> This is a deliberate restriction, not a missing feature
+> ([issue #32](https://github.com/winccoa/winccoa-ae-js-mcpserver/issues/32)). Additional *read-only*
+> types may be added over time via `WidgetFactory.registerWidgetType()`.
+>
+> Note this is separate from the tool-level write controls in the README: the datapoint, alarm and
+> archive `*_set` tools do write to SCADA and can be excluded via `TOOLS`. The widget restriction is
+> about what a *dashboard* can contain, and cannot be switched on.
+
 - `add-widget` - Add a widget to a dashboard
-  - **Widget types:** "gauge", "label", "trend", "pie", "progressbar", "barchart"
+  - **Widget types:** "gauge", "label", "trend", "pie", "progressbar", "barchart" (all read-only)
   - **Parameters:**
     - `dashboardId` - Dashboard datapoint name (required)
     - `type` - Widget type (required)

@@ -524,34 +524,62 @@ This wraps the npx command in Windows Command Prompt, which correctly handles pa
 
 ### Transport Layer Security
 
-**Current Limitation:**
-- No built-in HTTPS support for remote connections
-- Clients must use `--allow-http` flag for remote access
+**HTTPS is supported.** The server terminates TLS natively via `https.createServer()` when
+`MCP_SSL_ENABLED=true`. An earlier version of this document stated there was no built-in HTTPS
+support, which contradicted both `docs/CONFIGURATION.md` and the implementation
+([issue #34](https://github.com/winccoa/winccoa-ae-js-mcpserver/issues/34)).
 
-**Workarounds:**
-1. **Use reverse proxy**
+```env
+MCP_SSL_ENABLED=true
+MCP_SSL_CERT_PATH=/path/to/cert.pem
+MCP_SSL_KEY_PATH=/path/to/key.pem
+MCP_SSL_CA_PATH=/path/to/ca.pem   # optional
+```
+
+See [Configuration → SSL/TLS](CONFIGURATION.md#ssltls-configuration) for the full option list. With
+TLS enabled, use an `https://` URL in your client and **do not** pass `--allow-http`.
+
+**Actual limitations:**
+
+- **Bring your own certificate.** There is no certificate provisioning: you supply `cert.pem` and
+  `key.pem` yourself. To generate a self-signed pair for testing:
+  ```bash
+  openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 365 -subj "/CN=localhost"
+  ```
+  Clients will reject a self-signed certificate unless configured to trust it.
+- **No ACME / Let's Encrypt integration** and **no automatic renewal**. An expired certificate stops
+  the server from starting; renewal and rotation are your responsibility.
+- **Certificates are read once at startup.** Replacing them on disk requires a manager restart.
+- **TLS is off by default** (`MCP_SSL_ENABLED` defaults to `false`). The server prints a
+  `[SECURITY WARNING]` at startup when it binds a non-loopback address without TLS, because the API
+  token then crosses the network in clear text.
+- **No client-certificate (mTLS) authentication.** `MCP_SSL_CA_PATH` supplies a CA chain to present,
+  not a trust anchor for verifying clients. Authentication is by bearer token or API key only.
+
+**Alternatives to terminating TLS in the server:**
+
+1. **Reverse proxy** — useful if you already run one, or need ACME/auto-renewal, which the server
+   does not provide:
    ```nginx
-   # nginx configuration
    server {
      listen 443 ssl;
      ssl_certificate /path/to/cert.pem;
      ssl_certificate_key /path/to/key.pem;
-     
+
      location / {
-       proxy_pass http://localhost:3000;
+       proxy_pass http://127.0.0.1:3000;
      }
    }
    ```
+   Bind the server to `127.0.0.1` as well, so it is not reachable except through the proxy.
 
-2. **Restrict to localhost**
+2. **Restrict to localhost** — if the client runs on the same host, TLS is not required:
    ```env
-   # Only allow local connections
    MCP_HTTP_HOST=127.0.0.1
    ```
 
-3. **Use VPN or secure network**
-   - Deploy within secure network perimeter
-   - Use VPN for remote access
+3. **VPN or an isolated network segment** — defence in depth, not a replacement for TLS. Traffic is
+   still unencrypted inside the perimeter.
 
 ### Authorization Limitations
 
