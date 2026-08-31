@@ -14,10 +14,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
@@ -127,21 +127,16 @@ jobs:
           mv *.tgz winccoa-mcp-server-${{ steps.get_version.outputs.version }}.tgz
           
       - name: Upload release assets
-        uses: actions/upload-release-asset@v1
+        # actions/upload-release-asset@v1 is archived and unmaintained (Node 12
+        # era). `gh release upload` ships with the runner and is the supported
+        # route; it also uploads both assets in one step.
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./mcpWinCCOA/winccoa-mcp-server-${{ steps.get_version.outputs.version }}.tgz
-          asset_name: winccoa-mcp-server-${{ steps.get_version.outputs.version }}.tgz
-          asset_content_type: application/gzip
-
-      - name: Upload SBOM as release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./mcpWinCCOA/sbom.json
-          asset_name: winccoa-mcp-server-${{ steps.get_version.outputs.version }}-sbom.json
-          asset_content_type: application/json
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          cd mcpWinCCOA
+          cp sbom.json "winccoa-mcp-server-${VERSION}-sbom.json"
+          gh release upload "${{ github.event.release.tag_name }}" \
+            "winccoa-mcp-server-${VERSION}.tgz" \
+            "winccoa-mcp-server-${VERSION}-sbom.json" \
+            --clobber
