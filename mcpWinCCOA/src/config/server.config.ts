@@ -91,24 +91,80 @@ export function loadSSLConfig(): SslCertificates | null {
 }
 
 /**
- * Validate configuration
+ * Is this host a loopback address?
+ *
+ * Used to decide whether running without TLS is merely a development
+ * convenience or an actual exposure: on a loopback bind the API token never
+ * leaves the machine, on any other bind it crosses the network in clear text.
+ *
+ * @param host - Host or interface the server binds to
+ * @returns true if traffic cannot leave the machine
+ */
+export function isLoopbackHost(host: string): boolean {
+  const h = host.trim().toLowerCase().replace(/^\[|\]$/g, '');
+  return (
+    h === 'localhost' ||
+    h === '::1' ||
+    h === '0:0:0:0:0:0:0:1' ||
+    /^127\./.test(h)
+  );
+}
+
+/**
+ * Validate configuration.
+ *
+ * Returns messages rather than throwing, so the caller can report every problem
+ * at once instead of one per restart.
+ *
  * @returns Array of validation error messages (empty if valid)
  */
 export function validateConfig(): string[] {
-  console.log('🔍 Starting configuration validation...');
-  console.log('🔍 process.env.MCP_API_TOKEN:', process.env.MCP_API_TOKEN ? 'SET' : 'NOT SET');
-  console.log('🔍 serverConfig.http.auth.token:', serverConfig.http.auth.token ? 'SET' : 'NOT SET');
-
   const errors: string[] = [];
 
-  // Always require API token
+  // Always require an API token.
   if (!serverConfig.http.auth.token) {
-    console.log('❌ MCP_API_TOKEN validation failed');
-    errors.push('MCP_API_TOKEN must be set in environment variables or .env file');
-  } else {
-    console.log('✅ MCP_API_TOKEN validation passed');
+    errors.push(
+      'MCP_API_TOKEN must be set in the environment or .env file. ' +
+        'Generate one with: openssl rand -hex 32'
+    );
   }
 
-  console.log('🔍 Validation completed with', errors.length, 'errors');
+  // If TLS is on, the certificate must actually be usable. Previously
+  // loadSSLConfig() returned null and the caller reported only
+  // "certificates could not be loaded", which named neither the missing
+  // variable nor the unreadable path.
+  const ssl = serverConfig.http.ssl;
+  if (ssl.enabled) {
+    for (const [envVar, value] of [
+      ['MCP_SSL_CERT_PATH', ssl.cert],
+      ['MCP_SSL_KEY_PATH', ssl.key]
+    ] as const) {
+      if (!value) {
+        errors.push(
+          `MCP_SSL_ENABLED is true but ${envVar} is not set. ` +
+            'Set it, or set MCP_SSL_ENABLED=false to serve plain HTTP. ' +
+            'To create a self-signed pair: openssl req -x509 -newkey rsa:2048 ' +
+            '-nodes -keyout key.pem -out cert.pem -days 365 -subj "/CN=localhost"'
+        );
+      } else {
+        try {
+          readFileSync(value);
+        } catch (cause) {
+          const reason = cause instanceof Error ? cause.message : String(cause);
+          errors.push(`${envVar} is set to "${value}" but could not be read: ${reason}`);
+        }
+      }
+    }
+
+    if (ssl.ca) {
+      try {
+        readFileSync(ssl.ca);
+      } catch (cause) {
+        const reason = cause instanceof Error ? cause.message : String(cause);
+        errors.push(`MCP_SSL_CA_PATH is set to "${ssl.ca}" but could not be read: ${reason}`);
+      }
+    }
+  }
+
   return errors;
 }

@@ -9,6 +9,10 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ServerContext } from './types/index.js';
+import { timingSafeEqual } from 'node:crypto';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import * as log from './utils/logger.js';
 
 // Try to load dotenv if available BEFORE importing config
 try {
@@ -35,7 +39,7 @@ try {
       console.log(`✓ dotenv.config() successful`);
       console.log(`✓ MCP_API_TOKEN after loading: ${process.env.MCP_API_TOKEN ? 'SET' : 'NOT SET'}`);
       if (process.env.MCP_API_TOKEN) {
-        console.log(`✓ MCP_API_TOKEN value: ${process.env.MCP_API_TOKEN.substring(0, 8)}...`);
+        console.log(`✓ MCP_API_TOKEN ${log.describeSecret(process.env.MCP_API_TOKEN)}`);
       }
     }
   } else {
@@ -56,6 +60,7 @@ let createServer: (context: ServerContext) => Promise<McpServer>;
 let serverConfig: any;
 let loadSSLConfig: () => any;
 let validateConfig: () => string[];
+let isLoopbackHost: (host: string) => boolean;
 let https: any;
 let cors: any;
 let rateLimit: any;
@@ -74,9 +79,9 @@ try {
   console.log('✅ server.js imported');
 
   console.log('🔄 Importing server.config.js...');
-  ({ serverConfig, loadSSLConfig, validateConfig } = await import('./config/server.config.js'));
+  ({ serverConfig, loadSSLConfig, validateConfig, isLoopbackHost } = await import('./config/server.config.js'));
   console.log('✅ server.config.js imported');
-  console.log('🔍 serverConfig.http.auth.token:', serverConfig.http.auth.token ? 'SET' : 'NOT SET');
+  log.debug('🔍 serverConfig.http.auth.token:', serverConfig.http.auth.token ? 'SET' : 'NOT SET');
 
   console.log('🔄 Importing https...');
   https = await import('https');
@@ -142,7 +147,7 @@ if (serverConfig.security.ipFilter.enabled) {
   console.log('🔄 Setting up IP filtering middleware...');
   app.use((req: Request, res: Response, next: NextFunction) => {
     const clientIp = req.ip || (req.connection as any).remoteAddress;
-    console.log('🔍 IP filter check for:', clientIp);
+    log.debug('🔍 IP filter check for:', clientIp);
 
     // Check whitelist
     if (serverConfig.security.ipFilter.whitelist.length > 0) {
@@ -188,13 +193,27 @@ if (serverConfig.security.ipFilter.enabled) {
 }
 
 // Authentication middleware
-function authenticate(req: Request, res: Response, next: NextFunction): void {
-  console.log('🔍 Authentication check started');
-  console.log('🔍 Auth enabled:', serverConfig.http.auth.enabled);
-  console.log('🔍 Auth type:', serverConfig.http.auth.type);
+/**
+ * Compare two secrets without leaking their contents through timing.
+ *
+ * `!==` on strings short-circuits at the first differing byte, which lets a
+ * caller recover the expected token one character at a time. timingSafeEqual
+ * requires equal-length buffers, so length is compared separately - length is
+ * not secret in the way the value is.
+ */
+function secretsMatch(presented: string | undefined, expected: string | undefined): boolean {
+  if (!presented || !expected) return false;
 
+  const a = Buffer.from(presented, 'utf8');
+  const b = Buffer.from(expected, 'utf8');
+  if (a.length !== b.length) return false;
+
+  return timingSafeEqual(a, b);
+}
+
+function authenticate(req: Request, res: Response, next: NextFunction): void {
   if (!serverConfig.http.auth.enabled) {
-    console.log('ℹ️  Authentication disabled, skipping');
+    log.debug('ℹ️  Authentication disabled, skipping');
     return next();
   }
 
@@ -202,26 +221,23 @@ function authenticate(req: Request, res: Response, next: NextFunction): void {
 
   if (serverConfig.http.auth.type === 'bearer') {
     const authHeader = req.headers['authorization'];
-    console.log('🔍 Authorization header:', authHeader ? `${authHeader.substring(0, 20)}...` : 'NOT SET');
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.replace('Bearer ', '');
-      console.log('🔍 Bearer token extracted:', token ? `${token.substring(0, 8)}...` : 'NOT FOUND');
+      token = authHeader.slice('Bearer '.length);
     }
   } else if (serverConfig.http.auth.type === 'api-key') {
     token = (req.headers['x-api-key'] as string) || (req.query.apiKey as string);
-    console.log('🔍 API key token:', token ? `${token.substring(0, 8)}...` : 'NOT FOUND');
   }
 
-  // Fallback to body token for backward compatibility
+  // Fallback to a token in the body, for backward compatibility.
   token = token || (req.body as any)?.token;
-  console.log('🔍 Final token (after fallback):', token ? `${token.substring(0, 8)}...` : 'NOT FOUND');
-  console.log(
-    '🔍 Expected token:',
-    serverConfig.http.auth.token ? `${serverConfig.http.auth.token.substring(0, 8)}...` : 'NOT SET'
-  );
 
-  if (token !== serverConfig.http.auth.token) {
-    console.log('❌ Authentication failed: token mismatch');
+  // Deliberately no token material in the log - not even a prefix, and not the
+  // expected value. Only whether one was presented at all.
+  if (!secretsMatch(token, serverConfig.http.auth.token)) {
+    log.warn(
+      `❌ Authentication failed from ${req.ip ?? 'unknown'}: ` +
+        (token ? 'token mismatch' : 'no token presented')
+    );
     res.status(401).json({
       jsonrpc: '2.0',
       error: {
@@ -233,14 +249,15 @@ function authenticate(req: Request, res: Response, next: NextFunction): void {
     return;
   }
 
-  console.log('✅ Authentication successful');
+  log.debug('✅ Authentication successful');
   next();
 }
 
 app.post('/mcp', authenticate, async (req: Request, res: Response) => {
   console.log('📨 Received POST MCP request');
-  console.log('🔍 Request body size:', JSON.stringify(req.body).length, 'bytes');
-  console.log('🔍 Request headers:', Object.keys(req.headers));
+  log.debug('🔍 Request body size:', JSON.stringify(req.body).length, 'bytes');
+  // Header *names* only, and only at debug level - values can carry credentials.
+  log.debug('🔍 Request headers:', Object.keys(req.headers));
 
   try {
     // A fresh McpServer per request. Sharing one instance across requests is the
@@ -372,10 +389,33 @@ async function start(): Promise<void> {
     console.log(`Server listening on ${protocol}://${host}:${port}`);
     console.log(`Health check: ${protocol}://${host}:${port}/health`);
 
+    // Task 6 of #231342. Without TLS the bearer token is the only thing
+    // protecting the server, and it crosses the network in clear text on every
+    // request. On a loopback bind that traffic cannot leave the machine, so the
+    // warning is limited to binds that are actually exposed.
+    if (!serverConfig.http.ssl.enabled && !isLoopbackHost(host)) {
+      console.warn('');
+      console.warn('  ========================================================================');
+      console.warn('  [SECURITY WARNING]  Unencrypted HTTP on a non-loopback address');
+      console.warn('');
+      console.warn(`  Bound to ${host}:${port} without TLS. The API token and every request`);
+      console.warn('  and response travel the network in clear text and can be captured or');
+      console.warn('  replayed by anyone who can observe the traffic.');
+      console.warn('');
+      console.warn('  Enable TLS:   MCP_SSL_ENABLED=true');
+      console.warn('                MCP_SSL_CERT_PATH=/path/to/cert.pem');
+      console.warn('                MCP_SSL_KEY_PATH=/path/to/key.pem');
+      console.warn('');
+      console.warn('  Or bind to loopback only:  MCP_HTTP_HOST=127.0.0.1');
+      console.warn('  See docs/CONFIGURATION.md for the full TLS options.');
+      console.warn('  ========================================================================');
+      console.warn('');
+    }
+
     if (serverConfig.http.auth.enabled) {
       console.log(`Authentication: ${serverConfig.http.auth.type}`);
       if (serverConfig.http.auth.token) {
-        console.log(`API Token: ${serverConfig.http.auth.token.substring(0, 8)}... (first 8 chars shown)`);
+        console.log(`API Token: ${log.describeSecret(serverConfig.http.auth.token)}`);
       }
     } else {
       console.log('⚠️  WARNING: Authentication is disabled!');
@@ -387,7 +427,18 @@ async function start(): Promise<void> {
   });
 }
 
-start().catch((error: Error) => {
-  console.error("Failed to start server:", error);
-  process.exit(1);
-});
+// Exported for tests. Importing this module must not start a listener, so the
+// auto-start below is guarded: without it, index_http.ts could only ever be
+// exercised by launching a real server, which is why it sat at 0% coverage.
+export { app, start, authenticate, secretsMatch };
+
+const invokedDirectly =
+  process.argv[1] !== undefined &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (invokedDirectly) {
+  start().catch((error: Error) => {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  });
+}
