@@ -10,6 +10,7 @@
   "scripts": {
     "build": "node build.mjs",
     "sbom": "cyclonedx-npm --omit dev --omit peer --output-format JSON --output-file sbom.json",
+    "oss": "npm run sbom && node gen-oss.mjs",
     "postinstall": "node postinstall.cjs",
     "inspect": "npx @modelcontextprotocol/inspector",
     "start": "node build/index_stdio.js",

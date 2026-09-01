@@ -124,6 +124,22 @@ jobs:
             console.log('SBOM OK: ' + c.length + ' components, all licensed');
           "
 
+      - name: OSS.md must match the SBOM
+        working-directory: mcpWinCCOA
+        # Every licence in the tree is an attribution licence, so the disclosure
+        # has to list every distributed component. Regenerating and diffing keeps
+        # OSS.md from silently falling behind a dependency change.
+        #
+        # Only OSS.md is diffed: sbom.json carries a fresh serialNumber on every
+        # generation, so it is expected to differ.
+        run: |
+          node gen-oss.mjs
+          if ! git diff --exit-code -- ../OSS.md; then
+            echo "::error::OSS.md is out of date. Run 'npm run oss' in mcpWinCCOA and commit the result."
+            exit 1
+          fi
+          echo "OSS.md is in sync with the SBOM."
+
       - name: Upload SBOM
         uses: actions/upload-artifact@v5
         with:
