@@ -15,7 +15,13 @@ coverage/
 *.xls
 *.presentations
 mcpWinCCOA/build
-mcpWinCCOA/.env
+# Environment files - never commit, they hold the API token. Patterns are
+# unanchored so they match at any depth (mcpWinCCOA/.env, mcpWinCCOA/build/.env),
+# and *.env catches the file a mistyped `cp .env.example build\.env` produces in
+# bash, where the backslash is an escape and the name collapses to "build.env".
+.env
+*.env
+!.env.example
 QUICKSTART.md
 .claude/settings.local.json
 
