@@ -107,6 +107,35 @@ jobs:
         working-directory: mcpWinCCOA
         run: npm run sbom
 
+      - name: SBOM must be reproducible
+        working-directory: mcpWinCCOA
+        # The SBOM is generated with --package-lock-only so it is a function of a
+        # committed file, not of whatever npm happened to install. Without that,
+        # cyclonedx-npm walks node_modules and classifies optional/dev packages
+        # differently across npm versions - which produced 113 components in CI
+        # against 111 locally, and surfaced misleadingly as "OSS.md is out of date".
+        #
+        # Compares component sets only: serialNumber and timestamp change on every
+        # generation by design.
+        run: |
+          git show HEAD:mcpWinCCOA/sbom.json > /tmp/sbom-committed.json
+          node -e "
+            const ids = p => require(p).components
+              .map(c => (c.group ? c.group + '/' : '') + c.name + '@' + c.version).sort();
+            const committed = ids('/tmp/sbom-committed.json');
+            const fresh = ids('./sbom.json');
+            const added = fresh.filter(x => !committed.includes(x));
+            const removed = committed.filter(x => !fresh.includes(x));
+            if (added.length || removed.length) {
+              console.error('SBOM is not reproducible in this environment.');
+              if (added.length) console.error('  only in freshly generated: ' + added.join(', '));
+              if (removed.length) console.error('  only in committed:        ' + removed.join(', '));
+              console.error('Committed: ' + committed.length + ' components, fresh: ' + fresh.length + '.');
+              process.exit(1);
+            }
+            console.log('SBOM reproducible: ' + fresh.length + ' components match the committed one.');
+          "
+
       - name: Check SBOM excludes proprietary and unlicensed components
         working-directory: mcpWinCCOA
         # winccoa-manager is proprietary Siemens code supplied by the WinCC OA
