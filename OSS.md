@@ -34,13 +34,13 @@ machine-readable CycloneDX SBOM (`sbom.json`) is published with each release.
 
 | Component | Open Source Software [Yes/No] | Acknowledgements/Comment | License conditions and copyright notices |
 |-----------|------------------------------|-------------------------|----------------------------------------|
-| @modelcontextprotocol/sdk 1.30.0 | Yes | Model Context Protocol server/client SDK. SVM: **to be confirmed** - #229345 recorded the 1.12.x line as not tracked by Siemens. Pinned above the advisory range 1.10.0-1.25.3 (cross-client data leak via shared server/transport instance reuse). | [MIT](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/LICENSE) |
-| cors 2.8.6 | Yes | Express CORS middleware. SVM: to be confirmed. | [MIT](https://github.com/expressjs/cors/blob/master/LICENSE) |
-| dotenv 16.6.1 | Yes | Loads `.env` configuration. SVM: to be confirmed. | [BSD-2-Clause](https://github.com/motdotla/dotenv/blob/master/LICENSE) |
-| express 5.2.1 | Yes | HTTP server for the streamable HTTP transport. SVM: to be confirmed. | [MIT](https://github.com/expressjs/express/blob/master/LICENSE) |
-| express-rate-limit 7.5.1 | Yes | Request rate limiting. SVM: to be confirmed. | [MIT](https://github.com/express-rate-limit/express-rate-limit/blob/main/LICENSE) |
-| mcp-remote 0.1.37 | Yes | Remote MCP client bridge. **SVM: not tracked by Siemens** (recorded in #229345). Retained as a documented risk; replacement is out of scope for this release. | [MIT](https://github.com/geelen/mcp-remote/blob/main/LICENSE) |
-| zod 3.25.76 | Yes | Runtime schema validation for tool inputs. SVM: to be confirmed. | [MIT](https://github.com/colinhacks/zod/blob/main/LICENSE) |
+| @modelcontextprotocol/sdk 1.30.0 | Yes | Model Context Protocol server/client SDK. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. Pinned above the advisory range 1.10.0-1.25.3 (cross-client data leak via shared server/transport instance reuse). | [MIT](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/LICENSE) |
+| cors 2.8.6 | Yes | Express CORS middleware. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. | [MIT](https://github.com/expressjs/cors/blob/master/LICENSE) |
+| dotenv 16.6.1 | Yes | Loads `.env` configuration. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. | [BSD-2-Clause](https://github.com/motdotla/dotenv/blob/master/LICENSE) |
+| express 5.2.1 | Yes | HTTP server for the streamable HTTP transport. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. | [MIT](https://github.com/expressjs/express/blob/master/LICENSE) |
+| express-rate-limit 7.5.1 | Yes | Request rate limiting. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. | [MIT](https://github.com/express-rate-limit/express-rate-limit/blob/main/LICENSE) |
+| mcp-remote 0.1.37 | Yes | Remote MCP client bridge. Under Siemens vulnerability monitoring as of 2026-09-01. The pinned 0.1.37 is **not affected** by the known Remote Command Injection vulnerability in versions 0.0.5 to 0.1.15, which was fixed in 0.1.16. | [MIT](https://github.com/geelen/mcp-remote/blob/main/LICENSE) |
+| zod 3.25.76 | Yes | Runtime schema validation for tool inputs. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. | [MIT](https://github.com/colinhacks/zod/blob/main/LICENSE) |
 
 ### Not distributed
 
