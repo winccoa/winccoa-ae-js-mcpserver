@@ -87,6 +87,14 @@ Security and supply-chain release, implementing the remediation items from Sieme
 - `docs/TOOLS.md` documents that all widget types are read-only and that command widgets are not
   currently supported ([#32](https://github.com/winccoa/winccoa-ae-js-mcpserver/issues/32)).
 - `docs/INSTALLATION.md` gained a build-from-source section; there was none.
+- **`npm install` for `winccoa-manager` now documented as `npm install --save-peer file:...`.** On
+  npm 11 and later, a plain `npm install file:...` silently does nothing for this package — it prints
+  `added 25 packages`, exits 0, and never creates `node_modules/winccoa-manager`, so the server fails
+  at startup with `ERR_MODULE_NOT_FOUND`. `winccoa-manager` is an optional `peerDependency`, and npm 11
+  no longer materialises those from a `file:` spec (verified: npm 10.9.4 does, npm 11.6.0 does not).
+  `--save-peer` works on both and records the package under `peerDependencies` rather than
+  `dependencies`, which is where it belongs. Covered in `docs/INSTALLATION.md` and
+  `docs/TROUBLESHOOTING.md`.
 - `docs/dev/release.md` corrected throughout.
 
 ### Tests

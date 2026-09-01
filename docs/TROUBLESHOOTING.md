@@ -11,22 +11,50 @@ Common issues, solutions, and known limitations.
 - Server fails to start with import errors
 
 **Solutions:**
-1. **Verify WinCC OA installation path**
+1. **On npm 11 or later, `npm install` needs `--save-peer`** — this is the most common cause, and it
+   fails *silently*.
+
+   `winccoa-manager` is declared an optional `peerDependency`. From npm 11, a plain
+   `npm install file:...` prints `added 25 packages`, exits 0, installs only the manager's own
+   dependencies, and never creates `node_modules/winccoa-manager`. Nothing indicates a problem until
+   the server starts and throws:
+
+   ```
+   ERR_MODULE_NOT_FOUND: Cannot find package 'winccoa-manager'
+   ```
+
    ```bash
-   # Check if manager exists
+   npm --version                                  # 11.x or later? use --save-peer
+   npm install --save-peer file:"C:/Program Files/Siemens/WinCC_OA/3.21/javascript/winccoa-manager"
+   node -e "console.log(require.resolve('winccoa-manager'))"   # must print a path
+   ```
+
+   `--save-peer` works on npm 10 and 11 alike, and records the package under `peerDependencies`
+   instead of `dependencies` — which matters, because `winccoa-manager` is proprietary Siemens code and
+   must never be listed as a regular dependency.
+
+   None of `--include=peer`, `--include=optional`, `--legacy-peer-deps`, `--install-links`, or running
+   as Administrator changes this. A later plain `npm install` or `npm ci` **removes** the link again, so
+   re-run the command after either.
+
+2. **Verify the WinCC OA installation path**
+   ```bash
+   # 3.21 default (note the space in "Program Files")
+   ls "C:/Program Files/Siemens/WinCC_OA/3.21/javascript/winccoa-manager"
+
+   # 3.20 default
    ls "C:/Siemens/Automation/WinCC_OA/3.20/javascript/winccoa-manager"
    ```
 
-2. **Use correct npm install command**
+3. **Check what npm actually recorded**
    ```bash
-   # Windows
-   npm install file:C:/Siemens/Automation/WinCC_OA/3.20/javascript/winccoa-manager
-   
-   # Linux  
-   npm install file:/opt/WinCC_OA/3.20/javascript/winccoa-manager
+   node -e "console.log(require('./package.json').peerDependencies)"
+   ls node_modules/winccoa-manager
    ```
+   If `peerDependencies` holds the `file:` path but `node_modules/winccoa-manager` is missing, the
+   install was a no-op — see point 1.
 
-3. **Check WinCC OA version compatibility**
+4. **Check WinCC OA version compatibility**
    - Requires WinCC OA 3.20 or higher
    - Check version: WinCC OA → Help → About
 
