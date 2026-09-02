@@ -3,11 +3,13 @@
  *
  * This file previously sat at 0% coverage: it called start() as an import side
  * effect and process.exit() on a config error, so no test could import it. The
- * auto-start is now guarded by an "invoked directly" check, which makes the
- * express app and the auth middleware reachable from here.
+ * auto-start is now guarded by MCP_DISABLE_AUTOSTART, which makes the express
+ * app and the auth middleware reachable from here. The guard is opt-out on
+ * purpose: an opt-in "invoked directly" check silently stopped the server from
+ * starting under the WinCC OA JavaScript Manager.
  *
- * Covers task 6 / A4 of #231342: timing-safe token comparison, and the promise
- * that no token material reaches the log.
+ * Covers timing-safe token comparison, and the promise that no token material
+ * reaches the log.
  */
 
 import { describe, it, expect, beforeAll, vi } from 'vitest';

@@ -18,7 +18,7 @@
 *.cmd text eol=crlf
 
 # Binary types: never diff, never convert line endings. None are tracked today,
-# but task 8 of #231342 adds a .docx/.pdf pair and these must not be mangled.
+# but the delivery documentation adds a .docx/.pdf pair and these must not be mangled.
 *.png  binary
 *.jpg  binary
 *.jpeg binary

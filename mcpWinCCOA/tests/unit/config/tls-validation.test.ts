@@ -1,7 +1,7 @@
 /**
  * Unit tests for the TLS half of src/config/server.config.ts
  *
- * Covers task 6 / A4 of #231342. server.config.ts snapshots process.env at
+ * server.config.ts snapshots process.env at
  * module load, so every scenario resets the module registry and re-imports with
  * a different environment.
  *
@@ -72,7 +72,7 @@ describe('validateConfig - API token', () => {
 describe('validateConfig - TLS', () => {
   it('defaults to TLS disabled', async () => {
     // Pinning current behaviour deliberately: flipping this default is a
-    // breaking change deferred to 2.0.0 (out of scope per #229345/#231342).
+    // breaking change deferred to 2.0.0, deliberately out of scope here.
     const { serverConfig } = await loadConfig({ MCP_API_TOKEN: TOKEN });
     expect(serverConfig.http.ssl.enabled).toBe(false);
   });

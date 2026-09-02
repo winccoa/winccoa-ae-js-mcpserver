@@ -393,7 +393,7 @@ async function start(): Promise<void> {
     console.log(`Server listening on ${protocol}://${host}:${port}`);
     console.log(`Health check: ${protocol}://${host}:${port}/health`);
 
-    // Task 6 of #231342. Without TLS the bearer token is the only thing
+    // Without TLS the bearer token is the only thing
     // protecting the server, and it crosses the network in clear text on every
     // request. On a loopback bind that traffic cannot leave the machine, so the
     // warning is limited to binds that are actually exposed.
