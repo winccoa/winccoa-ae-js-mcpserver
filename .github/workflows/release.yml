@@ -5,13 +5,16 @@ on:
     types: [published]
 
 jobs:
-  build-and-publish:
+  # Split from the publish on purpose. These artifacts - the tarball, the SBOM
+  # and the SIOS archive - do not come from npm, so a registry credential
+  # problem must not leave the GitHub release with no assets. This job owns the
+  # release contents; publish-npm below owns the registry.
+  release-assets:
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: write  # Required for uploading release assets
-      id-token: write  # Required for npm provenance
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -112,13 +115,6 @@ jobs:
         # Regenerated at release time so the SBOM matches the published artifact.
         run: npm run sbom
 
-      - name: Publish to npm
-        run: |
-          cd mcpWinCCOA
-          npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          
       - name: Create GitHub release assets
         run: |
           cd mcpWinCCOA
@@ -150,3 +146,49 @@ jobs:
             "winccoa-mcp-server-${VERSION}-sbom.json" \
             "dist/winccoa-mcp-server-${VERSION}-sios.zip" \
             --clobber
+
+  # Publishing runs only after the release assets are safely uploaded, so a
+  # failure here is visibly just the publish. The build is repeated rather than
+  # carried over as an artifact: `npm publish` is left byte-identical to the
+  # invocation that has always worked, instead of switching to publishing a
+  # pre-packed tarball.
+  publish-npm:
+    needs: release-assets
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write  # Required for npm provenance
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        working-directory: mcpWinCCOA
+        run: npm install --ignore-scripts
+
+      - name: Build project
+        working-directory: mcpWinCCOA
+        run: npm run build
+
+      - name: Stage root documents for the package
+        working-directory: mcpWinCCOA
+        run: cp ../README.md ../OSS.md ../LEGAL_INFO.md ../LICENSE.md .
+
+      - name: Generate SBOM
+        working-directory: mcpWinCCOA
+        run: npm run sbom
+
+      - name: Publish to npm
+        run: |
+          cd mcpWinCCOA
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

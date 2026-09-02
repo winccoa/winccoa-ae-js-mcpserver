@@ -32,11 +32,11 @@ flowchart TD
     Test --> Build[Build + SBOM]
     Build --> TestResult{All checks pass?}
     TestResult -->|No| Fail[Build Failed]
-    TestResult -->|Yes| Package[Create npm Package]
+    TestResult -->|Yes| Package[Create npm Package + SIOS Archive]
     
-    Package --> Publish[Publish to npm Registry]
-    Publish --> Upload[Upload Release Assets]
-    Upload --> Complete([Release Complete])
+    Package --> Upload[Upload Release Assets]
+    Upload --> Publish[Publish to npm Registry]
+    Publish --> Complete([Release Complete])
     
     Fail --> Fix[Fix Issues]
     Fix --> Commit
@@ -171,7 +171,11 @@ Examples:
 
 ## Automated Build Process
 
-The GitHub Action performs these steps:
+The GitHub Action runs **two jobs**. `release-assets` produces everything attached to the GitHub
+release; `publish-npm` then publishes to the registry. They are separate because the release artifacts
+do not come from npm, so a registry credential problem must not leave the release with no assets.
+
+`release-assets`:
 
 1. **Extract version** from the GitHub release tag
 2. **Verify** the tag matches `package.json` and `package.winccoa.json` — fails the job if not
@@ -180,8 +184,16 @@ The GitHub Action performs these steps:
 5. **Build** via `npm run build` (the same `build.mjs` used locally, so there is one recipe)
 6. **Stage** `README.md`, `OSS.md`, `LEGAL_INFO.md` and `LICENSE.md` into the package directory
 7. **Generate the SBOM** (`sbom.json`), so it matches the published artifact
-8. **Publish to npm** with provenance
-9. **Upload** the tarball and the SBOM as release assets
+8. **Pack** the npm tarball and **build the SIOS archive** (`npm run zip`)
+9. **Upload** the tarball, the SBOM and the SIOS archive as release assets
+
+`publish-npm` (needs `release-assets`):
+
+10. Repeat install, build, document staging and SBOM generation
+11. **Publish to npm** with provenance
+
+The build is repeated rather than carried over as an artifact, so that `npm publish` stays identical to
+the invocation that has always worked instead of switching to publishing a pre-packed tarball.
 
 The package contents come from the committed `files` array in `package.json`. The workflow no longer
 injects metadata with `npm pkg set` — every field it used to write was already in `package.json`, which
