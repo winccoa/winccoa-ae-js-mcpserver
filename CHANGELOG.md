@@ -6,7 +6,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [1.5.0] — 2026-08-31
 
-Security and supply-chain release, implementing the remediation items from Siemens work item #231342.
+Security and supply-chain release, implementing the findings of an internal Siemens security review.
 
 ### ⚠️ Upgrade notes
 
