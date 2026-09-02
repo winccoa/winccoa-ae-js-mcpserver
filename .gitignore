@@ -15,6 +15,7 @@ coverage/
 *.xls
 *.presentations
 mcpWinCCOA/build
+mcpWinCCOA/dist
 # Environment files - never commit, they hold the API token. Patterns are
 # unanchored so they match at any depth (mcpWinCCOA/.env, mcpWinCCOA/build/.env),
 # and *.env catches the file a mistyped `cp .env.example build\.env` produces in
@@ -22,7 +23,6 @@ mcpWinCCOA/build
 .env
 *.env
 !.env.example
-QUICKSTART.md
 .claude/settings.local.json
 
 # Root documents copied into the package dir at release time (see release.yml).

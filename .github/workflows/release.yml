@@ -126,6 +126,15 @@ jobs:
           npm pack
           mv *.tgz winccoa-mcp-server-${{ steps.get_version.outputs.version }}.tgz
           
+      - name: Build SIOS delivery archive
+        working-directory: mcpWinCCOA
+        # Runs after "Generate SBOM", and `npm run zip` deliberately does not
+        # regenerate it - the archive ships the same sbom.json that was audited.
+        # Separate channel from npm: extracted and run directly rather than
+        # installed, so it carries QUICKSTART.md and the manifests its step 2
+        # needs. Scripted so the contents cannot drift or silently lose a file.
+        run: npm run zip
+
       - name: Upload release assets
         # actions/upload-release-asset@v1 is archived and unmaintained (Node 12
         # era). `gh release upload` ships with the runner and is the supported
@@ -139,4 +148,5 @@ jobs:
           gh release upload "${{ github.event.release.tag_name }}" \
             "winccoa-mcp-server-${VERSION}.tgz" \
             "winccoa-mcp-server-${VERSION}-sbom.json" \
+            "dist/winccoa-mcp-server-${VERSION}-sios.zip" \
             --clobber
