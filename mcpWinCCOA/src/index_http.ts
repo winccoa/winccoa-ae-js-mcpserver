@@ -10,8 +10,6 @@ import type { Request, Response, NextFunction } from 'express';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ServerContext } from './types/index.js';
 import { timingSafeEqual } from 'node:crypto';
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import * as log from './utils/logger.js';
 
 // Try to load dotenv if available BEFORE importing config
@@ -259,7 +257,7 @@ function authenticate(req: Request, res: Response, next: NextFunction): void {
 }
 
 app.post('/mcp', authenticate, async (req: Request, res: Response) => {
-  console.log('📨 Received POST MCP request');
+  log.debug('📨 Received POST MCP request');
   log.debug('🔍 Request body size:', JSON.stringify(req.body).length, 'bytes');
   // Header *names* only, and only at debug level - values can carry credentials.
   log.debug('🔍 Request headers:', Object.keys(req.headers));
@@ -288,17 +286,17 @@ app.post('/mcp', authenticate, async (req: Request, res: Response) => {
     };
 
     res.on('close', () => {
-      console.log('📪 Request closed');
+      log.debug('📪 Request closed');
       dispose();
     });
 
-    console.log('🔄 Connecting server to transport...');
+    log.debug('🔄 Connecting server to transport...');
     await server.connect(transport);
-    console.log('✅ Server connected to transport');
+    log.debug('✅ Server connected to transport');
 
-    console.log('🔄 Handling request...');
+    log.debug('🔄 Handling request...');
     await transport.handleRequest(req, res, req.body);
-    console.log('✅ Request handled successfully');
+    log.debug('✅ Request handled successfully');
   } catch (error) {
     console.error('❌ Error handling MCP request:', error);
     if (error instanceof Error) {
@@ -318,7 +316,7 @@ app.post('/mcp', authenticate, async (req: Request, res: Response) => {
 });
 
 app.get('/mcp', async (req: Request, res: Response) => {
-  console.log('📨 Received GET MCP request (not allowed)');
+  log.debug('📨 Received GET MCP request (not allowed)');
   res
     .writeHead(405)
     .end(
@@ -334,7 +332,7 @@ app.get('/mcp', async (req: Request, res: Response) => {
 });
 
 app.delete('/mcp', async (req: Request, res: Response) => {
-  console.log('📨 Received DELETE MCP request (not allowed)');
+  log.debug('📨 Received DELETE MCP request (not allowed)');
   res
     .writeHead(405)
     .end(
@@ -433,16 +431,20 @@ async function start(): Promise<void> {
   });
 }
 
-// Exported for tests. Importing this module must not start a listener, so the
-// auto-start below is guarded: without it, index_http.ts could only ever be
-// exercised by launching a real server, which is why it sat at 0% coverage.
+// Exported for tests, so the express app and the auth middleware can be
+// exercised without launching a real server.
 export { app, start, authenticate, secretsMatch };
 
-const invokedDirectly =
-  process.argv[1] !== undefined &&
-  resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-
-if (invokedDirectly) {
+// Start unless a test explicitly suppresses it.
+//
+// The default must be "start". An earlier version of this guard compared
+// process.argv[1] against import.meta.url and only started on a match. The
+// WinCC OA JavaScript Manager does not launch the script in a way that
+// satisfies that comparison, so the server silently never started: every
+// module-level line logged normally and then nothing happened, with no error.
+// Defaulting to start means a mismatch can never cost us the production path -
+// the worst case is a test that has to opt out.
+if (process.env.MCP_DISABLE_AUTOSTART !== 'true') {
   start().catch((error: Error) => {
     console.error('Failed to start server:', error);
     process.exit(1);

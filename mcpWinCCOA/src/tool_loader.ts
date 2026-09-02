@@ -6,10 +6,14 @@
 
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import * as log from './utils/logger.js';
 import type { ServerContext, ToolModule, ToolRegistrationResult } from './types/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+/** Emit the registration summary once per process, not once per request. */
+let summaryLogged = false;
 
 /**
  * Dynamically load and register tools based on TOOLS environment variable
@@ -20,13 +24,13 @@ export async function loadAllTools(server: any, context: ServerContext): Promise
   const toolsToLoad = process.env.TOOLS ? process.env.TOOLS.split(',').map(t => t.trim()) : [];
 
   if (toolsToLoad.length === 0) {
-    console.log('No tools configured in TOOLS environment variable');
+    log.warn('No tools configured in TOOLS environment variable');
     return;
   }
 
   let totalTools = 0;
 
-  console.log(`Loading ${toolsToLoad.length} configured tools`);
+  log.debug(`Loading ${toolsToLoad.length} configured tools`);
 
   for (const toolPath of toolsToLoad) {
     try {
@@ -39,7 +43,7 @@ export async function loadAllTools(server: any, context: ServerContext): Promise
       if (typeof toolModule.registerTools === 'function') {
         const toolCount = await toolModule.registerTools(server, context);
         totalTools += toolCount || 0;
-        console.log(`  ✓ Loaded ${toolPath} (${toolCount || 'unknown'} tools)`);
+        log.debug(`  ✓ Loaded ${toolPath} (${toolCount || 'unknown'} tools)`);
       } else {
         console.warn(`  ⚠ ${toolPath} does not export registerTools function`);
       }
@@ -49,7 +53,19 @@ export async function loadAllTools(server: any, context: ServerContext): Promise
     }
   }
 
-  console.log(`Total tools registered: ${totalTools}`);
+  // The HTTP transport builds a fresh server per request, so this runs on every
+  // request. Logging the full 27-module breakdown each time floods the WinCC OA
+  // log - it was truncating PVSS_II.log in testing - so the detail is behind
+  // MCP_LOG_LEVEL=debug and the summary is emitted once per process.
+  if (!summaryLogged) {
+    summaryLogged = true;
+    log.info(
+      `Registered ${totalTools} tools from ${toolsToLoad.length} modules ` +
+        '(subsequent requests reuse this set; set MCP_LOG_LEVEL=debug for per-request detail)'
+    );
+  } else {
+    log.debug(`Total tools registered: ${totalTools}`);
+  }
 }
 
 /**

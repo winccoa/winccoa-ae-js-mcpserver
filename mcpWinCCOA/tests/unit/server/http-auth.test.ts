@@ -17,6 +17,9 @@ import { describe, it, expect, beforeAll, vi } from 'vitest';
 const TOKEN = 'a'.repeat(64);
 process.env.MCP_API_TOKEN = TOKEN;
 process.env.MCP_MODE = 'http';
+// Autostart defaults to ON so the WinCC OA JavaScript Manager can never be left
+// without a listener by a path-comparison mismatch. Tests opt out explicitly.
+process.env.MCP_DISABLE_AUTOSTART = 'true';
 delete process.env.TOOLS;
 
 let app: any;
@@ -142,14 +145,23 @@ describe('failure reporting', () => {
     }
   });
 
-  it('has no process.exit outside the direct-invocation guard', async () => {
-    // Cheap structural guard: a reintroduced module-scope exit would make this
-    // suite fail in a way that is very hard to diagnose from CI output.
+  it('has no process.exit outside the autostart guard, and autostart defaults on', async () => {
+    // Two structural guards, both for regressions that are near-impossible to
+    // diagnose from logs alone:
+    //  - a module-scope process.exit kills a vitest worker, so failures show up
+    //    as tests silently "skipped"
+    //  - an autostart condition that defaults to *off* leaves the WinCC OA
+    //    JavaScript Manager with no listener and no error at all
     const { readFileSync } = await import('node:fs');
     const src = readFileSync(
       new URL('../../../src/index_http.ts', import.meta.url),
       'utf8'
     );
+
+    // The guard must be a negated opt-out, never a positive "only if invoked
+    // directly" test against argv.
+    expect(src).toMatch(/MCP_DISABLE_AUTOSTART !== 'true'/);
+    expect(src).not.toMatch(/invokedDirectly/);
     // Strip comments first: this file legitimately *mentions* process.exit() in
     // a comment explaining why it is not used at module scope.
     const code = src
@@ -160,6 +172,5 @@ describe('failure reporting', () => {
 
     const occurrences = code.match(/process\.exit\(/g) ?? [];
     expect(occurrences).toHaveLength(1);
-    expect(src).toMatch(/if \(invokedDirectly\) \{[\s\S]*process\.exit\(1\)/);
   });
 });
