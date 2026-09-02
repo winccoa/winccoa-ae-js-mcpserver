@@ -6,55 +6,73 @@
 
 import { z } from 'zod';
 import { createSuccessResponse, createErrorResponse } from '../../utils/helpers.js';
+import * as log from '../../utils/logger.js';
 import type { ServerContext } from '../../types/index.js';
 
 /**
  * Query common config attributes for a datapoint element
  */
 async function queryCommonConfig(winccoa: any, dpe: string): Promise<any> {
-  try {
-    // Read all common config attributes
-    const description = winccoa.dpGetDescription(dpe);
-    const alias = winccoa.dpGetAlias(dpe);
-    const format = winccoa.dpGetFormat(dpe);
-    const unit = winccoa.dpGetUnit(dpe);
+  const result: any = { dpe, configured: false };
+  let hasConfig = false;
+  const unreadable: string[] = [];
 
-    // Build result object with only non-empty attributes
-    const result: any = {
-      dpe: dpe,
-      configured: false
-    };
-
-    // Check if any attribute exists (not empty/null/undefined)
-    let hasConfig = false;
-
-    if (description && Object.keys(description).length > 0) {
-      result.description = description;
-      hasConfig = true;
+  /**
+   * Read one attribute, treating "not configured" as an absence rather than a
+   * failure.
+   *
+   * WinCC OA throws for an unset attribute - dpGetAlias raises error 76,
+   * "no such alias" - so reading all four inside a single try meant one unset
+   * attribute aborted the whole query and the tool reported failure for a
+   * perfectly normal datapoint. The caller then could not distinguish "nothing
+   * configured" from a real error, which is what pv_range-query gets right.
+   */
+  const read = (attribute: string, get: () => unknown): unknown => {
+    try {
+      return get();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      // Keep this at debug: for most datapoints an unset attribute is the norm.
+      log.debug(`  ${attribute} not readable on ${dpe}: ${message}`);
+      unreadable.push(attribute);
+      return undefined;
     }
+  };
 
-    if (alias && alias.trim() !== '') {
-      result.alias = alias;
-      hasConfig = true;
-    }
+  const description = read('description', () => winccoa.dpGetDescription(dpe));
+  const alias = read('alias', () => winccoa.dpGetAlias(dpe));
+  const format = read('format', () => winccoa.dpGetFormat(dpe));
+  const unit = read('unit', () => winccoa.dpGetUnit(dpe));
 
-    if (format && Object.keys(format).length > 0) {
-      result.format = format;
-      hasConfig = true;
-    }
-
-    if (unit && Object.keys(unit).length > 0) {
-      result.unit = unit;
-      hasConfig = true;
-    }
-
-    result.configured = hasConfig;
-
-    return result;
-  } catch (error) {
-    console.error(`Error querying common config for ${dpe}:`, error);
-    throw error;
+  if (description && Object.keys(description).length > 0) {
+    result.description = description;
+    hasConfig = true;
   }
+
+  if (typeof alias === 'string' && alias.trim() !== '') {
+    result.alias = alias;
+    hasConfig = true;
+  }
+
+  if (format && Object.keys(format).length > 0) {
+    result.format = format;
+    hasConfig = true;
+  }
+
+  if (unit && Object.keys(unit).length > 0) {
+    result.unit = unit;
+    hasConfig = true;
+  }
+
+  result.configured = hasConfig;
+
+  // Report which attributes could not be read, so an unset attribute and a real
+  // read failure remain distinguishable by the caller.
+  if (unreadable.length > 0) {
+    result.notConfigured = unreadable;
+  }
+
+  return result;
 }
 
 /**

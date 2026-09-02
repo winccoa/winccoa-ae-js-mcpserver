@@ -5,6 +5,7 @@
  * Supports all Pmon commands for manager administration.
  */
 
+import * as log from '../../utils/logger.js';
 import * as net from 'net';
 import type {
   PmonConfig,
@@ -440,7 +441,19 @@ export class PmonClient {
       }
     }
 
-    // Default return if parsing didn't complete normally
+    // Reached only when no trailing status line (one ending in ';') was found.
+    // The manager list itself parses correctly in this case, so the project mode
+    // silently reports UNKNOWN/0 while Pmon is plainly running and answering.
+    //
+    // Deliberately not guessed at: fixing the parser needs the actual response
+    // format, so log what arrived instead of failing quietly. Capture it with
+    // MCP_LOG_LEVEL=debug and correct the parsing from real data.
+    log.warn(
+      `Pmon MGRLIST:STATI: no trailing status line found, project mode reported as UNKNOWN. ` +
+        `Parsed ${managers.length} manager(s) of ${count} announced.`
+    );
+    log.debug(`Pmon raw response lines: ${JSON.stringify(lines)}`);
+
     return {
       managers,
       modeNumeric: 0,
