@@ -277,7 +277,9 @@ describe('Server Configuration', () => {
       const errors = validateConfig();
 
       expect(errors).toHaveLength(1);
-      expect(errors[0]).toBe('MCP_API_TOKEN must be set in environment variables or .env file');
+      expect(errors[0]).toContain('MCP_API_TOKEN');
+      // The message must tell the operator how to fix it, not just what is wrong.
+      expect(errors[0]).toContain('openssl rand -hex 32');
 
       consoleSpy.mockRestore();
     });
@@ -294,18 +296,28 @@ describe('Server Configuration', () => {
       consoleSpy.mockRestore();
     });
 
-    it('logs validation progress', async () => {
-      process.env.MCP_API_TOKEN = 'valid-token';
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    it('reports problems by return value, and never logs the token', async () => {
+      // This replaces an earlier test that asserted on three exact debug log
+      // strings. Those were removed: validateConfig communicates through its
+      // return value, and per-request/startup commentary that could carry
+      // secrets does not belong on stdout.
+      const secret = 'super-secret-token-value';
+      process.env.MCP_API_TOKEN = secret;
+
+      const lines: string[] = [];
+      const capture = (...args: unknown[]) => lines.push(args.map(String).join(' '));
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(capture);
+      const errSpy = vi.spyOn(console, 'error').mockImplementation(capture);
 
       const { validateConfig } = await import('../../../src/config/server.config.js');
-      validateConfig();
+      expect(validateConfig()).toEqual([]);
 
-      expect(consoleSpy).toHaveBeenCalledWith('🔍 Starting configuration validation...');
-      expect(consoleSpy).toHaveBeenCalledWith('✅ MCP_API_TOKEN validation passed');
-      expect(consoleSpy).toHaveBeenCalledWith('🔍 Validation completed with', 0, 'errors');
+      logSpy.mockRestore();
+      errSpy.mockRestore();
 
-      consoleSpy.mockRestore();
+      const output = lines.join('\n');
+      expect(output).not.toContain(secret);
+      expect(output).not.toContain(secret.slice(0, 8));
     });
   });
 

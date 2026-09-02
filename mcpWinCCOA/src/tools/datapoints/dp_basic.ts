@@ -6,6 +6,7 @@
 
 import { z } from 'zod';
 import { mkTypesContent, addDescriptionAndUnitsToChildren, createSuccessResponse, createErrorResponse, validateDatapointElementsForGet } from '../../utils/helpers.js';
+import * as log from '../../utils/logger.js';
 import type { ServerContext, McpContent } from '../../types/index.js';
 
 /**
@@ -208,6 +209,65 @@ Supports all WinCC OA datapoint element types including state values, command va
         return createSuccessResponse(finalResult);
       } catch (error: any) {
         const errorMessage = error instanceof Error ? error.message : String(error);
+        const dpeArray = Array.isArray(dpe) ? dpe : [dpe];
+
+        // A batched dpGet is atomic: one bad element fails the whole call with
+        // 9399 "multiple errors" and no values at all, so a caller reading ten
+        // datapoints loses the nine that were fine and is not told which one
+        // broke. The nested errors do name the offender, but only inside their
+        // message text.
+        //
+        // On a multi-element read, retry each element on its own. That yields the
+        // values that are readable plus an exact per-element error, and it only
+        // costs extra calls on the failure path.
+        if (dpeArray.length > 1) {
+          log.warn(`Batched read of ${dpeArray.length} elements failed, retrying individually: ${errorMessage}`);
+
+          const values: any[] = [];
+          const failures: Array<{ dpe: string; error: string; errorCode?: number }> = [];
+
+          for (const one of dpeArray) {
+            try {
+              const single = await winccoa.dpGet([one + ':_online.._value', one + ':_original.._stime']);
+              values.push({
+                dpe: one,
+                value: (single as any[])[0],
+                timestamp: (single as any[])[1],
+                unit: winccoa.dpGetUnit(one)
+              });
+            } catch (singleError: any) {
+              failures.push({
+                dpe: one,
+                error: singleError instanceof Error ? singleError.message : String(singleError),
+                errorCode: singleError?.code
+              });
+            }
+          }
+
+          // Every element failed - nothing partial to report.
+          if (values.length === 0) {
+            return createErrorResponse(
+              `Failed to get values for all ${dpeArray.length} datapoint element(s): ` +
+                failures.map(f => `${f.dpe} (${f.error})`).join('; '),
+              { errorType: 'ALL_DPE_FAILED', failures }
+            );
+          }
+
+          log.info(
+            `Got values for ${values.length} of ${dpeArray.length} datapoint(s); ` +
+              `${failures.length} failed: ${failures.map(f => f.dpe).join(', ')}`
+          );
+
+          return createSuccessResponse({
+            values,
+            failures,
+            partial: true,
+            message:
+              `Returned ${values.length} of ${dpeArray.length} requested element(s). ` +
+              `Failed: ${failures.map(f => `${f.dpe} - ${f.error}`).join('; ')}`
+          });
+        }
+
         console.error(`Error getting values:`, error);
 
         // Handle WinCC OA specific errors

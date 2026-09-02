@@ -5,6 +5,7 @@
  * Supports all Pmon commands for manager administration.
  */
 
+import * as log from '../../utils/logger.js';
 import * as net from 'net';
 import type {
   PmonConfig,
@@ -396,6 +397,12 @@ export class PmonClient {
    * @returns Parsed manager status
    */
   private parseManagerStatus(response: string): PmonStatus {
+    // Two attempts at fixing the always-UNKNOWN project mode have now been wrong,
+    // both made without seeing the actual payload. Log it verbatim so the format
+    // can be read rather than inferred: set MCP_LOG_LEVEL=debug and call
+    // list-managers once.
+    log.debug(`Pmon MGRLIST:STATI raw response: ${JSON.stringify(response)}`);
+
     const lines = response.trim().split('\n');
     const managers: PmonManager[] = [];
 
@@ -406,47 +413,73 @@ export class PmonClient {
 
     const count = parseInt(lines[0].substring(5), 10);
 
-    // Parse manager lines
+    // Parse the response. Real payload for a 13-manager project:
+    //
+    //   LIST:13
+    //   2;13240;0;2026.09.02 09:04:34.264;  1     <- manager, semicolon-separated
+    //   ... 13 of these ...
+    //   2 MONITOR_MODE 0 0                        <- project status, WHITESPACE-separated
+    //   ;                                         <- bare terminator
+    //
+    // The status line carries no semicolons, so an earlier version failed the
+    // ">= 5 semicolon fields" manager test and skipped it, then mistook the bare
+    // ';' terminator for the status line - giving an empty body and a permanent
+    // mode of UNKNOWN/0 while Pmon was answering normally.
+    let status: Pick<PmonStatus, 'modeNumeric' | 'modeString' | 'emergencyActive' | 'demoModeActive'> | null = null;
+
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i]?.trim();
 
-      // Skip empty lines
-      if (!line) continue;
+      // Skip blank lines and the bare ';' terminator.
+      if (!line || line === ';') continue;
 
-      // Check for status line (ends with ;)
-      if (line.endsWith(';')) {
-        // This is the final status line
-        const parts = line.slice(0, -1).trim().split(/\s+/);
-        return {
-          managers,
+      // Manager line: <state>;<PID>;<startMode>;<startTime>;<manNum>
+      const fields = line.split(';');
+      if (fields.length >= 5) {
+        managers.push({
+          index: managers.length,
+          state: parseInt(fields[0] || '0', 10) as ManagerState,
+          pid: parseInt(fields[1] || '0', 10),
+          startMode: parseInt(fields[2] || '0', 10) as ManagerStartMode,
+          startTime: (fields[3] || '').trim(),
+          manNum: parseInt(fields[4] || '0', 10)
+        });
+        continue;
+      }
+
+      // Otherwise: the project status line, e.g. "2 MONITOR_MODE 0 0".
+      const parts = line.split(/\s+/);
+      if (parts.length >= 2) {
+        status = {
           modeNumeric: parseInt(parts[0] || '0', 10),
-          modeString: parts[1] || 'UNKNOWN',
+          modeString: (parts[1] || '').trim() || 'UNKNOWN',
           emergencyActive: parseInt(parts[2] || '0', 10),
           demoModeActive: parseInt(parts[3] || '0', 10)
         };
+        log.debug(`Pmon project status: ${JSON.stringify(status)} (from ${JSON.stringify(line)})`);
+        continue;
       }
 
-      // Parse manager line: <state>;<PID>;<startMode>;<startTime>;<manNum>
-      const parts = line.split(';');
-      if (parts.length >= 5) {
-        managers.push({
-          index: i - 1, // Index in the list
-          state: parseInt(parts[0] || '0', 10) as ManagerState,
-          pid: parseInt(parts[1] || '0', 10),
-          startMode: parseInt(parts[2] || '0', 10) as ManagerStartMode,
-          startTime: parts[3] || '',
-          manNum: parseInt(parts[4] || '0', 10)
-        });
-      }
+      log.debug(`Pmon MGRLIST:STATI: unrecognised line skipped: ${JSON.stringify(line)}`);
     }
 
-    // Default return if parsing didn't complete normally
+    if (managers.length !== count) {
+      log.warn(`Pmon announced ${count} manager(s) but ${managers.length} were parsed`);
+    }
+
+    if (!status) {
+      log.warn(
+        'Pmon MGRLIST:STATI: no project status line found, reporting UNKNOWN. ' +
+          'Run with MCP_LOG_LEVEL=debug to see the raw response.'
+      );
+    }
+
     return {
       managers,
-      modeNumeric: 0,
-      modeString: 'UNKNOWN',
-      emergencyActive: 0,
-      demoModeActive: 0
+      modeNumeric: status?.modeNumeric ?? 0,
+      modeString: status?.modeString ?? 'UNKNOWN',
+      emergencyActive: status?.emergencyActive ?? 0,
+      demoModeActive: status?.demoModeActive ?? 0
     };
   }
 

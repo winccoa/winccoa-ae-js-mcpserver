@@ -10,7 +10,7 @@
     "automation",
     "winccoa"
   ],
-  "Version": "1.4.0",
+  "Version": "1.5.0",
   "Description": "Provides an MCP server for WinCC OA, enabling AI assistants and compatible clients to interact with WinCC OA projects through structured tools, configuration, and HTTP-based integration.",
   "OaVersions": "^3.20.0",
   "Libraries": [

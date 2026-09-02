@@ -26,12 +26,16 @@ const mockBrowse = vi.hoisted(() =>
 const mockDeleteConnection = vi.hoisted(() => vi.fn().mockResolvedValue(true));
 
 vi.mock('../../../src/helpers/drivers/OpcUaConnection.js', () => {
-  const mockClass = vi.fn().mockImplementation(() => ({
-    addConnection: mockAddConnection,
-    browse: mockBrowse,
-    deleteConnection: mockDeleteConnection,
-    addAddressConfig: vi.fn().mockResolvedValue(true)
-  }));
+  // Must be a function expression, not an arrow: vitest >=4 constructs the mock
+  // implementation with `new`, and arrow functions are not constructors.
+  const mockClass = vi.fn().mockImplementation(function () {
+    return {
+      addConnection: mockAddConnection,
+      browse: mockBrowse,
+      deleteConnection: mockDeleteConnection,
+      addAddressConfig: vi.fn().mockResolvedValue(true)
+    };
+  });
 
   return {
     default: mockClass,  // Add default export for tool file import

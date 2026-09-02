@@ -4,7 +4,16 @@ This document describes the automated release process for the WinCC OA MCP Serve
 
 ## Overview
 
-The project uses GitHub Actions to automatically build and publish npm packages when a GitHub release is created. The version number from the GitHub release tag becomes the npm package version.
+The project uses GitHub Actions to automatically build and publish npm packages when a GitHub release is created.
+
+**The repository is the source of truth for the version, not the tag.** The release workflow verifies
+that the tag matches *both* `mcpWinCCOA/package.json` and `package.winccoa.json` (the SIOS manifest)
+and fails if they disagree. So the version must be bumped in a commit **before** tagging.
+
+This is deliberate: the workflow previously derived a version from the tag but used it only for the
+tarball filename, so `npm publish` shipped whatever `package.json` said. Tagging `v1.5.0` against a
+`1.4.0` manifest silently republished 1.4.0. Keeping the version in git history also means an audit can
+see which commit a released version corresponds to.
 
 ## Release Process Flow
 
@@ -16,12 +25,12 @@ flowchart TD
     Release --> Trigger[GitHub Action Triggered]
     
     Trigger --> Extract[Extract Version from Tag]
-    Extract --> Update[Update package.json]
-    Update --> Install[Install Dependencies]
-    Install --> Build[Build TypeScript]
-    Build --> Test[Run Tests]
-    
-    Test --> TestResult{Tests Pass?}
+    Extract --> Verify{Tag matches both manifests?}
+    Verify -->|No| Fail[Build Failed]
+    Verify -->|Yes| Install[Install Dependencies]
+    Install --> Test[Type check, tests, audit]
+    Test --> Build[Build + SBOM]
+    Build --> TestResult{All checks pass?}
     TestResult -->|No| Fail[Build Failed]
     TestResult -->|Yes| Package[Create npm Package]
     
@@ -42,11 +51,13 @@ flowchart TD
 
 ### Process Steps
 
-1. **Manual**: Developer creates GitHub release with version tag
-2. **Automated**: GitHub Action workflow is triggered
-3. **Automated**: Build, test, and publish to npm registry
-4. **Automated**: Upload release assets to GitHub
-5. **Manual**: Verify release and communicate to team
+1. **Manual**: Bump the version in `mcpWinCCOA/package.json` **and** `package.winccoa.json`, update
+   `CHANGELOG.md`, commit and push
+2. **Manual**: Create the GitHub release with a tag matching that version
+3. **Automated**: workflow verifies version consistency, then type check, tests and `npm audit`
+4. **Automated**: build, generate the SBOM, publish to npm with provenance
+5. **Automated**: upload the tarball and `sbom.json` as release assets
+6. **Manual**: verify the release, then hand off to SIOS
 
 ## Prerequisites
 
@@ -78,16 +89,27 @@ Ensure your npm account has permissions to publish under the `@etm-professional-
 1. **Ensure code is ready**:
    ```bash
    cd mcpWinCCOA
-   npm test  # Run tests if available
-   npm run build  # Verify build works
+   npm ci
+   npx tsc --noEmit
+   npm test
+   npm run build
+   npm run sbom
+   npm audit --audit-level=high
    ```
 
-2. **Update documentation** if needed:
+2. **Bump the version in both manifests** — they must match the tag you are about to create:
+   ```bash
+   # mcpWinCCOA/package.json  -> "version"
+   # package.winccoa.json     -> "Version"
+   ```
+
+3. **Update documentation** if needed:
    - Update README files
    - Update field configurations
-   - Update project configuration examples
+   - Update `CHANGELOG.md`
+   - Update `OSS.md` if dependencies changed
 
-3. **Commit and push all changes**:
+4. **Commit and push all changes**:
    ```bash
    git add .
    git commit -m "Prepare for release vX.Y.Z"
@@ -151,31 +173,48 @@ Examples:
 
 The GitHub Action performs these steps:
 
-1. **Extract version** from GitHub release tag
-2. **Update package.json** with release version
-3. **Install dependencies** in mcpWinCCOA directory
-4. **Compile TypeScript** to JavaScript
-5. **Create npm package** with correct metadata
-6. **Publish to npm** with provenance
-7. **Upload release assets** to GitHub
+1. **Extract version** from the GitHub release tag
+2. **Verify** the tag matches `package.json` and `package.winccoa.json` — fails the job if not
+3. **Install dependencies** in `mcpWinCCOA`
+4. **Type check**, **run the tests**, and **`npm audit --audit-level=high`**
+5. **Build** via `npm run build` (the same `build.mjs` used locally, so there is one recipe)
+6. **Stage** `README.md`, `OSS.md`, `LEGAL_INFO.md` and `LICENSE.md` into the package directory
+7. **Generate the SBOM** (`sbom.json`), so it matches the published artifact
+8. **Publish to npm** with provenance
+9. **Upload** the tarball and the SBOM as release assets
+
+The package contents come from the committed `files` array in `package.json`. The workflow no longer
+injects metadata with `npm pkg set` — every field it used to write was already in `package.json`, which
+made the two able to drift.
 
 ## File Structure After Build
 
+As published (from the `files` array in `package.json`):
+
 ```
 @etm-professional-control/winccoa-mcp-server/
-├── build/                    # Compiled JavaScript
-│   ├── index_stdio.js       # Main STDIO entry point
+├── build/                   # Compiled JavaScript + copied runtime assets
 │   ├── index_http.js        # HTTP server entry point
-│   └── field_loader.js     # Field configuration loader
-├── fields/                  # Field configurations (from parent directory)
-│   ├── oil.md
-│   ├── transport.md
-│   ├── default.md
-│   └── README.md
-├── README.md               # npm package documentation
-├── README_PROJECT_CONFIG.md # Project configuration guide
-└── package.json           # Package metadata
+│   ├── index_stdio.js       # STDIO entry point
+│   ├── systemprompt.md
+│   ├── fields/              # default.md, oil.md, transport.md
+│   ├── config/              # demo-project-instructions.md
+│   ├── helpers/  tools/  types/  utils/
+├── src/fields/              # source copies, used by postinstall
+├── src/systemprompt.md
+├── config/
+├── postinstall.cjs          # copies build output into the WinCC OA project
+├── .env.example
+├── sbom.json                # CycloneDX SBOM for this exact version
+├── README.md
+├── OSS.md                   # third-party software disclosure
+├── LEGAL_INFO.md
+├── LICENSE.md
+└── package.json
 ```
+
+`winccoa-manager` is **never** included: it is proprietary Siemens code supplied by the WinCC OA
+installation and declared as an optional `peerDependency`. It is also excluded from `sbom.json`.
 
 ## Troubleshooting
 
@@ -246,9 +285,14 @@ Better approach: Publish fixed version immediately
 - [ ] Code changes tested and reviewed
 - [ ] Documentation updated
 - [ ] Version number follows SemVer
+- [ ] **`mcpWinCCOA/package.json` version bumped**
+- [ ] **`package.winccoa.json` `Version` bumped to match** (the release job fails otherwise)
+- [ ] **`CHANGELOG.md` updated**
+- [ ] `npm audit --audit-level=high` clean locally
+- [ ] `OSS.md` reflects any dependency change, and SVM entries updated
 - [ ] NPM_TOKEN secret is configured
 - [ ] All changes committed and pushed
-- [ ] GitHub release created with proper tag
+- [ ] GitHub release created with a tag matching the bumped version
 - [ ] GitHub Action completed successfully
 - [ ] Package visible on npm registry
 - [ ] Installation and basic functionality tested

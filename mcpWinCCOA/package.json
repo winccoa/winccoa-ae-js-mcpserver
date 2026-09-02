@@ -1,6 +1,6 @@
 {
   "name": "@etm-professional-control/winccoa-mcp-server",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "MCP Server for WinCC OA with field-specific configurations",
   "type": "module",
   "bin": {
@@ -8,16 +8,32 @@
     "winccoa-mcp-http": "./build/index_http.js"
   },
   "scripts": {
-    "build": "./build.sh",
+    "build": "node build.mjs",
+    "sbom": "cyclonedx-npm --package-lock-only --omit dev --omit peer --output-format JSON --output-file sbom.json",
+    "oss": "npm run sbom && node gen-oss.mjs",
+    "zip": "npm run build && node zip.mjs",
     "postinstall": "node postinstall.cjs",
     "inspect": "npx @modelcontextprotocol/inspector",
     "start": "node build/index_stdio.js",
     "start:http": "node build/index_http.js",
-    "dev": "tsc && npm start",
+    "dev": "npm run build && npm start",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },
+  "files": [
+    "build",
+    "src/fields",
+    "src/systemprompt.md",
+    "config",
+    "postinstall.cjs",
+    ".env.example",
+    "sbom.json",
+    "README.md",
+    "OSS.md",
+    "LEGAL_INFO.md",
+    "LICENSE.md"
+  ],
   "keywords": [
     "mcp",
     "winccoa",
@@ -37,16 +53,16 @@
     "url": "https://github.com/winccoa/winccoa-ae-js-mcpserver/issues"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.3",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^5.1.0",
-    "express-rate-limit": "^7.1.5",
-    "mcp-remote": "^0.1.13",
-    "zod": "^3.25.51"
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "cors": "2.8.6",
+    "dotenv": "16.6.1",
+    "express": "5.2.1",
+    "express-rate-limit": "7.5.1",
+    "mcp-remote": "0.1.37",
+    "zod": "3.25.76"
   },
   "peerDependencies": {
     "winccoa-manager": "*"
@@ -57,10 +73,11 @@
     }
   },
   "devDependencies": {
-    "@types/express": "^5.0.3",
-    "@types/node": "^18.19.129",
-    "@vitest/coverage-v8": "^2.0.0",
-    "typescript": "^5.8.3",
-    "vitest": "^2.0.0"
+    "@cyclonedx/cyclonedx-npm": "6.0.1",
+    "@types/express": "5.0.6",
+    "@types/node": "20.19.43",
+    "@vitest/coverage-v8": "4.1.11",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
   }
 }

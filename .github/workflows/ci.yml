@@ -8,13 +8,20 @@ on:
 
 jobs:
   test:
-    name: Unit Tests
-    runs-on: ubuntu-latest
+    name: Unit Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows is a first-class target: WinCC OA ships on it, and the build
+        # must stay shell-free. Do not drop this leg.
+        os: [ubuntu-latest, windows-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: 'npm'
@@ -33,14 +40,149 @@ jobs:
         working-directory: mcpWinCCOA
         run: npm test
 
+      - name: Build
+        working-directory: mcpWinCCOA
+        run: npm run build
+
+      - name: Verify build output
+        working-directory: mcpWinCCOA
+        # Guards the assets tsc does not emit - a bare `tsc` leaves these out and
+        # the server then fails at runtime looking for its fields/system prompt.
+        shell: bash
+        run: |
+          for f in build/index_http.js build/index_stdio.js build/systemprompt.md \
+                   build/fields/default.md build/config/demo-project-instructions.md; do
+            test -f "$f" || { echo "missing build output: $f"; exit 1; }
+          done
+          echo "build output complete"
+
+  versions:
+    name: Manifest Versions
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: package.json and package.winccoa.json must agree
+        # package.winccoa.json is the SIOS manifest and carries its own Version.
+        # It has to move in lockstep with the npm package version; the release
+        # workflow refuses to publish when they disagree, and this catches it on
+        # the PR instead.
+        run: |
+          PKG=$(node -p "require('./mcpWinCCOA/package.json').version")
+          SIOS=$(node -p "require('./package.winccoa.json').Version")
+          echo "package.json         : $PKG"
+          echo "package.winccoa.json : $SIOS"
+          if [ "$PKG" != "$SIOS" ]; then
+            echo "::error::Version mismatch: mcpWinCCOA/package.json is $PKG but package.winccoa.json is $SIOS. Bump both."
+            exit 1
+          fi
+          echo "Versions match."
+
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mcpWinCCOA/package-lock.json
+
+      - name: Install dependencies
+        working-directory: mcpWinCCOA
+        run: npm ci
+
+      - name: Audit dependencies
+        working-directory: mcpWinCCOA
+        # Fails the build on any high or critical advisory. Direct dependencies are
+        # pinned to exact versions, so a new finding here means a real new advisory
+        # rather than drift - triage it, do not relax the threshold.
+        run: npm audit --audit-level=high
+
+      - name: Generate SBOM
+        working-directory: mcpWinCCOA
+        run: npm run sbom
+
+      - name: SBOM must be reproducible
+        working-directory: mcpWinCCOA
+        # The SBOM is generated with --package-lock-only so it is a function of a
+        # committed file, not of whatever npm happened to install. Without that,
+        # cyclonedx-npm walks node_modules and classifies optional/dev packages
+        # differently across npm versions - which produced 113 components in CI
+        # against 111 locally, and surfaced misleadingly as "OSS.md is out of date".
+        #
+        # Compares component sets only: serialNumber and timestamp change on every
+        # generation by design.
+        run: |
+          git show HEAD:mcpWinCCOA/sbom.json > /tmp/sbom-committed.json
+          node -e "
+            const ids = p => require(p).components
+              .map(c => (c.group ? c.group + '/' : '') + c.name + '@' + c.version).sort();
+            const committed = ids('/tmp/sbom-committed.json');
+            const fresh = ids('./sbom.json');
+            const added = fresh.filter(x => !committed.includes(x));
+            const removed = committed.filter(x => !fresh.includes(x));
+            if (added.length || removed.length) {
+              console.error('SBOM is not reproducible in this environment.');
+              if (added.length) console.error('  only in freshly generated: ' + added.join(', '));
+              if (removed.length) console.error('  only in committed:        ' + removed.join(', '));
+              console.error('Committed: ' + committed.length + ' components, fresh: ' + fresh.length + '.');
+              process.exit(1);
+            }
+            console.log('SBOM reproducible: ' + fresh.length + ' components match the committed one.');
+          "
+
+      - name: Check SBOM excludes proprietary and unlicensed components
+        working-directory: mcpWinCCOA
+        # winccoa-manager is proprietary Siemens code supplied by the WinCC OA
+        # installation and must never appear in a distributed SBOM. A component
+        # with no license, or a leaked local build path, also fails the SVM review.
+        run: |
+          node -e "
+            const s = require('./sbom.json');
+            const c = s.components || [];
+            const fail = m => { console.error('SBOM check failed: ' + m); process.exit(1); };
+            if (c.some(x => x.name === 'winccoa-manager')) fail('winccoa-manager is present');
+            const noLicense = c.filter(x => !(x.licenses || []).length).map(x => x.name);
+            if (noLicense.length) fail('components without a license: ' + noLicense.join(', '));
+            if (JSON.stringify(s).includes('Program Files')) fail('a local build path leaked');
+            console.log('SBOM OK: ' + c.length + ' components, all licensed');
+          "
+
+      - name: OSS.md must match the SBOM
+        working-directory: mcpWinCCOA
+        # Every licence in the tree is an attribution licence, so the disclosure
+        # has to list every distributed component. Regenerating and diffing keeps
+        # OSS.md from silently falling behind a dependency change.
+        #
+        # Only OSS.md is diffed: sbom.json carries a fresh serialNumber on every
+        # generation, so it is expected to differ.
+        run: |
+          node gen-oss.mjs
+          if ! git diff --exit-code -- ../OSS.md; then
+            echo "::error::OSS.md is out of date. Run 'npm run oss' in mcpWinCCOA and commit the result."
+            exit 1
+          fi
+          echo "OSS.md is in sync with the SBOM."
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v5
+        with:
+          name: sbom
+          path: mcpWinCCOA/sbom.json
+
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: 'npm'

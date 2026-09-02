@@ -35,6 +35,17 @@ Example read-only configuration:
 TOOLS=datapoints/dp_basic,datapoints/dp_types,archive/archive_query,common/common_query,pv_range/pv_range_query,manager/manager_list,opcua/opcua_connection
 ```
 
+## 🔐 Cybersecurity information
+
+In order to protect plants, systems, machines and networks against cyber threats, it is necessary to
+implement – and continuously maintain – a holistic, state-of-the-art industrial cybersecurity concept.
+Siemens' products and solutions constitute one element of such a concept. For more information about
+industrial cybersecurity, please visit www.siemens.com/cybersecurity-industry.
+
+See [LEGAL_INFO.md](LEGAL_INFO.md) for the full cybersecurity information and the application-example
+terms of use. Note in particular that this server's HTTP transport is **unencrypted by default** — see
+[Transport security](#remote-host-transport-security) below.
+
 ## ℹ️ Version Requirements
 
 **Dashboard Tools Requirement:** The dashboard-related tools require **WinCC OA version 3.21 or higher**. If you are using an earlier version of WinCC OA, these tools will not be available. Other tools and features will continue to work with earlier versions.
@@ -157,6 +168,8 @@ Edit the configuration file:
 
 **⚠️ IMPORTANT:** Replace `YOUR_TOKEN_HERE` with the exact same token from your `.env` file's `MCP_API_TOKEN`. The tokens must match exactly!
 
+**🔒 Transport security:** the `http://localhost:3000/mcp` URL above is plain HTTP. That is acceptable **only** because the traffic never leaves the machine. As soon as the server and the client are on different hosts, the bearer token and every request and response cross the network in clear text — see [Remote Host](#remote-host-transport-security) below and enable TLS.
+
 **Windows Path Issue:** If you encounter the error `"C:\Program" is either misspelled or could not be found`, use this alternative configuration:
 
 ```json
@@ -176,7 +189,26 @@ This method uses `cmd` to properly handle paths with spaces in Windows.
 - On Windows: Close Claude through the task-tray menu by selecting "Exit", or end the task in Task Manager if needed
 - On macOS/Linux: Quit Claude Desktop completely and restart
 
-**Remote Host:** When connecting to a remote WinCC OA server (not `localhost`), you must add the `--allow-http` flag to the `mcp-remote` args. Example:
+<a id="remote-host-transport-security"></a>
+**Remote Host:** When connecting to a remote WinCC OA server (not `localhost`), the transport is no longer local.
+
+> **🔒 Enable TLS before doing this.** `--allow-http` tells the client to accept an unencrypted
+> connection: the `Authorization: Bearer` token, all datapoint values and all configuration changes
+> travel the network in clear text, and can be captured and replayed by anyone able to observe the
+> traffic. The server itself prints a `[SECURITY WARNING]` at startup when it binds a non-loopback
+> address without TLS.
+>
+> Configure TLS on the server (`MCP_SSL_ENABLED`, `MCP_SSL_CERT_PATH`, `MCP_SSL_KEY_PATH` — see
+> [Configuration](docs/CONFIGURATION.md#ssltls-configuration)), then use an `https://` URL and **drop
+> `--allow-http`**:
+>
+> ```json
+> "args": ["mcp-remote", "https://winccoaserver:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
+> ```
+>
+> Use `--allow-http` only on a network you fully control, and treat the token as compromised if you do.
+
+If you accept that risk, add the `--allow-http` flag to the `mcp-remote` args:
 
 ```json
 {
@@ -197,7 +229,15 @@ If you are using [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (
 claude mcp add --transport http winccoa http://localhost:3000/mcp --header "Authorization: Bearer your-secure-token-here"
 ```
 
-**Remote Host:** When connecting to a remote WinCC OA server (not `localhost`), add the `--allow-http` flag:
+**Remote Host:** With TLS configured on the server, use the `https://` URL — no extra flag is needed:
+
+```bash
+claude mcp add --transport http winccoa https://winccoaserver:3000/mcp --header "Authorization: Bearer your-secure-token-here"
+```
+
+> **🔒** Only if the server has no TLS, and only on a network you fully control, add `--allow-http`.
+> The token then crosses the network in clear text — see the warning under
+> [Remote Host](#remote-host-transport-security) above.
 
 ```bash
 claude mcp add --transport http winccoa http://winccoaserver:3000/mcp --header "Authorization: Bearer your-secure-token-here" --allow-http
