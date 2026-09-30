@@ -5,7 +5,7 @@ Complete setup instructions for the WinCC OA MCP Server.
 ## Prerequisites
 
 - **WinCC OA 3.20** or higher
-- **Node.js 18+** installed
+- **Node.js 24 LTS** or later installed
 - **npm** package manager
 - **Windows 10/11** or **Linux**
 
