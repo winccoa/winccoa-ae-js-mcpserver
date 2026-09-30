@@ -101,7 +101,11 @@ Ensure your npm account has permissions to publish under the `@etm-professional-
    ```bash
    # mcpWinCCOA/package.json  -> "version"
    # package.winccoa.json     -> "Version"
+   # mcpWinCCOA/QUICKSTART.md -> hardcoded "Version x.y.z" line
    ```
+
+   `QUICKSTART.md` is not checked by the release workflow, so a stale version there goes unnoticed
+   (it still said 1.4.0 before v1.5.1).
 
 3. **Update documentation** if needed:
    - Update README files
@@ -265,6 +269,13 @@ flat paths, and adds `"private": true`. `postinstall.cjs` and `package-lock.json
 `build/`, `node_modules/`, `package-lock.json` or `postinstall.cjs` entry, a manifest with a
 machine-specific path, or a `build/` child whose name clashes with a root file.
 
+## Known Issue
+
+On the npm install path, `postinstall.cjs` copies the package's `package.json` into the install
+directory. That manifest still contains the `postinstall` script and the `build/`-based `start` / `bin`
+entries, but `postinstall.cjs` itself is not copied, so a later `npm install` in that directory fails.
+To be fixed in a later release by writing a sanitized manifest the way `zip.mjs` does.
+
 ## Troubleshooting
 
 ### Build Failures
@@ -336,6 +347,7 @@ Better approach: Publish fixed version immediately
 - [ ] Version number follows SemVer
 - [ ] **`mcpWinCCOA/package.json` version bumped**
 - [ ] **`package.winccoa.json` `Version` bumped to match** (the release job fails otherwise)
+- [ ] **`mcpWinCCOA/QUICKSTART.md` "Version x.y.z" line bumped** (hardcoded, not checked by CI)
 - [ ] **`CHANGELOG.md` updated**
 - [ ] `npm audit --audit-level=high` clean locally
 - [ ] `OSS.md` reflects any dependency change, and SVM entries updated

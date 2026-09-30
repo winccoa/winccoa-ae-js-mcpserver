@@ -211,22 +211,17 @@ for (const [src, entryName] of ENTRIES) {
 // peerDependencies to that absolute path, and it has reached a commit that way
 // more than once. Shipping it would make `npm install` fail for the recipient,
 // who has no such directory.
-for (const manifestName of [MANIFEST_NAME]) {
-  const staged = join(staging, manifestName);
-  if (!existsSync(staged)) continue;
+const stagedManifest = join(staging, MANIFEST_NAME);
+const stagedText = readFileSync(stagedManifest, 'utf8');
+const offenders = [...stagedText.matchAll(/"(?:file:)?((?:[A-Za-z]:[\\/]|\.\.[\\/])[^"]*)"/g)].map(m => m[1]);
 
-  const text = readFileSync(staged, 'utf8');
-  const offenders = [...text.matchAll(/"(?:file:)?((?:[A-Za-z]:[\\/]|\.\.[\\/])[^"]*)"/g)].map(m => m[1]);
-
-  if (offenders.length > 0) {
-    console.error(`❌ Refusing to ship: ${manifestName} contains machine-specific path(s):`);
-    for (const o of [...new Set(offenders)]) console.error(`   ${o}`);
-    console.error('\nRestore the manifests (git restore) and rebuild.');
-    rmSync(staging, { recursive: true, force: true });
-    process.exit(1);
-  }
+if (offenders.length > 0) {
+  console.error(`❌ Refusing to ship: ${MANIFEST_NAME} contains machine-specific path(s):`);
+  for (const o of [...new Set(offenders)]) console.error(`   ${o}`);
+  console.error('\nRestore the manifests (git restore) and rebuild.');
+  rmSync(staging, { recursive: true, force: true });
+  process.exit(1);
 }
-
 
 if (process.platform === 'win32') {
   execFileSync(
