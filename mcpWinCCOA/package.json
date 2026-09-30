@@ -27,6 +27,7 @@
     "src/systemprompt.md",
     "config",
     "postinstall.cjs",
+    "manifest.cjs",
     ".env.example",
     "sbom.json",
     "README.md",

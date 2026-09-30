@@ -220,6 +220,7 @@ As published (from the `files` array in `package.json`):
 ├── src/systemprompt.md
 ├── config/
 ├── postinstall.cjs          # copies build output into the WinCC OA project
+├── manifest.cjs             # runtime-manifest sanitizer shared by postinstall.cjs and zip.mjs
 ├── .env.example
 ├── sbom.json                # CycloneDX SBOM for this exact version
 ├── README.md
@@ -259,7 +260,8 @@ winccoa-mcp-server-<version>-sios.zip
 └── CHANGELOG.md
 ```
 
-The archive's `package.json` is **generated**, not copied. It keeps the name, version, metadata,
+The archive's `package.json` is **generated**, not copied (by `manifest.cjs`, the same sanitizer
+`postinstall.cjs` uses for the npm path). It keeps the name, version, metadata,
 `engines`, `dependencies` and the optional `winccoa-manager` peer dependency, so that `npm install` in
 the extracted directory pulls exactly the runtime dependencies. It drops the `postinstall` script and
 all build/test scripts, `devDependencies`, `bin` and `files`, rewrites `start` / `start:http` to the
@@ -268,13 +270,6 @@ flat paths, and adds `"private": true`. `postinstall.cjs` and `package-lock.json
 `zip.mjs` refuses to produce an archive that contains a `.env` (or any secret-shaped file), a
 `build/`, `node_modules/`, `package-lock.json` or `postinstall.cjs` entry, a manifest with a
 machine-specific path, or a `build/` child whose name clashes with a root file.
-
-## Known Issue
-
-On the npm install path, `postinstall.cjs` copies the package's `package.json` into the install
-directory. That manifest still contains the `postinstall` script and the `build/`-based `start` / `bin`
-entries, but `postinstall.cjs` itself is not copied, so a later `npm install` in that directory fails.
-To be fixed in a later release by writing a sanitized manifest the way `zip.mjs` does.
 
 ## Troubleshooting
 
