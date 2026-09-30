@@ -228,6 +228,43 @@ As published (from the `files` array in `package.json`):
 `winccoa-manager` is **never** included: it is proprietary Siemens code supplied by the WinCC OA
 installation and declared as an optional `peerDependency`. It is also excluded from `sbom.json`.
 
+## SIOS Archive Structure
+
+`npm run zip` (`mcpWinCCOA/zip.mjs`) builds `dist/winccoa-mcp-server-<version>-sios.zip`. The archive
+is **flat**: the contents of `build/` sit directly at the archive root, which is the same layout
+`postinstall.cjs` produces for an npm install. The manager script path is therefore
+`<folder>/index_http.js` and `.env` lives next to it, for both delivery paths
+([#36](https://github.com/winccoa/winccoa-ae-js-mcpserver/issues/36); 1.5.0 still had a `build/` folder).
+
+```
+winccoa-mcp-server-<version>-sios.zip
+├── index_http.js            # HTTP server entry point (manager script)
+├── index_stdio.js           # STDIO entry point
+├── server.js  tool_loader.js
+├── systemprompt.md
+├── fields/                  # default.md, oil.md, transport.md
+├── config/                  # demo-project-instructions.md, server.config.js
+├── helpers/  tools/  types/  utils/
+├── QUICKSTART.md            # SIOS-only; not part of the npm package
+├── .env.example             # copied to .env in the same directory
+├── package.json             # sanitized manifest, see below
+├── sbom.json
+├── OSS.md
+├── LEGAL_INFO.md
+├── LICENSE.md
+└── CHANGELOG.md
+```
+
+The archive's `package.json` is **generated**, not copied. It keeps the name, version, metadata,
+`engines`, `dependencies` and the optional `winccoa-manager` peer dependency, so that `npm install` in
+the extracted directory pulls exactly the runtime dependencies. It drops the `postinstall` script and
+all build/test scripts, `devDependencies`, `bin` and `files`, rewrites `start` / `start:http` to the
+flat paths, and adds `"private": true`. `postinstall.cjs` and `package-lock.json` are not shipped.
+
+`zip.mjs` refuses to produce an archive that contains a `.env` (or any secret-shaped file), a
+`build/`, `node_modules/`, `package-lock.json` or `postinstall.cjs` entry, a manifest with a
+machine-specific path, or a `build/` child whose name clashes with a root file.
+
 ## Troubleshooting
 
 ### Build Failures
