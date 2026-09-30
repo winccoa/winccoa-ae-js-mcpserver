@@ -4,6 +4,56 @@ All notable changes to the WinCC OA MCP Server are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.5.1] — 2026-09-30
+
+Maintenance and security release: Node.js 24 LTS, an `mcp-remote` security update, and a flat SIOS
+archive.
+
+### ⚠️ Upgrade notes
+
+- **Node.js 24 LTS is now the minimum** (`engines.node >= 24.0.0`). Node.js 20 LTS reached end-of-life
+  on 2026-04-30. This is breaking for anyone still on Node.js 20 or 22: upgrade Node before installing
+  this version.
+- **The SIOS archive layout has changed** ([#36](https://github.com/winccoa/winccoa-ae-js-mcpserver/issues/36)).
+  Existing archive users must re-extract: the `build/` folder is gone, so the manager script path
+  changes from `mcpWinCCOA/build/index_http.js` to `mcpServer/index_http.js` (or `<your folder>/index_http.js`)
+  and `.env` moves from `build\.env` to the directory that holds `index_http.js`. The npm install path
+  is unchanged.
+
+### Security
+
+- **Updated `mcp-remote` 0.1.37 → 0.14.3.** Fixes the Remote Information Disclosure in OAuth scope
+  handling that affects 0.1.32 to 0.1.38 (fixed in 0.1.39; Siemens SVM notification 236904). The update
+  also removes the vulnerable transitive versions it pulled in: `undici` 7.29.0 (ten high advisories,
+  now 7.30.0) and the `express` 4 / `body-parser` / `qs` chain (moderate, now `express` 4.22.3,
+  `body-parser` 1.20.8, `qs` 6.16.0). The `mcp-remote` CLI flags used in the documentation
+  (positional URL, `--header`, `--allow-http`) are unchanged.
+- Lockfile refreshed with `npm audit fix` (no `--force`): `fast-uri` 3.1.8, `ip-address` 10.7.2 and,
+  dev-only, `brace-expansion` 2.1.7. `npm audit` reports **0 vulnerabilities**, with and without
+  `--omit=dev`.
+
+### Changed
+
+- **SIOS archive is now flat, matching the npm install layout**
+  ([#36](https://github.com/winccoa/winccoa-ae-js-mcpserver/issues/36)). The contents of `build/`
+  (`index_http.js`, `index_stdio.js`, `systemprompt.md`, `fields/`, `config/`, ...) sit at the archive
+  root next to the documentation, so one set of instructions covers both delivery paths. The archive's
+  `package.json` is now generated: it keeps the runtime `dependencies` so `npm install` still works,
+  but has no `postinstall` script, no build/test scripts and no `devDependencies`, and is marked
+  `private`. `postinstall.cjs` is no longer part of the archive. `zip.mjs` refuses to build an archive
+  that is not flat. The npm package is unchanged.
+- `@types/node` 20.19.43 → 24.19.0.
+- CI and the release workflow run on Node.js 24.
+
+### Documentation
+
+- `QUICKSTART.md` rewritten for the flat archive: extract into `javascript\mcpServer\` (the directory
+  name used in `docs/INSTALLATION.md`), `.env` next to `index_http.js`, manager options
+  `mcpServer/index_http.js`, plus an upgrade note for 1.5.0 archive users. It also stated version 1.4.0.
+- Node.js requirement updated to 24 LTS in `QUICKSTART.md`, `docs/INSTALLATION.md` (which still said
+  Node.js 18+) and `docs/PREREQUISITES.md`.
+- `docs/dev/release.md` documents the SIOS archive structure.
+
 ## [1.5.0] — 2026-08-31
 
 Security and supply-chain release, implementing the findings of an internal Siemens security review.
