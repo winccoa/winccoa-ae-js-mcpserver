@@ -16,9 +16,9 @@ archive.
   this version.
 - **The SIOS archive layout has changed** ([#36](https://github.com/winccoa/winccoa-ae-js-mcpserver/issues/36)).
   Existing archive users must re-extract: the `build/` folder is gone, so the manager script path
-  changes from `mcpWinCCOA/build/index_http.js` to `mcpServer/index_http.js` (or `<your folder>/index_http.js`)
+  changes from `mcpWinCCOA/build/index_http.js` to `mcpWinCCOA/index_http.js` (or `<your folder>/index_http.js`)
   and `.env` moves from `build\.env` to the directory that holds `index_http.js`. The npm install path
-  is unchanged.
+  keeps its layout.
 
 ### Security
 
@@ -41,15 +41,26 @@ archive.
   `package.json` is now generated: it keeps the runtime `dependencies` so `npm install` still works,
   but has no `postinstall` script, no build/test scripts and no `devDependencies`, and is marked
   `private`. `postinstall.cjs` is no longer part of the archive. `zip.mjs` refuses to build an archive
-  that is not flat. The npm package is unchanged.
+  that is not flat.
 - `@types/node` 20.19.43 → 24.19.0.
 - CI and the release workflow run on Node.js 24.
 
+### Fixed
+
+- **npm install path: the manifest written into the install directory was broken.** `postinstall.cjs`
+  copied the package's `package.json` verbatim, including the `postinstall` hook (whose script is not
+  copied), `build/`-based `bin` / `start` entries, `files` and `devDependencies`, so a later
+  `npm install` in the install directory failed with `MODULE_NOT_FOUND`. It now writes a runtime
+  manifest (no `postinstall`, no build/test scripts, no `devDependencies`, `start` /
+  `start:http` pointing at the flat files, `"private": true`). The sanitizer (`manifest.cjs`) is shared
+  with `zip.mjs`, so the npm and SIOS paths produce the same manifest. Re-running `npm install` in the
+  install directory no longer fails.
+
 ### Documentation
 
-- `QUICKSTART.md` rewritten for the flat archive: extract into `javascript\mcpServer\` (the directory
-  name used in `docs/INSTALLATION.md`), `.env` next to `index_http.js`, manager options
-  `mcpServer/index_http.js`, plus an upgrade note for 1.5.0 archive users. It also stated version 1.4.0.
+- `QUICKSTART.md` rewritten for the flat archive: extract into `javascript\mcpWinCCOA\` (the same folder
+  name is used in all docs, for the archive and the npm path), `.env` next to `index_http.js`, manager options
+  `mcpWinCCOA/index_http.js`, plus an upgrade note for 1.5.0 archive users. It also stated version 1.4.0.
 - Node.js requirement updated to 24 LTS in `QUICKSTART.md`, `docs/INSTALLATION.md` (which still said
   Node.js 18+) and `docs/PREREQUISITES.md`.
 - `docs/dev/release.md` documents the SIOS archive structure.

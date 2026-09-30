@@ -159,7 +159,7 @@ This file contains instructions tailored for the standard WinCC OA demo project 
 
 To use the demo instructions:
 ```env
-WINCCOA_PROJECT_INSTRUCTIONS=./javascript/mcpServer/config/demo-project-instructions.md
+WINCCOA_PROJECT_INSTRUCTIONS=./javascript/mcpWinCCOA/config/demo-project-instructions.md
 ```
 
 **Note:** The path is relative to your WinCC OA project directory, not the MCP server directory.
@@ -204,7 +204,7 @@ WINCCOA_PROJECT_INSTRUCTIONS=./config/my-refinery-rules.md
 ```env
 # Use demo project instructions (included with MCP server)
 WINCCOA_FIELD=default
-WINCCOA_PROJECT_INSTRUCTIONS=./javascript/mcpServer/config/demo-project-instructions.md
+WINCCOA_PROJECT_INSTRUCTIONS=./javascript/mcpWinCCOA/config/demo-project-instructions.md
 
 # Or use transport field for testing
 WINCCOA_FIELD=transport

@@ -18,8 +18,8 @@ Complete setup instructions for the WinCC OA MCP Server.
 cd <OA_ProjPath>/javascript
 
 # Create MCP server directory
-mkdir mcpServer
-cd mcpServer
+mkdir mcpWinCCOA
+cd mcpWinCCOA
 ```
 
 ### 1.2 Install Server Package
@@ -160,7 +160,7 @@ In WinCC OA GEDI (WinCC OA Editor):
 3. Right-click and select **Insert Manager**
 4. Configure:
    - **Manager Type:** `JavaScript Manager`
-   - **Script Path:** `mcpServer/index_http.js`
+   - **Script Path:** `mcpWinCCOA/index_http.js`
    - **Manager Number:** (auto-assign)
    - **Manager Name:** `MCP_Server` (or your choice)
 
@@ -209,7 +209,7 @@ Expected response: JSON with server capabilities.
 - Verify firewall settings
 
 **JavaScript Manager fails to start**
-- Check script path: `mcpServer/index_http.js`
+- Check script path: `mcpWinCCOA/index_http.js`
 - Verify `.env` file exists and is configured
 - Check WinCC OA logs for specific error messages
 

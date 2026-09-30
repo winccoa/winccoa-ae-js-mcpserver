@@ -18,24 +18,24 @@ Create a directory for the server in your WinCC OA project's `javascript/` direc
 this archive into it:
 
 ```
-<YourProject>\javascript\mcpServer\
+<YourProject>\javascript\mcpWinCCOA\
 ```
 
 The archive is flat: `index_http.js`, `index_stdio.js`, `systemprompt.md`, `fields\`, `config\` and the
-other runtime files land directly in `mcpServer\`, next to this guide. This is the same layout an
+other runtime files land directly in `mcpWinCCOA\`, next to this guide. This is the same layout an
 `npm install` of the published package produces, so the [Installation Guide](https://github.com/winccoa/winccoa-ae-js-mcpserver/blob/main/docs/INSTALLATION.md)
 applies to both.
 
 > **Upgrading from 1.5.0 or earlier?** Older archives had a `build\` subdirectory. Extract 1.5.1 into
-> a fresh directory, move your `.env` from `build\.env` to `mcpServer\.env`, and change the manager
-> options from `mcpWinCCOA/build/index_http.js` to `mcpServer/index_http.js` (step 4).
+> a fresh directory, move your `.env` from `build\.env` to `mcpWinCCOA\.env`, and change the manager
+> options from `mcpWinCCOA/build/index_http.js` to `mcpWinCCOA/index_http.js` (step 4).
 
 ### 2. Install Dependencies
 
-Open a command prompt in the `mcpServer` directory:
+Open a command prompt in the `mcpWinCCOA` directory:
 
 ```cmd
-cd <YourProject>\javascript\mcpServer
+cd <YourProject>\javascript\mcpWinCCOA
 npm install
 npm install --save-peer file:"C:/Program Files/Siemens/WinCC_OA/3.21/javascript/winccoa-manager"
 ```
@@ -61,7 +61,7 @@ node -e "console.log(require.resolve('winccoa-manager'))"
 
 ### 3. Configure
 
-The `.env` file must be placed in the `mcpServer` directory, next to `index_http.js` - the server
+The `.env` file must be placed in the `mcpWinCCOA` directory, next to `index_http.js` - the server
 resolves it relative to the running script.
 
 ```cmd
@@ -85,7 +85,7 @@ MCP_API_TOKEN=your-secure-token-here
 
 In the WinCC OA Console, add a new manager:
 - **Manager Type:** JavaScript Manager (node)
-- **Options:** `mcpServer/index_http.js`
+- **Options:** `mcpWinCCOA/index_http.js`
 - **Start mode:** always
 
 ### 5. Connect Your AI Tool
