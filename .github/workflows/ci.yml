@@ -52,7 +52,8 @@ jobs:
         shell: bash
         run: |
           for f in build/index_http.js build/index_stdio.js build/systemprompt.md \
-                   build/fields/default.md build/config/demo-project-instructions.md; do
+                   build/fields/default.md build/config/demo-project-instructions.md \
+                   build/helpers/icons/IX_ICONS_LIST.txt; do
             test -f "$f" || { echo "missing build output: $f"; exit 1; }
           done
           echo "build output complete"

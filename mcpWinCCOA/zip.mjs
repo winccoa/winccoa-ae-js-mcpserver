@@ -84,7 +84,7 @@ if (missing.length > 0) {
 
 // The build must contain the assets tsc does not emit, or the server starts and
 // then cannot find its field definitions.
-for (const required of ['index_http.js', 'index_stdio.js', 'systemprompt.md', 'fields', 'config']) {
+for (const required of ['index_http.js', 'index_stdio.js', 'systemprompt.md', 'fields', 'config', join('helpers', 'icons', 'IX_ICONS_LIST.txt')]) {
   if (!existsSync(join(buildDir, required))) {
     console.error(`❌ build/${required} is missing - run "npm run build".`);
     process.exit(1);
@@ -242,7 +242,7 @@ const misplaced = entries.filter(
     l === 'package-lock.json' ||
     l === 'postinstall.cjs'
 );
-const absent = ['index_http.js', 'index_stdio.js', 'systemprompt.md', MANIFEST_NAME].filter(
+const absent = ['index_http.js', 'index_stdio.js', 'systemprompt.md', 'helpers/icons/IX_ICONS_LIST.txt', MANIFEST_NAME].filter(
   f => !entries.includes(f)
 );
 if (misplaced.length > 0 || absent.length > 0) {

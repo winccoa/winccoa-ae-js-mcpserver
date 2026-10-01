@@ -2,7 +2,8 @@
  * Icon Generator
  *
  * Utility class for generating custom SVG icons for WinCC OA dashboards.
- * Icons are saved to /data/WebUI/icons/ and can be referenced in widget headers/footers.
+ * Icons are saved to <project>/data/WebUI/icons/ (public URL /data/WebUI/icons/<file>)
+ * and can be referenced in widget headers/footers.
  *
  * IMPORTANT: Icons must be small (24x24 pixels by default) to match Siemens IX icon size.
  * Header/footer icons cannot be full-width banners - use small icons only.
@@ -10,12 +11,6 @@
 
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-// ES module equivalent of __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 export interface IconConfig {
   name: string; // Icon filename (without .svg extension)
@@ -25,29 +20,80 @@ export interface IconConfig {
   customSvg?: string; // Custom SVG path/shape data
 }
 
+/** Hint appended to every storage error. */
+const STORAGE_HINT = 'Set WINCCOA_PROJ_PATH or run inside the WinCC OA JavaScript manager.';
+
+/**
+ * Raised when the icons directory cannot be used: the project path is unknown,
+ * or the directory cannot be created or written. The message is meant for the
+ * MCP client as-is.
+ */
+export class IconStorageError extends Error {
+  constructor(message: string, public readonly iconsPath?: string) {
+    super(message);
+    this.name = 'IconStorageError';
+  }
+}
+
 /**
  * SVG Icon Generator Class
+ *
+ * The constructor never touches the filesystem and never throws: it used to
+ * create the icons directory eagerly, and because tools are registered on every
+ * HTTP request, a wrong or unwritable path made the whole icon tool module fail
+ * to load on every request. The directory is now created lazily, when an icon
+ * is actually written.
  */
 export class IconGenerator {
-  private iconsPath: string;
+  private readonly iconsPath: string | undefined;
 
+  /**
+   * @param projectPath - WinCC OA project directory (see utils/projectPath.ts).
+   *   When undefined, the icon tools report a clear error instead of guessing.
+   */
   constructor(projectPath?: string) {
-    // Default to standard WinCC OA project structure
-    // __dirname points to build/helpers/icons/, go up 6 levels to reach project root
-    this.iconsPath = projectPath
-      ? path.join(projectPath, 'data', 'WebUI', 'icons')
-      : path.join(__dirname, '..', '..', '..', '..', '..', '..', 'data', 'WebUI', 'icons');
+    this.iconsPath = projectPath ? path.join(projectPath, 'data', 'WebUI', 'icons') : undefined;
+  }
 
-    // Ensure icons directory exists
-    if (!fs.existsSync(this.iconsPath)) {
-      fs.mkdirSync(this.iconsPath, { recursive: true });
+  /** Absolute icons directory, or undefined if the project path is unknown. */
+  getIconsPath(): string | undefined {
+    return this.iconsPath;
+  }
+
+  /**
+   * Return the icons directory, failing with an IconStorageError if the
+   * project path is unknown.
+   */
+  private requireIconsPath(): string {
+    if (!this.iconsPath) {
+      throw new IconStorageError(`Cannot write icons: project path unknown. ${STORAGE_HINT}`);
     }
+    return this.iconsPath;
+  }
+
+  /**
+   * Create the icons directory if needed and verify it is writable.
+   * @returns The icons directory
+   */
+  private ensureWritableIconsDir(): string {
+    const iconsPath = this.requireIconsPath();
+    try {
+      fs.mkdirSync(iconsPath, { recursive: true });
+      fs.accessSync(iconsPath, fs.constants.W_OK);
+    } catch {
+      throw new IconStorageError(
+        `Cannot write icons: directory not writable: ${iconsPath}. ${STORAGE_HINT}`,
+        iconsPath
+      );
+    }
+    return iconsPath;
   }
 
   /**
    * Generate a simple icon SVG
    * @param config - Icon configuration
-   * @returns Path to generated SVG file
+   * @returns Public URL of the generated SVG file
+   * @throws IconStorageError if the icons directory is unknown or not writable
    */
   generateIcon(config: IconConfig): string {
     const size = config.size || 24;
@@ -77,10 +123,18 @@ export class IconGenerator {
         break;
     }
 
+    const iconsPath = this.ensureWritableIconsDir();
     const filename = `${config.name}.svg`;
-    const filepath = path.join(this.iconsPath, filename);
+    const filepath = path.join(iconsPath, filename);
 
-    fs.writeFileSync(filepath, svgContent, 'utf8');
+    try {
+      fs.writeFileSync(filepath, svgContent, 'utf8');
+    } catch {
+      throw new IconStorageError(
+        `Cannot write icons: directory not writable: ${iconsPath}. ${STORAGE_HINT}`,
+        iconsPath
+      );
+    }
 
     return `/data/WebUI/icons/${filename}`;
   }
@@ -155,11 +209,12 @@ export class IconGenerator {
    * @returns Array of icon paths
    */
   listCustomIcons(): string[] {
-    if (!fs.existsSync(this.iconsPath)) {
+    const iconsPath = this.requireIconsPath();
+    if (!fs.existsSync(iconsPath)) {
       return [];
     }
 
-    const files = fs.readdirSync(this.iconsPath);
+    const files = fs.readdirSync(iconsPath);
     return files
       .filter(file => file.endsWith('.svg'))
       .map(file => `/data/WebUI/icons/${file}`);
@@ -171,7 +226,7 @@ export class IconGenerator {
    */
   deleteIcon(iconName: string): boolean {
     const filename = iconName.endsWith('.svg') ? iconName : `${iconName}.svg`;
-    const filepath = path.join(this.iconsPath, filename);
+    const filepath = path.join(this.requireIconsPath(), filename);
 
     if (fs.existsSync(filepath)) {
       fs.unlinkSync(filepath);

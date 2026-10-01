@@ -4,7 +4,7 @@
  *
  * Cross-platform replacement for the former build.sh: compiles TypeScript and
  * copies the non-TS runtime assets (field definitions, system prompt, demo
- * project instructions) into build/, since tsc only emits .js for src/**.
+ * project instructions, IX icon list) into build/, since tsc only emits .js for src/**.
  *
  * Runs on Windows, Linux and macOS - no shell required.
  */
@@ -30,6 +30,13 @@ const ASSETS = [
     from: join(root, 'config', 'demo-project-instructions.md'),
     to: join(buildDir, 'config', 'demo-project-instructions.md'),
     label: 'demo project instructions'
+  },
+  {
+    // Next to IconList.js, so it survives the flat copy of build/* done by
+    // postinstall.cjs and zip.mjs (docs/ itself is not shipped).
+    from: join(root, 'docs', 'IX_ICONS_LIST.txt'),
+    to: join(buildDir, 'helpers', 'icons', 'IX_ICONS_LIST.txt'),
+    label: 'IX icon list'
   }
 ];
 

@@ -9,6 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import * as log from '../../utils/logger.js';
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -306,16 +307,41 @@ export const ICON_CATEGORIES: IconCategory[] = [
  */
 export class IconList {
   private allIcons: Set<string>;
-  private iconListPath: string;
+  private readonly candidatePaths: string[];
+  private source: string | undefined;
 
-  constructor(projectPath?: string) {
+  /**
+   * @param iconListPath - Explicit path to IX_ICONS_LIST.txt (optional; tests).
+   *   By default the list is looked up next to this module first - build.mjs
+   *   copies it to build/helpers/icons/, which survives the flat copy done by
+   *   postinstall.cjs and zip.mjs - and then in the mcpWinCCOA/docs folder of a
+   *   development checkout. If neither exists, the curated category subset is used.
+   */
+  constructor(iconListPath?: string) {
     this.allIcons = new Set();
+    this.candidatePaths = iconListPath
+      ? [iconListPath]
+      : [
+          path.join(__dirname, 'IX_ICONS_LIST.txt'),
+          // Development checkout: src/helpers/icons or build/helpers/icons -> mcpWinCCOA/docs
+          path.join(__dirname, '..', '..', '..', 'docs', 'IX_ICONS_LIST.txt')
+        ];
+  }
 
-    // Path to IX_ICONS_LIST.txt in docs folder
-    // __dirname points to build/helpers/icons/, so go up 3 levels to reach mcpWinCCOA root
-    this.iconListPath = projectPath
-      ? path.join(projectPath, 'docs', 'IX_ICONS_LIST.txt')
-      : path.join(__dirname, '..', '..', '..', 'docs', 'IX_ICONS_LIST.txt');
+  /**
+   * Where the icon list was loaded from: a file path, 'built-in subset', or
+   * undefined before the first load.
+   */
+  getSource(): string | undefined {
+    return this.source;
+  }
+
+  /** Fill the set from the curated categories (fallback). */
+  private loadBuiltInSubset(): void {
+    ICON_CATEGORIES.forEach(category => {
+      category.icons.forEach(icon => this.allIcons.add(icon));
+    });
+    this.source = 'built-in subset';
   }
 
   /**
@@ -327,23 +353,23 @@ export class IconList {
     }
 
     try {
-      if (fs.existsSync(this.iconListPath)) {
-        const content = fs.readFileSync(this.iconListPath, 'utf8');
-        const icons = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      const listPath = this.candidatePaths.find(candidate => fs.existsSync(candidate));
+      if (listPath) {
+        const content = fs.readFileSync(listPath, 'utf8');
+        const icons = content.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
         icons.forEach(icon => this.allIcons.add(icon));
-      } else {
-        // Fallback: load from categories if file doesn't exist
-        ICON_CATEGORIES.forEach(category => {
-          category.icons.forEach(icon => this.allIcons.add(icon));
-        });
+        this.source = listPath;
+      }
+      if (this.allIcons.size === 0) {
+        this.loadBuiltInSubset();
       }
     } catch (error) {
-      console.error('Failed to load icon list:', error);
-      // Fallback to categories
-      ICON_CATEGORIES.forEach(category => {
-        category.icons.forEach(icon => this.allIcons.add(icon));
-      });
+      log.warn(`Failed to load icon list, using the built-in subset: ${error instanceof Error ? error.message : String(error)}`);
+      this.allIcons.clear();
+      this.loadBuiltInSubset();
     }
+
+    log.debug(`IX icon list: ${this.allIcons.size} icons from ${this.source}`);
   }
 
   /**

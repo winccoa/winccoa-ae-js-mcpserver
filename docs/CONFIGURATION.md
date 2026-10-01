@@ -101,6 +101,26 @@ MCP_SSL_CA_PATH=/path/to/ca.pem
 
 ## WinCC OA Settings
 
+### Project Path
+
+```env
+# WinCC OA project directory (optional override)
+# WINCCOA_PROJ_PATH=/opt/projects/MyPlant
+```
+
+Tools that write into the project - currently the icon tools, which store custom icons in
+`<project>/data/WebUI/icons/` - need the project directory. By default it is the project path
+reported by the WinCC OA JavaScript manager (`winccoa.getPaths()`), so normally nothing needs to be
+set. Resolution order:
+
+1. `WINCCOA_PROJ_PATH`, if set
+2. the project path reported by the WinCC OA manager
+3. `PVSS_II` (set by WinCC OA in the manager process, `<project>/config/config`)
+4. the nearest parent directory of the server files that contains `config/config`
+
+The path in use is logged once at startup (`Icon tools: project path ... (from ...)`). If none can be
+determined, the icon tools return an error explaining how to set it instead of failing to load.
+
 ### Field Selection
 
 ```env
