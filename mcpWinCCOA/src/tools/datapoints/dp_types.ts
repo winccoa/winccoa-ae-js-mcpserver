@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { createSuccessResponse, createErrorResponse } from '../../utils/helpers.js';
+import { createSuccessResponse, createErrorResponse, winccoaErrorResponse } from '../../utils/helpers.js';
 import { DpeType } from '../../types/winccoa/constants.js';
 import type { ServerContext } from '../../types/index.js';
 
@@ -52,9 +52,8 @@ including all elements, their data types, and structural relationships.`,
             : `Structured type: address an element via its child name, e.g. "System1:myDp.<child>"`
         });
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
         console.error(`Error getting datapoint type ${dpType}:`, error);
-        return createErrorResponse(`Failed to get datapoint type ${dpType}: ${errorMessage}`);
+        return winccoaErrorResponse(`Failed to get datapoint type ${dpType}`, error);
       }
     }
   );
@@ -66,7 +65,7 @@ including all elements, their data types, and structural relationships.`,
 dpName: Name of the data point (for example, 'valve.opening')
 
 Returns: JSON envelope {"success": true, "data": {"dpName": "...", "typeName": "..."}}.
-If the data point does not exist (or the call fails), an error envelope {"error": true, "message": "..."} is returned instead.
+If the data point does not exist (or the call fails), an error envelope {"error": true, "message": "...", "errorCode": 71, "errorType": "DP_NOT_EXIST", "details": [...]} is returned instead.
 
 Example: {"dpName": "Valve17.opening"} might return {"success": true, "data": {"dpName": "Valve17.opening", "typeName": "AnalogValve"}}`,
     {
@@ -84,9 +83,8 @@ Example: {"dpName": "Valve17.opening"} might return {"success": true, "data": {"
         }
         return createSuccessResponse({ dpName, typeName: result });
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
         console.error(`Error getting type name for ${dpName}:`, error);
-        return createErrorResponse(`Failed to get type name for ${dpName}: ${errorMessage}`);
+        return winccoaErrorResponse(`Failed to get type name for ${dpName}`, error, dpName);
       }
     }
   );

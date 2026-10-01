@@ -130,7 +130,7 @@ describe('get-value', () => {
     expect(parsed.message).toContain('DP does not exist, NoSuchDp_XYZ.value');
     expect(parsed.message).not.toContain('multiple errors');
     expect(parsed.details).toHaveLength(2);
-    expect(parsed.details[0]).toEqual({ code: 71, message: 'DP does not exist, NoSuchDp_XYZ.value:_online.._value' });
+    expect(parsed.details[0]).toEqual({ code: 71, message: 'DP does not exist, NoSuchDp_XYZ.value:_online.._value', dpe: 'NoSuchDp_XYZ.value' });
   });
 
   it('reports other errors with their code and details', async () => {
@@ -182,6 +182,38 @@ describe('dp-type-name', () => {
     expect((await env.call('dp-type-name', { dpName: 'Nope' })).error).toBe(true);
     env.winccoa.dpTypeName.mockReturnValue('');
     expect(await env.call('dp-type-name', { dpName: 'Nope' })).toMatchObject({ error: true, errorType: 'DP_NOT_EXIST' });
+  });
+});
+
+describe('dp-type tools error envelopes', () => {
+  it('dp-type-name: missing datapoint yields 71 / DP_NOT_EXIST with details[].dpe filled', async () => {
+    env.winccoa.dpTypeName.mockImplementation(() => {
+      throw oaError(9399, 'multiple errors (1 errors total)', [oaError(71, 'DP does not exist')]);
+    });
+    const parsed = await env.call('dp-type-name', { dpName: 'System1:Nope' });
+    expect(parsed).toMatchObject({ error: true, errorCode: 71, errorType: 'DP_NOT_EXIST' });
+    expect(parsed.details).toEqual([{ code: 71, message: 'DP does not exist', dpe: 'System1:Nope' }]);
+  });
+
+  it('dp-type-name: other errors carry errorCode and details', async () => {
+    env.winccoa.dpTypeName.mockImplementation(() => { throw oaError(5, 'boom'); });
+    const parsed = await env.call('dp-type-name', { dpName: 'X' });
+    expect(parsed).toMatchObject({ error: true, errorCode: 5, details: [] });
+    expect(parsed.errorType).toBeUndefined();
+  });
+
+  it('dp-type-get: missing type yields 57 / DP_TYPE_NOT_EXIST', async () => {
+    env.winccoa.dpTypeGet.mockImplementation(() => { throw oaError(57, 'DP type does not exist'); });
+    const parsed = await env.call('dp-type-get', { dpType: 'Nope' });
+    expect(parsed).toMatchObject({ error: true, errorCode: 57, errorType: 'DP_TYPE_NOT_EXIST', details: [] });
+    expect(parsed.message).toContain('DP type does not exist');
+  });
+
+  it('get-value: single-element 71 fills details[].dpe', async () => {
+    env.winccoa.dpGet.mockRejectedValue(oaError(9399, 'multiple errors (1 errors total)', [oaError(71, 'DP does not exist')]));
+    const parsed = await env.call('get-value', { dpe: 'System1:Nope.' });
+    expect(parsed).toMatchObject({ errorCode: 71, errorType: 'DP_NOT_EXIST' });
+    expect(parsed.details[0].dpe).toBe('System1:Nope.');
   });
 });
 

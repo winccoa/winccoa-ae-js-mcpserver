@@ -85,9 +85,10 @@ function errorDetails(e: unknown): unknown[] {
  * Nested details are flattened (their own details are pulled up one level).
  *
  * @param e - Caught error
+ * @param fallbackDpe - DPE the caller requested; used for inner details that carry no dpe themselves
  * @returns Flattened description
  */
-export function describeWinccoaError(e: unknown): WinccoaErrorDescription {
+export function describeWinccoaError(e: unknown, fallbackDpe?: string): WinccoaErrorDescription {
   const outerCode = errorCode(e);
   const outerMessage = errorMessage(e);
 
@@ -96,8 +97,8 @@ export function describeWinccoaError(e: unknown): WinccoaErrorDescription {
     const detail: WinccoaErrorDetail = { message: errorMessage(inner) };
     const code = errorCode(inner);
     if (code !== undefined) detail.code = code;
-    const dpe = errorDpe(inner);
-    if (dpe !== undefined) detail.dpe = dpe;
+    const dpe = errorDpe(inner) || fallbackDpe;
+    if (dpe) detail.dpe = dpe;
     details.push(detail);
   };
 
@@ -129,6 +130,30 @@ export function describeWinccoaError(e: unknown): WinccoaErrorDescription {
     message,
     details
   };
+}
+
+/** errorType per WinCC OA error code, for winccoaErrorResponse. */
+const WINCCOA_ERROR_TYPES: Record<number, string> = {
+  71: 'DP_NOT_EXIST',
+  57: 'DP_TYPE_NOT_EXIST'
+};
+
+/**
+ * Build the uniform error envelope for a caught WinCC OA error:
+ * `{error, message, errorCode?, errorType?, details}`.
+ *
+ * @param prefix - Message prefix, e.g. "Failed to get type name for X"
+ * @param e - Caught error
+ * @param fallbackDpe - DPE the caller requested (fills empty details[].dpe)
+ */
+export function winccoaErrorResponse(prefix: string, e: unknown, fallbackDpe?: string): McpToolResponse {
+  const described = describeWinccoaError(e, fallbackDpe);
+  const errorType = described.code !== undefined ? WINCCOA_ERROR_TYPES[described.code] : undefined;
+  return createErrorResponse(`${prefix}: ${described.message}`, {
+    errorCode: described.code,
+    ...(errorType ? { errorType } : {}),
+    details: described.details
+  });
 }
 
 /**

@@ -36,8 +36,12 @@ The MCP server provides tools that AI assistants can use to interact with WinCC 
 
 **`datapoints/dp_types`** - Datapoint type management
 - `dp-type-get` - Get structure of a datapoint type as tree
+  - Errors use the same envelope as `get-value`: `{"error": true, "message", "errorCode", "errorType"?, "details": [...]}`;
+    a missing type yields `errorCode` 57 / `errorType` `DP_TYPE_NOT_EXIST`
 - `dp-type-name` - Get datapoint type for a given datapoint name
   - Returns: `{"success": true, "data": {"dpName", "typeName"}}`; an error envelope if the datapoint does not exist
+  - Errors: `{"error": true, "message", "errorCode", "errorType"?, "details": [{"code", "message", "dpe"}]}`;
+    a missing datapoint yields `errorCode` 71 / `errorType` `DP_NOT_EXIST` (`details[].dpe` is filled with the requested name)
 
 **`datapoints/dp_type_create`** - Create new datapoint types
 - `dp-type-create` - Create datapoint types (DPT) with complete structure definitions

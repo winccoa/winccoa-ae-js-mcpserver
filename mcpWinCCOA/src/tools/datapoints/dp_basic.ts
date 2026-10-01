@@ -229,8 +229,8 @@ returned with "partial": true and a "failures" list ({dpe, error, errorCode}).`,
       } catch (error: unknown) {
         // The outer message is often just 9399 "multiple errors (N errors total)";
         // the actual cause (e.g. 71 "DP does not exist") is in the nested details.
-        const described = describeWinccoaError(error);
         const dpeArray = Array.isArray(dpe) ? dpe : [dpe];
+        const described = describeWinccoaError(error, dpeArray.length === 1 ? dpeArray[0] : undefined);
 
         // A batched dpGet is atomic: one bad element fails the whole call with
         // 9399 "multiple errors" and no values at all, so a caller reading ten
