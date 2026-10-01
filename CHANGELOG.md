@@ -20,6 +20,11 @@ archive.
   and `.env` moves from `build\.env` to the directory that holds `index_http.js`. The npm install path
   keeps its layout.
 
+### Changed
+
+- **CI:** GitHub Actions updated to Node 24 runtimes (`actions/upload-artifact` v5 → v7) and the Ubuntu
+  runner pinned to `ubuntu-24.04` ahead of the `ubuntu-latest` migration to Ubuntu 26 on 2026-10-19.
+
 ### Security
 
 - **Updated `mcp-remote` 0.1.37 → 0.14.3.** Fixes the Remote Information Disclosure in OAuth scope

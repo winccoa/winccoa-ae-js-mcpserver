@@ -14,9 +14,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Pinned: ubuntu-latest migrates to Ubuntu 26 on 2026-10-19; pin for reproducible builds (Windows stays on latest), revisit.
         # Windows is a first-class target: WinCC OA ships on it, and the build
         # must stay shell-free. Do not drop this leg.
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-24.04, windows-latest]
 
     steps:
       - uses: actions/checkout@v5
@@ -58,7 +59,8 @@ jobs:
 
   versions:
     name: Manifest Versions
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest migrates to Ubuntu 26 on 2026-10-19; pin for reproducible builds, revisit.
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v5
@@ -81,7 +83,8 @@ jobs:
 
   audit:
     name: Dependency Audit
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest migrates to Ubuntu 26 on 2026-10-19; pin for reproducible builds, revisit.
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v5
@@ -170,14 +173,15 @@ jobs:
           echo "OSS.md is in sync with the SBOM."
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: sbom
           path: mcpWinCCOA/sbom.json
 
   coverage:
     name: Coverage
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest migrates to Ubuntu 26 on 2026-10-19; pin for reproducible builds, revisit.
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v5
