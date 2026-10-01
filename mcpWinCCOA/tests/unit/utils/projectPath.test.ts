@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import {
   resolveProjectPath,
   resolveProjectPathWithSource,
@@ -46,6 +46,14 @@ describe('resolveProjectPathWithSource', () => {
     process.env.PVSS_II = '/pvss/proj/config/config';
     expect(resolveProjectPathWithSource(managerWithPaths(['/manager/proj']))).toEqual({
       path: '/override/proj',
+      source: 'WINCCOA_PROJ_PATH'
+    });
+  });
+
+  it('resolves a relative WINCCOA_PROJ_PATH to an absolute path', () => {
+    process.env.WINCCOA_PROJ_PATH = 'relative/proj';
+    expect(resolveProjectPathWithSource()).toEqual({
+      path: resolve('relative/proj'),
       source: 'WINCCOA_PROJ_PATH'
     });
   });

@@ -23,6 +23,9 @@ export interface IconConfig {
 /** Allowed icon names: letters, digits, '_' and '-', starting with a letter or digit. */
 export const ICON_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 
+/** Same as ICON_NAME_PATTERN, but tolerates a trailing ".svg" (delete accepts file names). */
+export const ICON_NAME_WITH_SVG_PATTERN = new RegExp(`^${ICON_NAME_PATTERN.source.slice(1, -1)}(\\.svg)?$`);
+
 /** Raised when an icon name is not a plain, safe file name. */
 export class InvalidIconNameError extends Error {
   constructor(message: string) {

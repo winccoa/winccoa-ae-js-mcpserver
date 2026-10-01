@@ -24,6 +24,8 @@ The MCP server provides tools that AI assistants can use to interact with WinCC 
   - Returns `{dpe, value, timestamp, unit}` (an array of them for an array input)
   - Errors carry the inner WinCC OA error: `{"error": true, "message", "errorCode", "errorType"?, "details": [{"code", "message"}]}`;
     a missing datapoint yields `errorCode` 71 / `errorType` `DP_NOT_EXIST` rather than the generic 9399 "multiple errors"
+  - Multi-element read where every element fails: the top-level `errorCode` (and `DP_NOT_EXIST` for 71) is set when all
+    failures share one code, otherwise `errorType` is `ALL_DPE_FAILED`; `failures[]` lists each element
   - Multi-element read with some failures: `{"values": [...], "failures": [{"dpe", "error", "errorCode"}], "partial": true}`
 
 **`datapoints/dp_create`** - Create new datapoints

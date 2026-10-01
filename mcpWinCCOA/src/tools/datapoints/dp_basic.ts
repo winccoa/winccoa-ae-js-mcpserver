@@ -268,10 +268,18 @@ returned with "partial": true and a "failures" list ({dpe, error, errorCode}).`,
 
           // Every element failed - nothing partial to report.
           if (values.length === 0) {
+            const codes = new Set(failures.map(f => f.errorCode));
+            const sharedCode = codes.size === 1 ? [...codes][0] : undefined;
             return createErrorResponse(
               `Failed to get values for all ${dpeArray.length} datapoint element(s): ` +
                 failures.map(f => `${f.dpe} (${f.error})`).join('; '),
-              { errorType: 'ALL_DPE_FAILED', failures }
+              {
+                // Surface a shared inner code at the top level, like the single-element branch.
+                ...(sharedCode !== undefined
+                  ? { errorCode: sharedCode, errorType: sharedCode === 71 ? 'DP_NOT_EXIST' : 'ALL_DPE_FAILED' }
+                  : { errorType: 'ALL_DPE_FAILED' }),
+                failures
+              }
             );
           }
 

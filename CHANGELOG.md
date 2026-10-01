@@ -20,6 +20,15 @@ archive.
   and `.env` moves from `build\.env` to the directory that holds `index_http.js`. The npm install path
   keeps its layout.
 
+### ⚠️ Behaviour changes for MCP clients
+
+- `get-datapoints` returns one JSON envelope `{success, data: {datapoints, totalCount, start, limit, returnedCount, hasMore}}`
+  instead of one text item per datapoint.
+- `get-dpTypes` returns `{success, data: {types, count, withInternals}}` instead of bare type names.
+- `get-value` errors carry the inner WinCC OA error code and messages (71 for a missing datapoint);
+  when all elements of a multi-element read fail with the same code, it is also the top-level `errorCode`.
+- `dp-type-name` returns an error envelope for a missing datapoint.
+
 ### Changed
 
 - **CI:** GitHub Actions updated to Node 24 runtimes (`actions/upload-artifact` v5 → v7) and the Ubuntu

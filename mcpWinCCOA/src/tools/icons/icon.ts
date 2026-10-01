@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { createSuccessResponse, createErrorResponse } from '../../utils/helpers.js';
 import type { ServerContext } from '../../types/index.js';
-import { IconGenerator, IconStorageError, InvalidIconNameError, ICON_NAME_PATTERN } from '../../helpers/icons/IconGenerator.js';
+import { IconGenerator, IconStorageError, InvalidIconNameError, ICON_NAME_PATTERN, ICON_NAME_WITH_SVG_PATTERN } from '../../helpers/icons/IconGenerator.js';
 import { IconList } from '../../helpers/icons/IconList.js';
 import { resolveProjectPathWithSource } from '../../utils/projectPath.js';
 import * as log from '../../utils/logger.js';
@@ -303,7 +303,7 @@ Example:
   "name": "my-icon.svg"
 }`,
     {
-      name: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}(\.svg)?$/, ICON_NAME_MESSAGE)
+      name: z.string().regex(ICON_NAME_WITH_SVG_PATTERN, ICON_NAME_MESSAGE)
     },
     async (params: { name: string }) => {
       try {

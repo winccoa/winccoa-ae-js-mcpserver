@@ -76,7 +76,7 @@ export function resolveProjectPathWithSource(
 ): ProjectPathResolution {
   const fromEnv = process.env.WINCCOA_PROJ_PATH?.trim();
   if (fromEnv) {
-    return { path: fromEnv, source: 'WINCCOA_PROJ_PATH' };
+    return { path: resolve(fromEnv), source: 'WINCCOA_PROJ_PATH' };
   }
 
   const getPaths = (winccoa as { getPaths?: unknown } | null | undefined)?.getPaths;

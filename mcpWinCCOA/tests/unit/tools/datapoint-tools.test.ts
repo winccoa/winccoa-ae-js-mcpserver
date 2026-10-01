@@ -162,7 +162,8 @@ describe('get-value', () => {
     });
     const parsed = await env.call('get-value', { dpe: ['A.value', 'B.value'] });
     expect(parsed.error).toBe(true);
-    expect(parsed.errorType).toBe('ALL_DPE_FAILED');
+    expect(parsed.errorCode).toBe(71);
+    expect(parsed.errorType).toBe('DP_NOT_EXIST');
     expect(parsed.failures.map((f: any) => f.errorCode)).toEqual([71, 71]);
     expect(parsed.message).toContain('DP does not exist');
   });
