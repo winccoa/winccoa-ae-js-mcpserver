@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { buildRuntimeManifest } = require('./manifest.cjs');
 
 // Get package info dynamically
 const packageJson = require('./package.json');
@@ -66,12 +67,17 @@ try {
       console.log('Copied systemprompt.md');
     }
 
-    // Copy package.json
+    // Write a runtime package.json. The package's own manifest must NOT be copied
+    // verbatim: it still has the postinstall hook (postinstall.cjs is not copied, so
+    // a later `npm install` here would fail), build/-based bin and start entries,
+    // files and devDependencies. See manifest.cjs (shared with zip.mjs).
+    // Like the build files above, an existing package.json is overwritten.
     const packageJsonSrc = path.join(nodeModulesPath, 'package.json');
     const packageJsonDest = path.join(installDir, 'package.json');
     if (fs.existsSync(packageJsonSrc)) {
-      fs.copyFileSync(packageJsonSrc, packageJsonDest);
-      console.log('Copied package.json');
+      const runtimeManifest = buildRuntimeManifest(JSON.parse(fs.readFileSync(packageJsonSrc, 'utf8')));
+      fs.writeFileSync(packageJsonDest, JSON.stringify(runtimeManifest, null, 2) + '\n');
+      console.log('Wrote runtime package.json');
     }
 
 
@@ -116,7 +122,7 @@ try {
     console.log('\nNext steps:');
     console.log('1. Copy the environment file: cp .env.example .env');
     console.log('2. Edit .env with your configuration');
-    console.log('3. Add JavaScript Manager in WinCC OA with script path: index_http.js');
+    console.log('3. Add JavaScript Manager in WinCC OA with script path: mcpWinCCOA/index_http.js (install into <OA_ProjPath>/javascript/mcpWinCCOA)');
     
   } else {
     console.error('Build directory not found in package');

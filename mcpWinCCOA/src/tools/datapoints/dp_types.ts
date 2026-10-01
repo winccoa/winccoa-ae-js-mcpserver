@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { createSuccessResponse, createErrorResponse } from '../../utils/helpers.js';
+import { createSuccessResponse, createErrorResponse, winccoaErrorResponse, logWinccoaError } from '../../utils/helpers.js';
 import { DpeType } from '../../types/winccoa/constants.js';
 import type { ServerContext } from '../../types/index.js';
 
@@ -52,9 +52,8 @@ including all elements, their data types, and structural relationships.`,
             : `Structured type: address an element via its child name, e.g. "System1:myDp.<child>"`
         });
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error(`Error getting datapoint type ${dpType}:`, error);
-        return createErrorResponse(`Failed to get datapoint type ${dpType}: ${errorMessage}`);
+        logWinccoaError(`Error getting datapoint type ${dpType}`, error);
+        return winccoaErrorResponse(`Failed to get datapoint type ${dpType}`, error);
       }
     }
   );
@@ -65,20 +64,27 @@ including all elements, their data types, and structural relationships.`,
 
 dpName: Name of the data point (for example, 'valve.opening')
 
-Returns: DP type as a string, or empty string if data point doesn't exist or error occurs.
+Returns: JSON envelope {"success": true, "data": {"dpName": "...", "typeName": "..."}}.
+If the data point does not exist (or the call fails), an error envelope {"error": true, "message": "...", "errorCode": 71, "errorType": "DP_NOT_EXIST", "details": [...]} is returned instead.
 
-Example: dpTypeName('Valve17.opening') might return 'AnalogValve'`,
+Example: {"dpName": "Valve17.opening"} might return {"success": true, "data": {"dpName": "Valve17.opening", "typeName": "AnalogValve"}}`,
     {
       dpName: z.string()
     },
     async ({ dpName }: { dpName: string }) => {
       try {
         const result = winccoa.dpTypeName(dpName);
+        if (!result) {
+          // Treat an empty type name like a non-existent datapoint, so the
+          // response matches the description in both cases.
+          return createErrorResponse(`Datapoint ${dpName} does not exist (no type name)`, {
+            errorType: 'DP_NOT_EXIST'
+          });
+        }
         return createSuccessResponse({ dpName, typeName: result });
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error(`Error getting type name for ${dpName}:`, error);
-        return createErrorResponse(`Failed to get type name for ${dpName}: ${errorMessage}`);
+        logWinccoaError(`Error getting type name for ${dpName}`, error, dpName);
+        return winccoaErrorResponse(`Failed to get type name for ${dpName}`, error, dpName);
       }
     }
   );

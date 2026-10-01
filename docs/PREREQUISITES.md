@@ -36,7 +36,7 @@ For detailed information about MCP prerequisites and setup, refer to the officia
 - JavaScript Manager available
 
 ### Node.js
-- Node.js 20.x LTS or later (Node.js 18 reached end-of-life and is no longer supported)
+- Node.js 24.x LTS or later (Node.js 20 reached end-of-life on 2026-04-30; Node.js 18, 20 and 22 are no longer supported)
 - npm (comes with Node.js)
 
 ### Operating System

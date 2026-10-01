@@ -39,7 +39,7 @@ machine-readable CycloneDX SBOM (`sbom.json`) is published with each release.
 | dotenv 16.6.1 | Yes | Loads `.env` configuration. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. | [BSD-2-Clause](https://github.com/motdotla/dotenv/blob/master/LICENSE) |
 | express 5.2.1 | Yes | HTTP server for the streamable HTTP transport. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. | [MIT](https://github.com/expressjs/express/blob/master/LICENSE) |
 | express-rate-limit 7.5.1 | Yes | Request rate limiting. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. | [MIT](https://github.com/express-rate-limit/express-rate-limit/blob/main/LICENSE) |
-| mcp-remote 0.1.37 | Yes | Remote MCP client bridge. Under Siemens vulnerability monitoring as of 2026-09-01. The pinned 0.1.37 is **not affected** by the known Remote Command Injection vulnerability in versions 0.0.5 to 0.1.15, which was fixed in 0.1.16. | [MIT](https://github.com/geelen/mcp-remote/blob/main/LICENSE) |
+| mcp-remote 0.14.3 | Yes | Remote MCP client bridge. Under Siemens vulnerability monitoring as of 2026-09-30. Updated from 0.1.37 to 0.14.3 for Siemens SVM notification 236904 (Remote Information Disclosure in OAuth scope handling, versions 0.1.32 to 0.1.38, fixed in 0.1.39). Also **not affected** by the older Remote Command Injection vulnerability in versions 0.0.5 to 0.1.15 (fixed in 0.1.16). | [MIT](https://github.com/geelen/mcp-remote/blob/main/LICENSE) |
 | zod 3.25.76 | Yes | Runtime schema validation for tool inputs. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. | [MIT](https://github.com/colinhacks/zod/blob/main/LICENSE) |
 
 ### Not distributed
@@ -52,7 +52,7 @@ machine-readable CycloneDX SBOM (`sbom.json`) is published with each release.
 
 Development dependencies are not part of the delivered artifact and are excluded from `sbom.json`
 (`--omit dev`). Listed for completeness: `@cyclonedx/cyclonedx-npm` 6.0.1 (Apache-2.0), `typescript`
-5.9.3 (Apache-2.0), `vitest` 4.1.11 (MIT), `@vitest/coverage-v8` 4.1.11 (MIT), `@types/node` 20.19.43
+5.9.3 (Apache-2.0), `vitest` 4.1.11 (MIT), `@vitest/coverage-v8` 4.1.11 (MIT), `@types/node` 24.19.0
 (MIT), `@types/express` 5.0.6 (MIT).
 
 <!-- BEGIN GENERATED COMPONENT LIST - edit gen-oss.mjs, not this block -->
@@ -100,7 +100,7 @@ Licence summary: MIT (100), ISC (7), BSD-2-Clause (2), BSD-3-Clause (2). All are
 | express | 5.2.1 | [MIT](https://opensource.org/license/mit) | yes |
 | express-rate-limit | 7.5.1 | [MIT](https://opensource.org/license/mit) | yes |
 | fast-deep-equal | 3.1.3 | [MIT](https://opensource.org/license/mit) | no |
-| fast-uri | 3.1.6 | [BSD-3-Clause](https://opensource.org/license/bsd-3-clause) | no |
+| fast-uri | 3.1.8 | [BSD-3-Clause](https://opensource.org/license/bsd-3-clause) | no |
 | finalhandler | 2.1.1 | [MIT](https://opensource.org/license/mit) | no |
 | forwarded | 0.2.0 | [MIT](https://opensource.org/license/mit) | no |
 | fresh | 2.0.0 | [MIT](https://opensource.org/license/mit) | no |
@@ -110,11 +110,11 @@ Licence summary: MIT (100), ISC (7), BSD-2-Clause (2), BSD-3-Clause (2). All are
 | gopd | 1.2.0 | [MIT](https://opensource.org/license/mit) | no |
 | has-symbols | 1.1.0 | [MIT](https://opensource.org/license/mit) | no |
 | hasown | 2.0.2 | [MIT](https://opensource.org/license/mit) | no |
-| hono | 4.13.5 | [MIT](https://opensource.org/license/mit) | no |
+| hono | 4.13.12 | [MIT](https://opensource.org/license/mit) | no |
 | http-errors | 2.0.1 | [MIT](https://opensource.org/license/mit) | no |
 | iconv-lite | 0.7.2 | [MIT](https://opensource.org/license/mit) | no |
 | inherits | 2.0.4 | [ISC](https://opensource.org/license/isc-license-txt) | no |
-| ip-address | 10.7.0 | [MIT](https://opensource.org/license/mit) | no |
+| ip-address | 10.7.2 | [MIT](https://opensource.org/license/mit) | no |
 | ipaddr.js | 1.9.1 | [MIT](https://opensource.org/license/mit) | no |
 | is-docker | 3.0.0 | [MIT](https://opensource.org/license/mit) | no |
 | is-inside-container | 1.0.0 | [MIT](https://opensource.org/license/mit) | no |
@@ -125,7 +125,7 @@ Licence summary: MIT (100), ISC (7), BSD-2-Clause (2), BSD-3-Clause (2). All are
 | json-schema-traverse | 1.0.0 | [MIT](https://opensource.org/license/mit) | no |
 | json-schema-typed | 8.0.2 | [BSD-2-Clause](https://opensource.org/license/bsd-2-clause) | no |
 | math-intrinsics | 1.1.0 | [MIT](https://opensource.org/license/mit) | no |
-| mcp-remote | 0.1.37 | [MIT](https://opensource.org/license/mit) | yes |
+| mcp-remote | 0.14.3 | [MIT](https://opensource.org/license/mit) | yes |
 | media-typer | 1.1.0 | [MIT](https://opensource.org/license/mit) | no |
 | merge-descriptors | 2.0.0 | [MIT](https://opensource.org/license/mit) | no |
 | methods | 1.1.2 | [MIT](https://opensource.org/license/mit) | no |
@@ -144,7 +144,7 @@ Licence summary: MIT (100), ISC (7), BSD-2-Clause (2), BSD-3-Clause (2). All are
 | path-to-regexp | 8.4.2 | [MIT](https://opensource.org/license/mit) | no |
 | pkce-challenge | 5.0.1 | [MIT](https://opensource.org/license/mit) | no |
 | proxy-addr | 2.0.7 | [MIT](https://opensource.org/license/mit) | no |
-| qs | 6.15.3 | [BSD-3-Clause](https://opensource.org/license/bsd-3-clause) | no |
+| qs | 6.16.0 | [BSD-3-Clause](https://opensource.org/license/bsd-3-clause) | no |
 | range-parser | 1.2.1 | [MIT](https://opensource.org/license/mit) | no |
 | raw-body | 3.0.2 | [MIT](https://opensource.org/license/mit) | no |
 | require-from-string | 2.0.2 | [MIT](https://opensource.org/license/mit) | no |
@@ -165,7 +165,7 @@ Licence summary: MIT (100), ISC (7), BSD-2-Clause (2), BSD-3-Clause (2). All are
 | strict-url-sanitise | 0.0.1 | [MIT](https://opensource.org/license/mit) | no |
 | toidentifier | 1.0.1 | [MIT](https://opensource.org/license/mit) | no |
 | type-is | 2.1.0 | [MIT](https://opensource.org/license/mit) | no |
-| undici | 7.29.0 | [MIT](https://opensource.org/license/mit) | no |
+| undici | 7.30.0 | [MIT](https://opensource.org/license/mit) | no |
 | unpipe | 1.0.0 | [MIT](https://opensource.org/license/mit) | no |
 | utils-merge | 1.0.1 | [MIT](https://opensource.org/license/mit) | no |
 | vary | 1.1.2 | [MIT](https://opensource.org/license/mit) | no |

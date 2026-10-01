@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { createSuccessResponse, createErrorResponse } from '../../utils/helpers.js';
+import { createSuccessResponse, createErrorResponse, logWinccoaError } from '../../utils/helpers.js';
 import * as log from '../../utils/logger.js';
 import type { ServerContext } from '../../types/index.js';
 
@@ -145,10 +145,7 @@ export function registerTools(server: any, context: ServerContext): number {
 
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error('========================================');
-        console.error('✗ Common Config Query Failed');
-        console.error('========================================');
-        console.error(`Error: ${errorMessage}`);
+        logWinccoaError('Common Config Query Failed', error);
 
         return createErrorResponse(`Failed to query common config: ${errorMessage}`);
       }

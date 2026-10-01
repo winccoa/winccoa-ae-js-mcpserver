@@ -11,7 +11,8 @@ jobs:
     if: >
       github.event_name == 'issue_comment' &&
       contains(github.event.comment.body, '@claude')
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest migrates to Ubuntu 26 on 2026-10-19; pin for reproducible builds, revisit.
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       issues: write

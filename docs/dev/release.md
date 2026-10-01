@@ -101,7 +101,11 @@ Ensure your npm account has permissions to publish under the `@etm-professional-
    ```bash
    # mcpWinCCOA/package.json  -> "version"
    # package.winccoa.json     -> "Version"
+   # mcpWinCCOA/QUICKSTART.md -> hardcoded "Version x.y.z" line
    ```
+
+   `QUICKSTART.md` is not checked by the release workflow, so a stale version there goes unnoticed
+   (it still said 1.4.0 before v1.5.1).
 
 3. **Update documentation** if needed:
    - Update README files
@@ -216,6 +220,7 @@ As published (from the `files` array in `package.json`):
 ├── src/systemprompt.md
 ├── config/
 ├── postinstall.cjs          # copies build output into the WinCC OA project
+├── manifest.cjs             # runtime-manifest sanitizer shared by postinstall.cjs and zip.mjs
 ├── .env.example
 ├── sbom.json                # CycloneDX SBOM for this exact version
 ├── README.md
@@ -227,6 +232,44 @@ As published (from the `files` array in `package.json`):
 
 `winccoa-manager` is **never** included: it is proprietary Siemens code supplied by the WinCC OA
 installation and declared as an optional `peerDependency`. It is also excluded from `sbom.json`.
+
+## SIOS Archive Structure
+
+`npm run zip` (`mcpWinCCOA/zip.mjs`) builds `dist/winccoa-mcp-server-<version>-sios.zip`. The archive
+is **flat**: the contents of `build/` sit directly at the archive root, which is the same layout
+`postinstall.cjs` produces for an npm install. The manager script path is therefore
+`<folder>/index_http.js` and `.env` lives next to it, for both delivery paths
+([#36](https://github.com/winccoa/winccoa-ae-js-mcpserver/issues/36); 1.5.0 still had a `build/` folder).
+
+```
+winccoa-mcp-server-<version>-sios.zip
+├── index_http.js            # HTTP server entry point (manager script)
+├── index_stdio.js           # STDIO entry point
+├── server.js  tool_loader.js
+├── systemprompt.md
+├── fields/                  # default.md, oil.md, transport.md
+├── config/                  # demo-project-instructions.md, server.config.js
+├── helpers/  tools/  types/  utils/
+├── QUICKSTART.md            # SIOS-only; not part of the npm package
+├── .env.example             # copied to .env in the same directory
+├── package.json             # sanitized manifest, see below
+├── sbom.json
+├── OSS.md
+├── LEGAL_INFO.md
+├── LICENSE.md
+└── CHANGELOG.md
+```
+
+The archive's `package.json` is **generated**, not copied (by `manifest.cjs`, the same sanitizer
+`postinstall.cjs` uses for the npm path). It keeps the name, version, metadata,
+`engines`, `dependencies` and the optional `winccoa-manager` peer dependency, so that `npm install` in
+the extracted directory pulls exactly the runtime dependencies. It drops the `postinstall` script and
+all build/test scripts, `devDependencies`, `bin` and `files`, rewrites `start` / `start:http` to the
+flat paths, and adds `"private": true`. `postinstall.cjs` and `package-lock.json` are not shipped.
+
+`zip.mjs` refuses to produce an archive that contains a `.env` (or any secret-shaped file), a
+`build/`, `node_modules/`, `package-lock.json` or `postinstall.cjs` entry, a manifest with a
+machine-specific path, or a `build/` child whose name clashes with a root file.
 
 ## Troubleshooting
 
@@ -299,6 +342,7 @@ Better approach: Publish fixed version immediately
 - [ ] Version number follows SemVer
 - [ ] **`mcpWinCCOA/package.json` version bumped**
 - [ ] **`package.winccoa.json` `Version` bumped to match** (the release job fails otherwise)
+- [ ] **`mcpWinCCOA/QUICKSTART.md` "Version x.y.z" line bumped** (hardcoded, not checked by CI)
 - [ ] **`CHANGELOG.md` updated**
 - [ ] `npm audit --audit-level=high` clean locally
 - [ ] `OSS.md` reflects any dependency change, and SVM entries updated

@@ -62,13 +62,13 @@ For detailed prerequisites, see **[📋 Prerequisites Guide](docs/PREREQUISITES.
 
 ### 1. Install
 
-Navigate to your WinCC OA projects javascript directory and create a folder for the MCP server. You can choose any name for this folder - we'll use `mcpServer` in this guide:
+Navigate to your WinCC OA projects javascript directory and create a folder for the MCP server. We use `mcpWinCCOA` as the folder name throughout this documentation:
 
 **Windows & Linux:**
 ```cmd
 cd <OA_ProjPath>\javascript
-mkdir mcpServer
-cd mcpServer
+mkdir mcpWinCCOA
+cd mcpWinCCOA
 ```
 
 Then install the required packages:
@@ -142,7 +142,7 @@ TOOLS=datapoints/dp_basic,datapoints/dp_types,archive/archive_query,common/commo
 
 Add JavaScript Manager in WinCC OA:
 - **Manager Type:** JavaScript Manager  
-- **Script Path:** `mcpServer/index_http.js`
+- **Script Path:** `mcpWinCCOA/index_http.js`
 
 ### 4. Connect Claude Desktop
 

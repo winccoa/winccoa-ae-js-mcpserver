@@ -11,9 +11,22 @@ The MCP server provides tools that AI assistants can use to interact with WinCC 
 ### Datapoint Tools
 
 **`datapoints/dp_basic`** - Basic datapoint operations
-- `get-dpTypes` - List available datapoint types
-- `get-datapoints` - Search datapoints by pattern  
+- `get-dpTypes` - List available datapoint type names
+  - Returns: `{"success": true, "data": {"types": ["..."], "count": N, "withInternals": false}}`
+  - Names only; use `dp-type-get` for the element structure of a type
+  - Internal types (names starting with `_`) only with `withInternals: true`
+- `get-datapoints` - Search datapoints by pattern
+  - Returns one envelope: `{"success": true, "data": {"datapoints": [...], "totalCount", "start", "limit", "returnedCount", "hasMore"}}`
+  - Each datapoint entry: `name`, `type`, `description`, `structure` (element tree with units and descriptions)
+  - No match: the same envelope with `"datapoints": []`, `"returnedCount": 0`, `"hasMore": false`
+  - Pagination: `start` (default 0), `limit` (default and max 200)
 - `get-value` - Read current values and timestamps
+  - Returns `{dpe, value, timestamp, unit}` (an array of them for an array input)
+  - Errors carry the inner WinCC OA error: `{"error": true, "message", "errorCode", "errorType"?, "details": [{"code", "message"}]}`;
+    a missing datapoint yields `errorCode` 71 / `errorType` `DP_NOT_EXIST` rather than the generic 9399 "multiple errors"
+  - Multi-element read where every element fails: the top-level `errorCode` (and `DP_NOT_EXIST` for 71) is set when all
+    failures share one code, otherwise `errorType` is `ALL_DPE_FAILED`; `failures[]` lists each element
+  - Multi-element read with some failures: `{"values": [...], "failures": [{"dpe", "error", "errorCode"}], "partial": true}`
 
 **`datapoints/dp_create`** - Create new datapoints
 - `create-datapoint` - Create datapoints with specified type and optional system/ID
@@ -23,7 +36,12 @@ The MCP server provides tools that AI assistants can use to interact with WinCC 
 
 **`datapoints/dp_types`** - Datapoint type management
 - `dp-type-get` - Get structure of a datapoint type as tree
+  - Errors use the same envelope as `get-value`: `{"error": true, "message", "errorCode", "errorType"?, "details": [...]}`;
+    a missing type yields `errorCode` 57 / `errorType` `DP_TYPE_NOT_EXIST`
 - `dp-type-name` - Get datapoint type for a given datapoint name
+  - Returns: `{"success": true, "data": {"dpName", "typeName"}}`; an error envelope if the datapoint does not exist
+  - Errors: `{"error": true, "message", "errorCode", "errorType"?, "details": [{"code", "message", "dpe"}]}`;
+    a missing datapoint yields `errorCode` 71 / `errorType` `DP_NOT_EXIST` (`details[].dpe` is filled with the requested name)
 
 **`datapoints/dp_type_create`** - Create new datapoint types
 - `dp-type-create` - Create datapoint types (DPT) with complete structure definitions
@@ -271,7 +289,8 @@ The MCP server provides tools that AI assistants can use to interact with WinCC 
 **`pv_range/pv_range_query`** - Query value ranges
 - `pv-range-query` - Query existing pv_range (min/max) configuration from a datapoint element
   - Returns: type, min, max, includeMin, includeMax, configured flag
-  - Returns null if not configured
+  - Not configured: `{"dpe": "...", "configured": false, "message": "..."}` (no error, no error log)
+  - Attributes the configured range type does not have are omitted
   - Shows boundary inclusivity settings
   - **Parameters:**
     - `dpe` - Datapoint element name (required)
@@ -481,7 +500,10 @@ The MCP server provides tools that AI assistants can use to interact with WinCC 
     - `color` - SVG color (default: "currentColor")
     - `size` - Viewbox size (default: 24, supported: 16, 24, 32)
     - `customSvg` - Custom SVG path data (required for "custom" type)
-  - Icons saved to /data/WebUI/icons/
+  - Icons saved to `<project>/data/WebUI/icons/`; the project path comes from the WinCC OA manager
+    (override with `WINCCOA_PROJ_PATH`, see [CONFIGURATION.md](CONFIGURATION.md))
+  - If the project path is unknown or the directory is not writable, the icon tools return an error
+    with `errorType` `ICON_STORAGE_UNAVAILABLE`
   - Returns: icon path (e.g., "/data/WebUI/icons/my-icon.svg")
   - Must be small (24x24px) to match Siemens IX library
   - Follow Siemens IX design guidelines (2px stroke, geometric shapes)

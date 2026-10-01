@@ -7,8 +7,37 @@
 import { z } from 'zod';
 import { createSuccessResponse, createErrorResponse } from '../../utils/helpers.js';
 import type { ServerContext } from '../../types/index.js';
-import { IconGenerator } from '../../helpers/icons/IconGenerator.js';
+import { IconGenerator, IconStorageError, InvalidIconNameError, ICON_NAME_PATTERN, ICON_NAME_WITH_SVG_PATTERN } from '../../helpers/icons/IconGenerator.js';
 import { IconList } from '../../helpers/icons/IconList.js';
+import { resolveProjectPathWithSource } from '../../utils/projectPath.js';
+import * as log from '../../utils/logger.js';
+
+/**
+ * The HTTP transport registers tools on every request, so log the resolved
+ * icons directory once per process, not once per request.
+ */
+let projectPathLogged = false;
+
+/**
+ * Turn an icon storage problem into a clean tool error instead of a stack trace.
+ * @returns An error response, or undefined if the error is something else
+ */
+function storageErrorResponse(error: unknown) {
+  if (error instanceof IconStorageError) {
+    log.warn(error.message);
+    return createErrorResponse(error.message, {
+      errorType: 'ICON_STORAGE_UNAVAILABLE',
+      ...(error.iconsPath ? { iconsPath: error.iconsPath } : {})
+    });
+  }
+  if (error instanceof InvalidIconNameError) {
+    return createErrorResponse(error.message, { errorType: 'INVALID_ICON_NAME' });
+  }
+  return undefined;
+}
+
+const ICON_NAME_MESSAGE =
+  'Invalid icon name: use 1-64 letters, digits, "_" or "-", starting with a letter or digit';
 
 /**
  * Register icon tools with the MCP server
@@ -17,15 +46,28 @@ import { IconList } from '../../helpers/icons/IconList.js';
  * @returns Number of tools registered
  */
 export function registerTools(server: any, context: ServerContext): number {
-  const iconGenerator = new IconGenerator();
+  const { path: projectPath, source } = resolveProjectPathWithSource(context?.winccoa);
+  const iconGenerator = new IconGenerator(projectPath);
   const iconList = new IconList();
+
+  if (!projectPathLogged) {
+    projectPathLogged = true;
+    if (projectPath) {
+      log.info(`Icon tools: project path ${projectPath} (from ${source}), icons in ${iconGenerator.getIconsPath()}`);
+    } else {
+      log.warn(
+        'Icon tools: WinCC OA project path unknown - custom icons cannot be created or listed. ' +
+          'Set WINCCOA_PROJ_PATH or run inside the WinCC OA JavaScript manager.'
+      );
+    }
+  }
 
   // ==================== CREATE CUSTOM ICON ====================
   server.tool(
     'create-custom-icon',
     `Create a custom SVG icon for dashboard widgets.
 
-Icons are saved to /data/WebUI/icons/ and can be referenced in widget headers/footers.
+Icons are saved to <project>/data/WebUI/icons/ (URL /data/WebUI/icons/<name>.svg) and can be referenced in widget headers/footers.
 After creating an icon, use its path in the titleIcon or subtitleIcon parameter when editing widgets.
 
 IMPORTANT: Icons must be small (24x24 pixels by default) to match Siemens IX icon library.
@@ -75,7 +117,7 @@ When creating custom SVG icons, follow Siemens Industrial Experience standards t
 ---
 
 Parameters:
-- name: Icon filename (without .svg extension) (required)
+- name: Icon filename (without .svg extension) (required). Only letters, digits, "_" and "-" (1-64 characters, must start with a letter or digit); anything else is rejected.
 - type: Icon type - "simple", "trend", "gauge", "alert", or "custom" (required)
 - color: SVG color (optional, default: "currentColor" for theme support)
 - size: Viewbox size in pixels (optional, default: 24, supported: 16, 24, 32)
@@ -162,7 +204,7 @@ After creating the icon, use it in a widget header or footer:
   "headerTitle": "Production Line 1"
 }`,
     {
-      name: z.string().min(1, 'Icon name is required'),
+      name: z.string().regex(ICON_NAME_PATTERN, ICON_NAME_MESSAGE),
       type: z.enum(['simple', 'trend', 'gauge', 'alert', 'custom']),
       color: z.string().optional(),
       size: z.number().int().min(16).max(32).optional(),
@@ -200,6 +242,8 @@ After creating the icon, use it in a widget header or footer:
           usage: `Use in widget: { "titleIcon": "${iconPath}", "headerTitle": "Your Title" }`
         });
       } catch (error) {
+        const storageError = storageErrorResponse(error);
+        if (storageError) return storageError;
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error('Error creating icon:', error);
         return createErrorResponse(`Failed to create icon: ${errorMessage}`);
@@ -237,6 +281,8 @@ Call this tool to see all available custom icons, then use the path in edit-widg
             : 'No custom icons found. Create one with create-custom-icon tool.'
         });
       } catch (error) {
+        const storageError = storageErrorResponse(error);
+        if (storageError) return storageError;
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error('Error listing icons:', error);
         return createErrorResponse(`Failed to list icons: ${errorMessage}`);
@@ -250,14 +296,14 @@ Call this tool to see all available custom icons, then use the path in edit-widg
     `Delete a custom icon from /data/WebUI/icons/.
 
 Parameters:
-- name: Icon filename (with or without .svg extension) (required)
+- name: Icon filename (with or without .svg extension) (required). Same rules as create-custom-icon: letters, digits, "_", "-" only.
 
 Example:
 {
   "name": "my-icon.svg"
 }`,
     {
-      name: z.string().min(1, 'Icon name is required')
+      name: z.string().regex(ICON_NAME_WITH_SVG_PATTERN, ICON_NAME_MESSAGE)
     },
     async (params: { name: string }) => {
       try {
@@ -276,6 +322,8 @@ Example:
           return createErrorResponse(`Icon not found: ${name}`);
         }
       } catch (error) {
+        const storageError = storageErrorResponse(error);
+        if (storageError) return storageError;
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error('Error deleting icon:', error);
         return createErrorResponse(`Failed to delete icon: ${errorMessage}`);

@@ -5,41 +5,75 @@
  */
 
 import { z } from 'zod';
-import { createSuccessResponse, createErrorResponse } from '../../utils/helpers.js';
+import { createSuccessResponse, createErrorResponse, describeWinccoaError, logWinccoaError } from '../../utils/helpers.js';
+import * as log from '../../utils/logger.js';
 import { DpConfigType } from '../../types/winccoa/constants.js';
 import type { ServerContext } from '../../types/index.js';
 
+/** WinCC OA error 19: "attribute does not exist in this config" - i.e. not configured. */
+const ERR_ATTRIBUTE_NOT_IN_CONFIG = 19;
+
+/**
+ * True if the error only says the attribute does not exist in the config
+ * (code 19, directly or in every nested detail). That is the normal answer
+ * for a datapoint element without a pv_range config, not a failure.
+ */
+export function isNotConfiguredError(error: unknown): boolean {
+  const described = describeWinccoaError(error);
+  if (described.details.length > 0) {
+    return described.details.every(d => d.code === ERR_ATTRIBUTE_NOT_IN_CONFIG);
+  }
+  return described.code === ERR_ATTRIBUTE_NOT_IN_CONFIG;
+}
+
+/**
+ * Read one _pv_range attribute.
+ * @returns The value, or undefined if the attribute does not exist in this config
+ * @throws Any other WinCC OA error
+ */
+async function readRangeAttribute(winccoa: any, dpe: string, attribute: string): Promise<any> {
+  try {
+    return await winccoa.dpGet(`${dpe}:_pv_range.._${attribute}`);
+  } catch (error) {
+    if (isNotConfiguredError(error)) {
+      log.debug(`${dpe}:_pv_range.._${attribute} does not exist in this config`);
+      return undefined;
+    }
+    throw error;
+  }
+}
+
 /**
  * Query range configuration for a datapoint element
+ * @returns The configuration, or null if no pv_range config exists
+ * @throws On real WinCC OA errors (not on "not configured")
  */
-async function queryRangeConfig(winccoa: any, dpe: string): Promise<any> {
-  try {
-    // Read all range configuration parameters
-    const [configType, minValue, maxValue, includeMin, includeMax] = await Promise.all([
-      winccoa.dpGet(`${dpe}:_pv_range.._type`),
-      winccoa.dpGet(`${dpe}:_pv_range.._min`),
-      winccoa.dpGet(`${dpe}:_pv_range.._max`),
-      winccoa.dpGet(`${dpe}:_pv_range.._incl_min`),
-      winccoa.dpGet(`${dpe}:_pv_range.._incl_max`)
-    ]);
+export async function queryRangeConfig(winccoa: any, dpe: string): Promise<any> {
+  // Read the config type first: without a config, the other attributes do not
+  // exist and reading them only produces errors.
+  const configType = await readRangeAttribute(winccoa, dpe, 'type');
 
-    // Check if configuration exists
-    if (configType === DpConfigType.DPCONFIG_NONE || configType === null || configType === undefined) {
-      return null;
-    }
-
-    return {
-      type: configType,
-      min: minValue,
-      max: maxValue,
-      includeMin: includeMin,
-      includeMax: includeMax,
-      configured: true
-    };
-  } catch (error) {
-    console.error(`Error querying range config for ${dpe}:`, error);
+  if (configType === DpConfigType.DPCONFIG_NONE || configType === null || configType === undefined) {
     return null;
   }
+
+  // Not every range type has every attribute (e.g. a set range check has no
+  // min/max); those come back as undefined.
+  const [minValue, maxValue, includeMin, includeMax] = await Promise.all([
+    readRangeAttribute(winccoa, dpe, 'min'),
+    readRangeAttribute(winccoa, dpe, 'max'),
+    readRangeAttribute(winccoa, dpe, 'incl_min'),
+    readRangeAttribute(winccoa, dpe, 'incl_max')
+  ]);
+
+  return {
+    type: configType,
+    min: minValue,
+    max: maxValue,
+    includeMin: includeMin,
+    includeMax: includeMax,
+    configured: true
+  };
 }
 
 /**
@@ -70,7 +104,9 @@ export function registerTools(server: any, context: ServerContext): number {
     - includeMax: Whether maximum is included in valid range
     - configured: true if a configuration exists
 
-    Returns null if no pv_range configuration exists.
+    If no pv_range configuration exists, returns
+    {"dpe": "...", "configured": false, "message": "No pv_range configuration exists for this datapoint element"}.
+    Attributes that do not exist for the configured range type are omitted.
     `,
     {
       dpe: z.string().describe('Datapoint element name (e.g., System1:MyTag.)')
@@ -113,13 +149,13 @@ export function registerTools(server: any, context: ServerContext): number {
         });
 
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error('========================================');
-        console.error('✗ PV Range Query Failed');
-        console.error('========================================');
-        console.error(`Error: ${errorMessage}`);
+        logWinccoaError('PV Range Query Failed', error);
 
-        return createErrorResponse(`Failed to query pv_range configuration: ${errorMessage}`);
+        const described = describeWinccoaError(error);
+        return createErrorResponse(`Failed to query pv_range configuration: ${described.message}`, {
+          ...(described.code !== undefined ? { errorCode: described.code } : {}),
+          ...(described.details.length > 0 ? { details: described.details } : {})
+        });
       }
     }
   );

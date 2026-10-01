@@ -227,7 +227,7 @@ This wraps the npx command in Windows Command Prompt, which correctly handles pa
 
 **Solutions:**
 1. **Check script path**
-   - Manager script path: `mcpServer/index_http.js`
+   - Manager script path: `mcpWinCCOA/index_http.js`
    - Verify file exists in WinCC OA project
 
 2. **Review WinCC OA logs**
@@ -240,13 +240,13 @@ This wraps the npx command in Windows Command Prompt, which correctly handles pa
 3. **Verify .env file**
    ```bash
    # Check .env exists and has required settings
-   cat mcpServer/.env
+   cat mcpWinCCOA/.env
    ```
 
 4. **Test Node.js directly**
    ```bash
    # Test if script runs outside WinCC OA
-   cd mcpServer
+   cd mcpWinCCOA
    node index_http.js
    ```
 
