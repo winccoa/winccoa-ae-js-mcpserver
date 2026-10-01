@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, chmodSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { IconGenerator, IconStorageError } from '../../../src/helpers/icons/IconGenerator.js';
+import { IconGenerator, IconStorageError, InvalidIconNameError, validateIconName } from '../../../src/helpers/icons/IconGenerator.js';
 import { IconList, ICON_CATEGORIES } from '../../../src/helpers/icons/IconList.js';
 
 let tempRoot: string;
@@ -184,5 +184,49 @@ describe('icon tools (icons/icon registerTools)', () => {
       vi.doUnmock('../../../src/utils/projectPath.js');
       vi.resetModules();
     }
+  });
+});
+
+describe('icon name validation (path traversal)', () => {
+  const bad = ['../x', '..', 'a/b', 'a\\b', '.hidden', '', 'a'.repeat(200), '/etc/passwd', 'x.svg/../../y'];
+
+  it.each(bad)('validateIconName rejects %j', name => {
+    expect(() => validateIconName(name)).toThrow(InvalidIconNameError);
+  });
+
+  it('validateIconName accepts pump_01-ok', () => {
+    expect(validateIconName('pump_01-ok')).toBe('pump_01-ok');
+  });
+
+  it.each(bad)('generateIcon rejects %j and writes nothing', name => {
+    const generator = new IconGenerator(join(tempRoot, 'proj'));
+    expect(() => generator.generateIcon({ name, type: 'simple' })).toThrow(InvalidIconNameError);
+    expect(existsSync(join(tempRoot, 'proj'))).toBe(false);
+  });
+
+  it('generateIcon accepts pump_01-ok', () => {
+    const generator = new IconGenerator(join(tempRoot, 'proj'));
+    expect(generator.generateIcon({ name: 'pump_01-ok', type: 'simple' })).toBe('/data/WebUI/icons/pump_01-ok.svg');
+  });
+
+  it('deleteIcon with a traversal name does not touch a file outside the icons dir', () => {
+    const proj = join(tempRoot, 'proj');
+    const iconsDir = join(proj, 'data', 'WebUI', 'icons');
+    mkdirSync(iconsDir, { recursive: true });
+    const outside = join(proj, 'data', 'WebUI', 'victim.svg');
+    writeFileSync(outside, 'keep me');
+    const generator = new IconGenerator(proj);
+
+    expect(() => generator.deleteIcon('../victim')).toThrow(InvalidIconNameError);
+    expect(() => generator.deleteIcon('../victim.svg')).toThrow(InvalidIconNameError);
+    expect(existsSync(outside)).toBe(true);
+  });
+
+  it('deleteIcon still accepts names with and without .svg', () => {
+    const generator = new IconGenerator(join(tempRoot, 'proj'));
+    generator.generateIcon({ name: 'a-1', type: 'simple' });
+    generator.generateIcon({ name: 'b-2', type: 'simple' });
+    expect(generator.deleteIcon('a-1.svg')).toBe(true);
+    expect(generator.deleteIcon('b-2')).toBe(true);
   });
 });

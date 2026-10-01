@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { createSuccessResponse, createErrorResponse } from '../../utils/helpers.js';
 import type { ServerContext } from '../../types/index.js';
-import { IconGenerator, IconStorageError } from '../../helpers/icons/IconGenerator.js';
+import { IconGenerator, IconStorageError, InvalidIconNameError, ICON_NAME_PATTERN } from '../../helpers/icons/IconGenerator.js';
 import { IconList } from '../../helpers/icons/IconList.js';
 import { resolveProjectPathWithSource } from '../../utils/projectPath.js';
 import * as log from '../../utils/logger.js';
@@ -30,8 +30,14 @@ function storageErrorResponse(error: unknown) {
       ...(error.iconsPath ? { iconsPath: error.iconsPath } : {})
     });
   }
+  if (error instanceof InvalidIconNameError) {
+    return createErrorResponse(error.message, { errorType: 'INVALID_ICON_NAME' });
+  }
   return undefined;
 }
+
+const ICON_NAME_MESSAGE =
+  'Invalid icon name: use 1-64 letters, digits, "_" or "-", starting with a letter or digit';
 
 /**
  * Register icon tools with the MCP server
@@ -111,7 +117,7 @@ When creating custom SVG icons, follow Siemens Industrial Experience standards t
 ---
 
 Parameters:
-- name: Icon filename (without .svg extension) (required)
+- name: Icon filename (without .svg extension) (required). Only letters, digits, "_" and "-" (1-64 characters, must start with a letter or digit); anything else is rejected.
 - type: Icon type - "simple", "trend", "gauge", "alert", or "custom" (required)
 - color: SVG color (optional, default: "currentColor" for theme support)
 - size: Viewbox size in pixels (optional, default: 24, supported: 16, 24, 32)
@@ -198,7 +204,7 @@ After creating the icon, use it in a widget header or footer:
   "headerTitle": "Production Line 1"
 }`,
     {
-      name: z.string().min(1, 'Icon name is required'),
+      name: z.string().regex(ICON_NAME_PATTERN, ICON_NAME_MESSAGE),
       type: z.enum(['simple', 'trend', 'gauge', 'alert', 'custom']),
       color: z.string().optional(),
       size: z.number().int().min(16).max(32).optional(),
@@ -290,14 +296,14 @@ Call this tool to see all available custom icons, then use the path in edit-widg
     `Delete a custom icon from /data/WebUI/icons/.
 
 Parameters:
-- name: Icon filename (with or without .svg extension) (required)
+- name: Icon filename (with or without .svg extension) (required). Same rules as create-custom-icon: letters, digits, "_", "-" only.
 
 Example:
 {
   "name": "my-icon.svg"
 }`,
     {
-      name: z.string().min(1, 'Icon name is required')
+      name: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}(\.svg)?$/, ICON_NAME_MESSAGE)
     },
     async (params: { name: string }) => {
       try {

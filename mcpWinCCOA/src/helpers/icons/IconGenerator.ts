@@ -20,6 +20,31 @@ export interface IconConfig {
   customSvg?: string; // Custom SVG path/shape data
 }
 
+/** Allowed icon names: letters, digits, '_' and '-', starting with a letter or digit. */
+export const ICON_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
+
+/** Raised when an icon name is not a plain, safe file name. */
+export class InvalidIconNameError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidIconNameError';
+  }
+}
+
+/**
+ * Validate an icon name (without .svg extension).
+ * @returns The name, unchanged
+ * @throws InvalidIconNameError if the name could address anything but a plain file name
+ */
+export function validateIconName(name: unknown): string {
+  if (typeof name !== 'string' || !ICON_NAME_PATTERN.test(name)) {
+    throw new InvalidIconNameError(
+      'Invalid icon name: use 1-64 letters, digits, "_" or "-", starting with a letter or digit (no paths, dots or spaces).'
+    );
+  }
+  return name;
+}
+
 /** Hint appended to every storage error. */
 const STORAGE_HINT = 'Set WINCCOA_PROJ_PATH or run inside the WinCC OA JavaScript manager.';
 
@@ -90,12 +115,25 @@ export class IconGenerator {
   }
 
   /**
+   * Build the icon file path and make sure it stays inside the icons directory.
+   */
+  private resolveIconFile(iconsPath: string, name: string): { filename: string; filepath: string } {
+    const filename = `${validateIconName(name)}.svg`;
+    const filepath = path.join(iconsPath, filename);
+    if (!path.resolve(filepath).startsWith(path.resolve(iconsPath) + path.sep)) {
+      throw new InvalidIconNameError('Invalid icon name: resolves outside the icons directory.');
+    }
+    return { filename, filepath };
+  }
+
+  /**
    * Generate a simple icon SVG
    * @param config - Icon configuration
    * @returns Public URL of the generated SVG file
    * @throws IconStorageError if the icons directory is unknown or not writable
    */
   generateIcon(config: IconConfig): string {
+    validateIconName(config.name);
     const size = config.size || 24;
     const color = config.color || 'currentColor';
 
@@ -124,8 +162,7 @@ export class IconGenerator {
     }
 
     const iconsPath = this.ensureWritableIconsDir();
-    const filename = `${config.name}.svg`;
-    const filepath = path.join(iconsPath, filename);
+    const { filename, filepath } = this.resolveIconFile(iconsPath, config.name);
 
     try {
       fs.writeFileSync(filepath, svgContent, 'utf8');
@@ -225,8 +262,8 @@ export class IconGenerator {
    * @param iconName - Icon filename (with or without .svg extension)
    */
   deleteIcon(iconName: string): boolean {
-    const filename = iconName.endsWith('.svg') ? iconName : `${iconName}.svg`;
-    const filepath = path.join(this.requireIconsPath(), filename);
+    const baseName = iconName.endsWith('.svg') ? iconName.slice(0, -4) : iconName;
+    const { filepath } = this.resolveIconFile(this.requireIconsPath(), baseName);
 
     if (fs.existsSync(filepath)) {
       fs.unlinkSync(filepath);

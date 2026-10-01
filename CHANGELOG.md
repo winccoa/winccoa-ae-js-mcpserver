@@ -27,6 +27,10 @@ archive.
 
 ### Security
 
+- **Icon names are validated to prevent path traversal** in `create-custom-icon` and `delete-custom-icon`.
+  Names must match `^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$` (a trailing `.svg` is still accepted on delete),
+  are checked again in the Zod schema and in `IconGenerator`, and the resolved path must stay inside
+  `<project>/data/WebUI/icons`. Rejected names return an `INVALID_ICON_NAME` error.
 - **Updated `mcp-remote` 0.1.37 → 0.14.3.** Fixes the Remote Information Disclosure in OAuth scope
   handling that affects 0.1.32 to 0.1.38 (fixed in 0.1.39; Siemens SVM notification 236904). The update
   also removes the vulnerable transitive versions it pulled in: `undici` 7.29.0 (ten high advisories,
