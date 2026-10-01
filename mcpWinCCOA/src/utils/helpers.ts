@@ -4,7 +4,6 @@
 
 import type { WinccoaManager } from 'winccoa-manager';
 import type {
-  McpContent,
   McpSuccessResponse,
   McpErrorResponse,
   McpToolResponse,
@@ -12,24 +11,124 @@ import type {
 } from '../types/index.js';
 
 /**
- * Create content array for MCP responses, filtering internal types if needed
+ * Filter datapoint type names, dropping internal types (starting with _) unless requested
  * @param arr - Array of type names
  * @param withInternals - Whether to include internal types (starting with _)
- * @returns Content array for MCP response
+ * @returns Filtered type names
  */
-export function mkTypesContent(arr: string[], withInternals?: boolean): McpContent[] {
-  const ret: McpContent[] = [];
-  for (let i = 0; i < arr.length; i++) {
-    const item = arr[i];
-    if (item !== undefined) {
-      if (!item.startsWith('_')) {
-        ret.push({ type: "text", text: item });
-      } else if (withInternals) {
-        ret.push({ type: "text", text: item });
-      }
+export function filterTypeNames(arr: ReadonlyArray<string | undefined>, withInternals?: boolean): string[] {
+  return arr.filter(
+    (item): item is string => typeof item === 'string' && (withInternals === true || !item.startsWith('_'))
+  );
+}
+
+/** One flattened WinCC OA error (see describeWinccoaError). */
+export interface WinccoaErrorDetail {
+  code?: number;
+  message: string;
+  dpe?: string;
+}
+
+/** Flattened view of a WinCC OA error, including its nested details. */
+export interface WinccoaErrorDescription {
+  /** Effective code: the inner code if all inner errors agree, else the outer code */
+  code?: number;
+  /** Outer code as reported by the manager (e.g. 9399 "multiple errors") */
+  outerCode?: number;
+  /** Human-readable message: the inner messages if there are any, else the outer message */
+  message: string;
+  /** Inner errors, flattened */
+  details: WinccoaErrorDetail[];
+}
+
+/** Read a numeric `code` from an error-like value. */
+function errorCode(e: unknown): number | undefined {
+  const code = (e as { code?: unknown } | null | undefined)?.code;
+  if (typeof code === 'number') return code;
+  if (typeof code === 'string' && code.trim() !== '' && !Number.isNaN(Number(code))) return Number(code);
+  return undefined;
+}
+
+/** Read a message from an error-like value. */
+function errorMessage(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (typeof e === 'string') return e;
+  const message = (e as { message?: unknown } | null | undefined)?.message;
+  return typeof message === 'string' ? message : String(e);
+}
+
+/** Read the dpe an error refers to, if the manager attached one. */
+function errorDpe(e: unknown): string | undefined {
+  const err = e as { dpe?: unknown; dpName?: unknown } | null | undefined;
+  if (typeof err?.dpe === 'string') return err.dpe;
+  if (typeof err?.dpName === 'string') return err.dpName;
+  return undefined;
+}
+
+/** Nested WinCC OA errors, if any. */
+function errorDetails(e: unknown): unknown[] {
+  const details = (e as { details?: unknown } | null | undefined)?.details;
+  if (Array.isArray(details)) return details;
+  // A single nested error instead of an array
+  if (details instanceof Error || (typeof details === 'object' && details !== null && 'message' in details)) {
+    return [details];
+  }
+  return [];
+}
+
+/**
+ * Flatten a WinccoaError into code, message and inner details.
+ *
+ * A failing dpGet usually throws 9399 "multiple errors (N errors total)" with
+ * the real cause - e.g. 71 "DP does not exist" naming the element - only in
+ * `details`. Forwarding `error.message` alone hides that from the client.
+ * Nested details are flattened (their own details are pulled up one level).
+ *
+ * @param e - Caught error
+ * @returns Flattened description
+ */
+export function describeWinccoaError(e: unknown): WinccoaErrorDescription {
+  const outerCode = errorCode(e);
+  const outerMessage = errorMessage(e);
+
+  const details: WinccoaErrorDetail[] = [];
+  const push = (inner: unknown): void => {
+    const detail: WinccoaErrorDetail = { message: errorMessage(inner) };
+    const code = errorCode(inner);
+    if (code !== undefined) detail.code = code;
+    const dpe = errorDpe(inner);
+    if (dpe !== undefined) detail.dpe = dpe;
+    details.push(detail);
+  };
+
+  for (const inner of errorDetails(e)) {
+    const nested = errorDetails(inner);
+    if (nested.length > 0) {
+      nested.forEach(push);
+    } else {
+      push(inner);
     }
   }
-  return ret;
+
+  if (details.length === 0) {
+    return {
+      ...(outerCode !== undefined ? { code: outerCode, outerCode } : {}),
+      message: outerMessage,
+      details
+    };
+  }
+
+  const innerCodes = new Set(details.map(d => d.code));
+  const commonCode = innerCodes.size === 1 ? [...innerCodes][0] : undefined;
+  const code = commonCode !== undefined ? commonCode : outerCode;
+  const message = [...new Set(details.map(d => d.message))].join('; ');
+
+  return {
+    ...(code !== undefined ? { code } : {}),
+    ...(outerCode !== undefined ? { outerCode } : {}),
+    message,
+    details
+  };
 }
 
 /**

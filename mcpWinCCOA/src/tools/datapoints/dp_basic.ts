@@ -5,9 +5,16 @@
  */
 
 import { z } from 'zod';
-import { mkTypesContent, addDescriptionAndUnitsToChildren, createSuccessResponse, createErrorResponse, validateDatapointElementsForGet } from '../../utils/helpers.js';
+import {
+  filterTypeNames,
+  addDescriptionAndUnitsToChildren,
+  createSuccessResponse,
+  createErrorResponse,
+  validateDatapointElementsForGet,
+  describeWinccoaError
+} from '../../utils/helpers.js';
 import * as log from '../../utils/logger.js';
-import type { ServerContext, McpContent } from '../../types/index.js';
+import type { ServerContext } from '../../types/index.js';
 
 /**
  * Register basic datapoint tools (get-dpTypes, get-datapoints, get-value)
@@ -37,7 +44,10 @@ systemId: Specify a different system ID to query from other systems. Default que
 
 includeEmpty: When set to false, data point types without existing data points will be ignored.
 
-Returns: Array of datapoint type definitions with complete structure information, element hierarchy, and type metadata including attributes, formats, and engineering units.`,
+withInternals: When true, internal types (names starting with _) are included. Default: false.
+
+Returns: JSON envelope {"success": true, "data": {"types": [...type names...], "count": N, "withInternals": false}}.
+Only the type NAMES are returned. Use dp-type-get to read the element structure of a type.`,
     {
       pattern: z.string().optional(),
       systemId: z.number().optional(),
@@ -57,9 +67,14 @@ Returns: Array of datapoint type definitions with complete structure information
     }) => {
       try {
         console.log('Getting datapoint types');
-        const types = winccoa.dpTypes(pattern, systemId, includeEmpty);
-        console.log(`Found ${types.length} datapoint types`);
-        return { content: mkTypesContent(types, withInternals) };
+        const allTypes = winccoa.dpTypes(pattern, systemId, includeEmpty);
+        const types = filterTypeNames(allTypes, withInternals);
+        console.log(`Found ${allTypes.length} datapoint types, returning ${types.length}`);
+        return createSuccessResponse({
+          types,
+          count: types.length,
+          withInternals: withInternals === true
+        });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error('Error getting datapoint types:', error);
@@ -78,10 +93,13 @@ Returns: Array of datapoint type definitions with complete structure information
     Can filter by specific datapoint type to narrow results.
 
     Pagination: Results are limited to 200 items per request. Use 'start' (default: 0) and 'limit' (default: 200, max: 200)
-    parameters for pagination. Response includes metadata with total count and hasMore flag.
+    parameters for pagination.
 
-    Returns: Array of datapoint objects with name, type, multilingual description, and complete structure hierarchy
-    including all elements with their full paths, data types, and engineering units.`,
+    Returns: one JSON envelope
+    {"success": true, "data": {"datapoints": [...], "totalCount": N, "start": 0, "limit": 200, "returnedCount": n, "hasMore": false}}
+    Each entry of "datapoints" has name, type, multilingual description, and the complete structure hierarchy
+    including all elements with their full paths, data types, and engineering units.
+    No match returns the same envelope with "datapoints": [] and "returnedCount": 0.`,
     {
       dpNamePattern: z.string().optional(),
       dpType: z.string().optional(),
@@ -112,7 +130,7 @@ Returns: Array of datapoint type definitions with complete structure information
         const paginatedDps = dps.slice(start, endIndex);
         const hasMore = endIndex < totalCount;
 
-        const results: McpContent[] = [];
+        const datapoints: any[] = [];
         for (const name of paginatedDps) {
           const dp: any = {};
           dp.name = name;
@@ -120,25 +138,21 @@ Returns: Array of datapoint type definitions with complete structure information
           dp.description = winccoa.dpGetDescription(name);
           dp.structure = winccoa.dpTypeGet(dp.type);
           addDescriptionAndUnitsToChildren(dp.structure.children, name, winccoa);
-          results.push({ type: "text", text: JSON.stringify(dp) });
+          datapoints.push(dp);
         }
 
         console.log(
-          `Found ${totalCount} total datapoints, returning ${results.length} (start: ${start}, limit: ${effectiveLimit})`
+          `Found ${totalCount} total datapoints, returning ${datapoints.length} (start: ${start}, limit: ${effectiveLimit})`
         );
 
-        const response = {
-          content: results,
-          metadata: {
-            totalCount,
-            start,
-            limit: effectiveLimit,
-            returnedCount: results.length,
-            hasMore
-          }
-        };
-
-        return response;
+        return createSuccessResponse({
+          datapoints,
+          totalCount,
+          start,
+          limit: effectiveLimit,
+          returnedCount: datapoints.length,
+          hasMore
+        });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error('Error getting datapoints:', error);
@@ -160,7 +174,12 @@ Returns for each datapoint:
 - timestamp: Server timestamp when value was last updated
 - unit: Engineering unit (e.g. '°C', 'bar', 'rpm')
 
-Supports all WinCC OA datapoint element types including state values, command values, parameters, alerts, and configuration elements.`,
+Supports all WinCC OA datapoint element types including state values, command values, parameters, alerts, and configuration elements.
+
+Errors: {"error": true, "message": "...", "errorCode": N, "errorType"?: "...", "details": [{"code", "message"}]}.
+The message and errorCode carry the inner WinCC OA error (e.g. 71 / errorType DP_NOT_EXIST for a missing datapoint),
+not just the generic 9399 "multiple errors". When some elements of a multi-element read fail, the readable values are
+returned with "partial": true and a "failures" list ({dpe, error, errorCode}).`,
     {
       dpe: z.union([z.string(), z.array(z.string())])
     },
@@ -207,8 +226,10 @@ Supports all WinCC OA datapoint element types including state values, command va
 
         console.log(`Got values for ${dpeArray.length} datapoint(s)`);
         return createSuccessResponse(finalResult);
-      } catch (error: any) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+      } catch (error: unknown) {
+        // The outer message is often just 9399 "multiple errors (N errors total)";
+        // the actual cause (e.g. 71 "DP does not exist") is in the nested details.
+        const described = describeWinccoaError(error);
         const dpeArray = Array.isArray(dpe) ? dpe : [dpe];
 
         // A batched dpGet is atomic: one bad element fails the whole call with
@@ -221,7 +242,7 @@ Supports all WinCC OA datapoint element types including state values, command va
         // values that are readable plus an exact per-element error, and it only
         // costs extra calls on the failure path.
         if (dpeArray.length > 1) {
-          log.warn(`Batched read of ${dpeArray.length} elements failed, retrying individually: ${errorMessage}`);
+          log.warn(`Batched read of ${dpeArray.length} elements failed, retrying individually: ${described.message}`);
 
           const values: any[] = [];
           const failures: Array<{ dpe: string; error: string; errorCode?: number }> = [];
@@ -235,11 +256,12 @@ Supports all WinCC OA datapoint element types including state values, command va
                 timestamp: (single as any[])[1],
                 unit: winccoa.dpGetUnit(one)
               });
-            } catch (singleError: any) {
+            } catch (singleError: unknown) {
+              const singleFailure = describeWinccoaError(singleError);
               failures.push({
                 dpe: one,
-                error: singleError instanceof Error ? singleError.message : String(singleError),
-                errorCode: singleError?.code
+                error: singleFailure.message,
+                ...(singleFailure.code !== undefined ? { errorCode: singleFailure.code } : {})
               });
             }
           }
@@ -268,23 +290,23 @@ Supports all WinCC OA datapoint element types including state values, command va
           });
         }
 
-        console.error(`Error getting values:`, error);
+        console.error(`Error getting values: ${described.message}`);
 
         // Handle WinCC OA specific errors
-        if (error.code === 71) {
+        if (described.code === 71) {
           return createErrorResponse(
-            `Datapoint does not exist. Please check the datapoint names. Error: ${errorMessage}`,
+            `Datapoint does not exist. Please check the datapoint names. Error: ${described.message}`,
             {
-              errorCode: error.code,
+              errorCode: described.code,
               errorType: 'DP_NOT_EXIST',
-              details: errorMessage
+              details: described.details
             }
           );
         }
 
-        return createErrorResponse(`Failed to get values: ${errorMessage}`, {
-          errorCode: error.code || undefined,
-          details: errorMessage
+        return createErrorResponse(`Failed to get values: ${described.message}`, {
+          errorCode: described.code,
+          details: described.details
         });
       }
     }

@@ -65,15 +65,23 @@ including all elements, their data types, and structural relationships.`,
 
 dpName: Name of the data point (for example, 'valve.opening')
 
-Returns: DP type as a string, or empty string if data point doesn't exist or error occurs.
+Returns: JSON envelope {"success": true, "data": {"dpName": "...", "typeName": "..."}}.
+If the data point does not exist (or the call fails), an error envelope {"error": true, "message": "..."} is returned instead.
 
-Example: dpTypeName('Valve17.opening') might return 'AnalogValve'`,
+Example: {"dpName": "Valve17.opening"} might return {"success": true, "data": {"dpName": "Valve17.opening", "typeName": "AnalogValve"}}`,
     {
       dpName: z.string()
     },
     async ({ dpName }: { dpName: string }) => {
       try {
         const result = winccoa.dpTypeName(dpName);
+        if (!result) {
+          // Treat an empty type name like a non-existent datapoint, so the
+          // response matches the description in both cases.
+          return createErrorResponse(`Datapoint ${dpName} does not exist (no type name)`, {
+            errorType: 'DP_NOT_EXIST'
+          });
+        }
         return createSuccessResponse({ dpName, typeName: result });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);

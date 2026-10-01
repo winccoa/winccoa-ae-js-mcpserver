@@ -12,7 +12,8 @@ import {
   isValidDatapointName,
   isValidDatapointElementForGet,
   validateDatapointElementsForGet,
-  mkTypesContent
+  filterTypeNames,
+  describeWinccoaError
 } from '../../../src/utils/helpers.js';
 
 // ---------------------------------------------------------------------------
@@ -194,37 +195,96 @@ describe('validateDatapointElementsForGet', () => {
 });
 
 // ---------------------------------------------------------------------------
-// mkTypesContent
+// filterTypeNames
 // ---------------------------------------------------------------------------
 
-describe('mkTypesContent', () => {
-  it('returns content items for non-internal types', () => {
-    const result = mkTypesContent(['TypeA', 'TypeB']);
-    expect(result).toHaveLength(2);
-    expect(result[0]).toEqual({ type: 'text', text: 'TypeA' });
-    expect(result[1]).toEqual({ type: 'text', text: 'TypeB' });
+describe('filterTypeNames', () => {
+  it('returns non-internal types', () => {
+    expect(filterTypeNames(['TypeA', 'TypeB'])).toEqual(['TypeA', 'TypeB']);
   });
 
   it('excludes types starting with underscore by default', () => {
-    const result = mkTypesContent(['TypeA', '_Internal', 'TypeB']);
-    expect(result).toHaveLength(2);
-    expect(result.map(r => r.text)).not.toContain('_Internal');
+    expect(filterTypeNames(['TypeA', '_Internal', 'TypeB'])).toEqual(['TypeA', 'TypeB']);
   });
 
   it('includes underscore types when withInternals=true', () => {
-    const result = mkTypesContent(['TypeA', '_Internal'], true);
-    expect(result).toHaveLength(2);
-    expect(result.map(r => r.text)).toContain('_Internal');
+    expect(filterTypeNames(['TypeA', '_Internal'], true)).toEqual(['TypeA', '_Internal']);
   });
 
   it('returns an empty array for an empty input', () => {
-    const result = mkTypesContent([]);
-    expect(result).toHaveLength(0);
+    expect(filterTypeNames([])).toEqual([]);
   });
 
   it('skips undefined entries in the array', () => {
-    const arr = ['TypeA', undefined as unknown as string, 'TypeB'];
-    const result = mkTypesContent(arr);
-    expect(result).toHaveLength(2);
+    expect(filterTypeNames(['TypeA', undefined, 'TypeB'])).toEqual(['TypeA', 'TypeB']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// describeWinccoaError
+// ---------------------------------------------------------------------------
+
+/** Shape of a WinccoaError: an Error with a numeric code and nested details. */
+function oaError(code: number, message: string, details?: unknown): Error {
+  return Object.assign(new Error(message), { code, ...(details !== undefined ? { details } : {}) });
+}
+
+describe('describeWinccoaError', () => {
+  it('uses the inner code and message of a 9399 "multiple errors"', () => {
+    const error = oaError(9399, 'multiple errors (2 errors total)', [
+      oaError(71, 'DP does not exist, NoSuchDp_XYZ.value:_online.._value'),
+      oaError(71, 'DP does not exist, NoSuchDp_XYZ.value:_original.._stime')
+    ]);
+    const described = describeWinccoaError(error);
+    expect(described.code).toBe(71);
+    expect(described.outerCode).toBe(9399);
+    expect(described.message).toContain('DP does not exist, NoSuchDp_XYZ.value:_online.._value');
+    expect(described.message).not.toContain('multiple errors');
+    expect(described.details).toHaveLength(2);
+    expect(described.details[0]).toEqual({
+      code: 71,
+      message: 'DP does not exist, NoSuchDp_XYZ.value:_online.._value'
+    });
+  });
+
+  it('flattens nested details one level', () => {
+    const error = oaError(9399, 'multiple errors', [
+      oaError(9399, 'multiple errors', [oaError(71, 'DP does not exist, A'), oaError(71, 'DP does not exist, B')]),
+      oaError(71, 'DP does not exist, C')
+    ]);
+    const described = describeWinccoaError(error);
+    expect(described.code).toBe(71);
+    expect(described.details.map(d => d.message)).toEqual([
+      'DP does not exist, A',
+      'DP does not exist, B',
+      'DP does not exist, C'
+    ]);
+  });
+
+  it('keeps the outer code when inner codes disagree', () => {
+    const error = oaError(9399, 'multiple errors', [oaError(71, 'DP does not exist, A'), oaError(19, 'attribute missing')]);
+    const described = describeWinccoaError(error);
+    expect(described.code).toBe(9399);
+    expect(described.details.map(d => d.code)).toEqual([71, 19]);
+  });
+
+  it('handles an error without details', () => {
+    expect(describeWinccoaError(oaError(71, 'DP does not exist'))).toEqual({
+      code: 71,
+      outerCode: 71,
+      message: 'DP does not exist',
+      details: []
+    });
+  });
+
+  it('handles a plain Error and a non-Error value', () => {
+    expect(describeWinccoaError(new Error('boom'))).toEqual({ message: 'boom', details: [] });
+    expect(describeWinccoaError('text')).toEqual({ message: 'text', details: [] });
+  });
+
+  it('accepts a single nested error object instead of an array', () => {
+    const described = describeWinccoaError(oaError(9399, 'multiple errors', oaError(71, 'DP does not exist, A')));
+    expect(described.code).toBe(71);
+    expect(described.details).toHaveLength(1);
   });
 });
