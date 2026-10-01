@@ -29,11 +29,6 @@ archive.
   when all elements of a multi-element read fail with the same code, it is also the top-level `errorCode`.
 - `dp-type-name` returns an error envelope for a missing datapoint.
 
-### Changed
-
-- **CI:** GitHub Actions updated to Node 24 runtimes (`actions/upload-artifact` v5 → v7) and the Ubuntu
-  runner pinned to `ubuntu-24.04` ahead of the `ubuntu-latest` migration to Ubuntu 26 on 2026-10-19.
-
 ### Security
 
 - **Icon names are validated to prevent path traversal** in `create-custom-icon` and `delete-custom-icon`.
@@ -52,6 +47,8 @@ archive.
 
 ### Changed
 
+- **CI:** GitHub Actions updated to Node 24 runtimes (`actions/upload-artifact` v5 → v7) and the Ubuntu
+  runner pinned to `ubuntu-24.04` ahead of the `ubuntu-latest` migration to Ubuntu 26 on 2026-10-19.
 - **SIOS archive is now flat, matching the npm install layout**
   ([#36](https://github.com/winccoa/winccoa-ae-js-mcpserver/issues/36)). The contents of `build/`
   (`index_http.js`, `index_stdio.js`, `systemprompt.md`, `fields/`, `config/`, ...) sit at the archive

@@ -45,7 +45,7 @@ describe('resolveProjectPathWithSource', () => {
     process.env.WINCCOA_PROJ_PATH = '/override/proj';
     process.env.PVSS_II = '/pvss/proj/config/config';
     expect(resolveProjectPathWithSource(managerWithPaths(['/manager/proj']))).toEqual({
-      path: '/override/proj',
+      path: resolve('/override/proj'),
       source: 'WINCCOA_PROJ_PATH'
     });
   });
@@ -97,6 +97,6 @@ describe('resolveProjectPathWithSource', () => {
 describe('resolveProjectPath', () => {
   it('returns just the path', () => {
     process.env.WINCCOA_PROJ_PATH = '/override/proj';
-    expect(resolveProjectPath()).toBe('/override/proj');
+    expect(resolveProjectPath()).toBe(resolve('/override/proj'));
   });
 });

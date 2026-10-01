@@ -110,7 +110,7 @@ Licence summary: MIT (100), ISC (7), BSD-2-Clause (2), BSD-3-Clause (2). All are
 | gopd | 1.2.0 | [MIT](https://opensource.org/license/mit) | no |
 | has-symbols | 1.1.0 | [MIT](https://opensource.org/license/mit) | no |
 | hasown | 2.0.2 | [MIT](https://opensource.org/license/mit) | no |
-| hono | 4.13.5 | [MIT](https://opensource.org/license/mit) | no |
+| hono | 4.13.12 | [MIT](https://opensource.org/license/mit) | no |
 | http-errors | 2.0.1 | [MIT](https://opensource.org/license/mit) | no |
 | iconv-lite | 0.7.2 | [MIT](https://opensource.org/license/mit) | no |
 | inherits | 2.0.4 | [ISC](https://opensource.org/license/isc-license-txt) | no |

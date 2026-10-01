@@ -150,7 +150,10 @@ const EXPECTED_NOT_FOUND_CODES: ReadonlySet<number> = new Set([71, 57, 19]);
  */
 export function logWinccoaError(context: string, e: unknown, fallbackDpe?: string): void {
   const described = describeWinccoaError(e, fallbackDpe);
-  const line = `${context}: ${described.code !== undefined ? `[${described.code}] ` : ''}${described.message}`;
+  // WinccoaError messages already start with "<code>, "; do not repeat the code.
+  const hasCodePrefix = described.code !== undefined && described.message.trimStart().startsWith(`${described.code},`);
+  const codePrefix = described.code !== undefined && !hasCodePrefix ? `[${described.code}] ` : '';
+  const line = `${context}: ${codePrefix}${described.message}`;
   if (described.code !== undefined && EXPECTED_NOT_FOUND_CODES.has(described.code)) {
     log.warn(line);
     return;

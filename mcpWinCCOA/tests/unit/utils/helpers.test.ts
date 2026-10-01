@@ -319,6 +319,19 @@ describe('logWinccoaError', () => {
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy.mock.calls[0]).toHaveLength(1);
     expect(String(warnSpy.mock.calls[0][0])).toContain('DP does not exist');
+    expect(String(warnSpy.mock.calls[0][0])).toContain('[71] DP does not exist');
+    expect(String(warnSpy.mock.calls[0][0])).not.toContain('at ');
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(logSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not repeat the code when the message already starts with it', () => {
+    const err = Object.assign(new Error('71, DP does not exist, X'), { code: 71 });
+    logWinccoaError('Error getting type name for X', err);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    const line = String(warnSpy.mock.calls[0][0]);
+    expect(line).toContain('71, DP does not exist');
+    expect(line).not.toContain('[71]');
     expect(String(warnSpy.mock.calls[0][0])).not.toContain('at ');
     expect(errorSpy).not.toHaveBeenCalled();
     expect(logSpy).not.toHaveBeenCalled();
