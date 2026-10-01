@@ -11,7 +11,8 @@ import {
   createSuccessResponse,
   createErrorResponse,
   validateDatapointElementsForGet,
-  describeWinccoaError
+  describeWinccoaError,
+  logWinccoaError
 } from '../../utils/helpers.js';
 import * as log from '../../utils/logger.js';
 import type { ServerContext } from '../../types/index.js';
@@ -77,7 +78,7 @@ Only the type NAMES are returned. Use dp-type-get to read the element structure 
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error('Error getting datapoint types:', error);
+        logWinccoaError('Error getting datapoint types', error);
         return createErrorResponse(`Failed to get datapoint types: ${errorMessage}`);
       }
     }
@@ -155,7 +156,7 @@ Only the type NAMES are returned. Use dp-type-get to read the element structure 
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error('Error getting datapoints:', error);
+        logWinccoaError('Error getting datapoints', error);
         return createErrorResponse(`Failed to get datapoints: ${errorMessage}`);
       }
     }
@@ -242,7 +243,7 @@ returned with "partial": true and a "failures" list ({dpe, error, errorCode}).`,
         // values that are readable plus an exact per-element error, and it only
         // costs extra calls on the failure path.
         if (dpeArray.length > 1) {
-          log.warn(`Batched read of ${dpeArray.length} elements failed, retrying individually: ${described.message}`);
+          logWinccoaError(`Batched read of ${dpeArray.length} elements failed, retrying individually`, error);
 
           const values: any[] = [];
           const failures: Array<{ dpe: string; error: string; errorCode?: number }> = [];
@@ -298,7 +299,7 @@ returned with "partial": true and a "failures" list ({dpe, error, errorCode}).`,
           });
         }
 
-        console.error(`Error getting values: ${described.message}`);
+        logWinccoaError('Error getting values', error, dpeArray.length === 1 ? dpeArray[0] : undefined);
 
         // Handle WinCC OA specific errors
         if (described.code === 71) {

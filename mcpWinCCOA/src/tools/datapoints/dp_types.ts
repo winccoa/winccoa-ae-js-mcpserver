@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { createSuccessResponse, createErrorResponse, winccoaErrorResponse } from '../../utils/helpers.js';
+import { createSuccessResponse, createErrorResponse, winccoaErrorResponse, logWinccoaError } from '../../utils/helpers.js';
 import { DpeType } from '../../types/winccoa/constants.js';
 import type { ServerContext } from '../../types/index.js';
 
@@ -52,7 +52,7 @@ including all elements, their data types, and structural relationships.`,
             : `Structured type: address an element via its child name, e.g. "System1:myDp.<child>"`
         });
       } catch (error) {
-        console.error(`Error getting datapoint type ${dpType}:`, error);
+        logWinccoaError(`Error getting datapoint type ${dpType}`, error);
         return winccoaErrorResponse(`Failed to get datapoint type ${dpType}`, error);
       }
     }
@@ -83,7 +83,7 @@ Example: {"dpName": "Valve17.opening"} might return {"success": true, "data": {"
         }
         return createSuccessResponse({ dpName, typeName: result });
       } catch (error) {
-        console.error(`Error getting type name for ${dpName}:`, error);
+        logWinccoaError(`Error getting type name for ${dpName}`, error, dpName);
         return winccoaErrorResponse(`Failed to get type name for ${dpName}`, error, dpName);
       }
     }

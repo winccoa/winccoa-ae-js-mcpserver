@@ -9,6 +9,7 @@ import type {
   McpToolResponse,
   DatapointChild
 } from '../types/index.js';
+import * as log from './logger.js';
 
 /**
  * Filter datapoint type names, dropping internal types (starting with _) unless requested
@@ -130,6 +131,32 @@ export function describeWinccoaError(e: unknown, fallbackDpe?: string): WinccoaE
     message,
     details
   };
+}
+
+/** Codes meaning "the client asked for something that does not exist": expected, not a server fault. */
+const EXPECTED_NOT_FOUND_CODES: ReadonlySet<number> = new Set([71, 57, 19]);
+
+/**
+ * Log a caught WinCC OA error as a single line.
+ *
+ * Expected not-found codes (71 DP does not exist, 57 DP type does not exist,
+ * 19 attribute not in config) are client mistakes and go out at warn level.
+ * Everything else is logged at error level; the stack is added only at
+ * MCP_LOG_LEVEL=debug. The error object itself is never dumped.
+ *
+ * @param context - What was being attempted, e.g. "Error getting type name for X"
+ * @param e - Caught error
+ * @param fallbackDpe - DPE the caller requested
+ */
+export function logWinccoaError(context: string, e: unknown, fallbackDpe?: string): void {
+  const described = describeWinccoaError(e, fallbackDpe);
+  const line = `${context}: ${described.code !== undefined ? `[${described.code}] ` : ''}${described.message}`;
+  if (described.code !== undefined && EXPECTED_NOT_FOUND_CODES.has(described.code)) {
+    log.warn(line);
+    return;
+  }
+  log.error(line);
+  if (e instanceof Error && e.stack) log.debug(e.stack);
 }
 
 /** errorType per WinCC OA error code, for winccoaErrorResponse. */

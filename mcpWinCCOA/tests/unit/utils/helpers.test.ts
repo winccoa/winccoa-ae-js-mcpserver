@@ -5,7 +5,7 @@
  * a running WinCC OA instance.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   createSuccessResponse,
   createErrorResponse,
@@ -13,7 +13,8 @@ import {
   isValidDatapointElementForGet,
   validateDatapointElementsForGet,
   filterTypeNames,
-  describeWinccoaError
+  describeWinccoaError,
+  logWinccoaError
 } from '../../../src/utils/helpers.js';
 
 // ---------------------------------------------------------------------------
@@ -286,5 +287,53 @@ describe('describeWinccoaError', () => {
     const described = describeWinccoaError(oaError(9399, 'multiple errors', oaError(71, 'DP does not exist, A')));
     expect(described.code).toBe(71);
     expect(described.details).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// logWinccoaError
+// ---------------------------------------------------------------------------
+
+describe('logWinccoaError', () => {
+  const origLevel = process.env.MCP_LOG_LEVEL;
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+  let errorSpy: ReturnType<typeof vi.spyOn>;
+  let logSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    delete process.env.MCP_LOG_LEVEL;
+    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    if (origLevel === undefined) delete process.env.MCP_LOG_LEVEL;
+    else process.env.MCP_LOG_LEVEL = origLevel;
+  });
+
+  it('logs code 71 as a single warn line without stack', () => {
+    const err = Object.assign(new Error('DP does not exist'), { code: 71 });
+    logWinccoaError('Error getting type name for X', err);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0]).toHaveLength(1);
+    expect(String(warnSpy.mock.calls[0][0])).toContain('DP does not exist');
+    expect(String(warnSpy.mock.calls[0][0])).not.toContain('at ');
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(logSpy).not.toHaveBeenCalled();
+  });
+
+  it('logs other codes at error level, stack only in debug', () => {
+    const err = Object.assign(new Error('boom'), { code: 5 });
+    logWinccoaError('ctx', err);
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).not.toHaveBeenCalled();
+    expect(logSpy).not.toHaveBeenCalled();
+
+    process.env.MCP_LOG_LEVEL = 'debug';
+    logWinccoaError('ctx', err);
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    expect(String(logSpy.mock.calls[0][0])).toContain('boom');
   });
 });

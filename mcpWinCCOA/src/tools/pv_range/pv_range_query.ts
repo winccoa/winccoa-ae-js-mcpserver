@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { createSuccessResponse, createErrorResponse, describeWinccoaError } from '../../utils/helpers.js';
+import { createSuccessResponse, createErrorResponse, describeWinccoaError, logWinccoaError } from '../../utils/helpers.js';
 import * as log from '../../utils/logger.js';
 import { DpConfigType } from '../../types/winccoa/constants.js';
 import type { ServerContext } from '../../types/index.js';
@@ -149,11 +149,7 @@ export function registerTools(server: any, context: ServerContext): number {
         });
 
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error('========================================');
-        console.error('✗ PV Range Query Failed');
-        console.error('========================================');
-        console.error(`Error: ${errorMessage}`);
+        logWinccoaError('PV Range Query Failed', error);
 
         const described = describeWinccoaError(error);
         return createErrorResponse(`Failed to query pv_range configuration: ${described.message}`, {
