@@ -60,6 +60,41 @@ archive.
   `start:http` pointing at the flat files, `"private": true`). The sanitizer (`manifest.cjs`) is shared
   with `zip.mjs`, so the npm and SIOS paths produce the same manifest. Re-running `npm install` in the
   install directory no longer fails.
+- **Icon tools were missing from every session.** The icon tools derived the WinCC OA project
+  directory by walking a fixed six levels up from their own module, which is only right for a git
+  clone inside `<project>/javascript/`; it was wrong in all shipped layouts (flat npm/SIOS install,
+  the old archive) and for symlinked development checkouts, and pointed outside the project. Because the
+  icons directory was created in the constructor, the resulting `EACCES` made `icons/icon` fail to
+  load, so `create-custom-icon`, `list-custom-icons`, `delete-custom-icon` and `list-ix-icons` were
+  absent, logged as a SEVERE error on every request. The project path is now resolved via the WinCC OA
+  manager (`winccoa.getPaths()`), with `WINCCOA_PROJ_PATH` as an optional override and `PVSS_II` / a
+  search for `config/config` as fallbacks, and logged once at startup. The directory is created only
+  when an icon is written; an unknown or unwritable path now yields a clear tool error
+  (`ICON_STORAGE_UNAVAILABLE`) instead of a failed module.
+- **`list-ix-icons` only knew a small built-in subset.** `IX_ICONS_LIST.txt` (1,407 icons) was read from
+  `docs/`, which is not shipped; it is now copied into the build (`helpers/icons/`) and included in the
+  npm package and the SIOS archive.
+- **Tool loader summary counted configured modules, not loaded ones.** "Registered N tools from M
+  modules" now reports the modules that actually registered and names the ones that failed. A module
+  that fails to load is reported once per process instead of on every HTTP request (per-request detail
+  with `MCP_LOG_LEVEL=debug`).
+- **`get-value` hid the actual error.** Errors forwarded only the outer 9399 "multiple errors (N errors
+  total)"; the message and `errorCode` now carry the inner WinCC OA errors (a missing datapoint yields
+  71 / `DP_NOT_EXIST`), and `details` lists them. The same applies to `failures[]` of a partial
+  multi-element read.
+- **`get-datapoints` pagination data never reached the client, and an empty result was empty.** The
+  `metadata` field was not part of the MCP tool result and was dropped. The tool now returns one JSON
+  envelope `{success, data: {datapoints, totalCount, start, limit, returnedCount, hasMore}}`, also when
+  nothing matches (`datapoints: []`). **Output shape change.**
+- **`get-dpTypes` returned bare text items** and its description promised complete structure
+  information. It now returns `{success, data: {types, count, withInternals}}` (names only; use
+  `dp-type-get` for the structure). **Output shape change.**
+- **`dp-type-name` description** claimed an empty string on error; it documents the actual
+  `{dpName, typeName}` / error envelope now, and an empty type name is reported as an error.
+- **`pv-range-query` logged a SEVERE error with stack trace for every element without a range
+  config.** "Attribute does not exist in this config" (code 19) is now treated as "not configured"
+  (debug log only), the config type is read first, other errors return an error envelope, and the
+  description states that `{configured: false, ...}` is returned rather than `null`.
 
 ### Documentation
 
