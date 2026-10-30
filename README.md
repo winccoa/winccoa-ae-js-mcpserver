@@ -160,7 +160,7 @@ Edit the configuration file:
   "mcpServers": {
     "winccoa": {
       "command": "npx",
-      "args": ["mcp-remote", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
+      "args": ["mcp-remote@0.15.2", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
     }
   }
 }
@@ -177,7 +177,7 @@ Edit the configuration file:
   "mcpServers": {
     "winccoa": {
       "command": "cmd",
-      "args": ["/c", "npx", "mcp-remote", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
+      "args": ["/c", "npx", "mcp-remote@0.15.2", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
     }
   }
 }
@@ -203,7 +203,7 @@ This method uses `cmd` to properly handle paths with spaces in Windows.
 > `--allow-http`**:
 >
 > ```json
-> "args": ["mcp-remote", "https://winccoaserver:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
+> "args": ["mcp-remote@0.15.2", "https://winccoaserver:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
 > ```
 >
 > Use `--allow-http` only on a network you fully control, and treat the token as compromised if you do.
@@ -215,7 +215,7 @@ If you accept that risk, add the `--allow-http` flag to the `mcp-remote` args:
   "mcpServers": {
     "winccoa": {
       "command": "npx",
-      "args": ["mcp-remote", "http://winccoaserver:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE", "--allow-http"]
+      "args": ["mcp-remote@0.15.2", "http://winccoaserver:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE", "--allow-http"]
     }
   }
 }
@@ -235,13 +235,8 @@ claude mcp add --transport http winccoa http://localhost:3000/mcp --header "Auth
 claude mcp add --transport http winccoa https://winccoaserver:3000/mcp --header "Authorization: Bearer your-secure-token-here"
 ```
 
-> **🔒** Only if the server has no TLS, and only on a network you fully control, add `--allow-http`.
-> The token then crosses the network in clear text — see the warning under
-> [Remote Host](#remote-host-transport-security) above.
-
-```bash
-claude mcp add --transport http winccoa http://winccoaserver:3000/mcp --header "Authorization: Bearer your-secure-token-here" --allow-http
-```
+`claude mcp add` also accepts an `http://` URL without an extra flag.
+The token then crosses the network in clear text — see [Remote Host](#remote-host-transport-security) above.
 
 ## Documentation
 

@@ -133,7 +133,7 @@ Use `cmd` to properly handle paths with spaces:
   "mcpServers": {
     "winccoa": {
       "command": "cmd",
-      "args": ["/c", "npx", "mcp-remote", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
+      "args": ["/c", "npx", "mcp-remote@0.15.2", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
     }
   }
 }
