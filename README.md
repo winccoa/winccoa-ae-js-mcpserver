@@ -160,7 +160,7 @@ Edit the configuration file:
   "mcpServers": {
     "winccoa": {
       "command": "npx",
-      "args": ["mcp-remote@0.15.2", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
+      "args": ["mcp-remote@0.14.3", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
     }
   }
 }
@@ -177,7 +177,7 @@ Edit the configuration file:
   "mcpServers": {
     "winccoa": {
       "command": "cmd",
-      "args": ["/c", "npx", "mcp-remote@0.15.2", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
+      "args": ["/c", "npx", "mcp-remote@0.14.3", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
     }
   }
 }
@@ -203,7 +203,7 @@ This method uses `cmd` to properly handle paths with spaces in Windows.
 > `--allow-http`**:
 >
 > ```json
-> "args": ["mcp-remote@0.15.2", "https://winccoaserver:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
+> "args": ["mcp-remote@0.14.3", "https://winccoaserver:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
 > ```
 >
 > Use `--allow-http` only on a network you fully control, and treat the token as compromised if you do.
@@ -215,7 +215,7 @@ If you accept that risk, add the `--allow-http` flag to the `mcp-remote` args:
   "mcpServers": {
     "winccoa": {
       "command": "npx",
-      "args": ["mcp-remote@0.15.2", "http://winccoaserver:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE", "--allow-http"]
+      "args": ["mcp-remote@0.14.3", "http://winccoaserver:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE", "--allow-http"]
     }
   }
 }
@@ -236,7 +236,8 @@ claude mcp add --transport http winccoa https://winccoaserver:3000/mcp --header 
 ```
 
 `claude mcp add` also accepts an `http://` URL without an extra flag.
-The token then crosses the network in clear text — see [Remote Host](#remote-host-transport-security) above.
+
+> **🔒** Over plain HTTP the bearer token and all traffic cross the network in clear text. Only do this on a network you fully control; otherwise enable TLS and use `https://`.
 
 ## Documentation
 
