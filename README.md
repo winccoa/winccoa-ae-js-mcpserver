@@ -44,7 +44,11 @@ industrial cybersecurity, please visit www.siemens.com/cybersecurity-industry.
 
 See [LEGAL_INFO.md](LEGAL_INFO.md) for the full cybersecurity information and the application-example
 terms of use. Note in particular that this server's HTTP transport is **unencrypted by default** — see
-[Transport security](#remote-host-transport-security) below.
+[Transport security](#remote-host-transport-security) below. If you connect through the `mcp-remote`
+bridge, also read the [`mcp-remote` security note](#mcp-remote-security-note).
+
+To report a vulnerability in this server, see [SECURITY.md](SECURITY.md): vulnerabilities are reported
+to Siemens ProductCERT only, never through public issues.
 
 ## ℹ️ Version Requirements
 
@@ -170,6 +174,38 @@ Edit the configuration file:
 
 **🔒 Transport security:** the `http://localhost:3000/mcp` URL above is plain HTTP. That is acceptable **only** because the traffic never leaves the machine. As soon as the server and the client are on different hosts, the bearer token and every request and response cross the network in clear text — see [Remote Host](#remote-host-transport-security) below and enable TLS.
 
+<a id="mcp-remote-security-note"></a>
+> **🔒 `mcp-remote` security note.** `mcp-remote` is a third-party bridge with two reported
+> OAuth-discovery issues, both CWE-918 (server-side request forgery): CVE-2026-51994 (critical, CVSS 9.1,
+> `resource_metadata`) and CVE-2026-51995 (high, CVSS 7.5, authorization-server metadata). An endpoint
+> that answers with a `401` challenge can make the bridge fetch metadata from an origin of the
+> endpoint's choosing, and the bridge may send the statically configured `Authorization: Bearer` token
+> along to that origin. The published records list 0.1.32 to 0.1.38. A fix is listed only for
+> CVE-2026-51995 (0.1.39, which according to the reporter changes scope handling only);
+> CVE-2026-51994 has no fixed release. The reporter
+> [states](https://github.com/winccoa/winccoa-ae-js-mcpserver/issues/40) that both behaviours still
+> reproduce on 0.14.3 (the version pinned here) and on the latest 0.16.5. We have not verified this
+> ourselves, so the pin stays at 0.14.3 until a fix is verified.
+>
+> **All clients:**
+>
+> - Use `https://` (TLS) for every non-`localhost` connection. Plain `http://` is only for `localhost`
+>   or a network you fully control, because the token travels in clear text (see
+>   [Remote Host](#remote-host-transport-security)).
+> - Prefer a client with native Streamable HTTP support, for example `claude mcp add --transport http …`
+>   in [Claude Code](#5-connect-claude-code-cli). It avoids the `mcp-remote` bridge and these two CVEs.
+> - Use a dedicated MCP token (`MCP_API_TOKEN`) that is used for nothing else, enable only the tools you
+>   need (see the Warning section above), and rotate the token regularly and whenever you suspect
+>   exposure.
+>
+> **If you use `mcp-remote` (for example with Claude Desktop):**
+>
+> - Point it only at a WinCC OA MCP server you operate and trust, over `https://`. A malicious endpoint,
+>   or an on-path attacker on a plain-HTTP connection, can trigger the discovery.
+> - Avoid `--allow-http` except for `localhost`, where it is not needed. If you still use it on a
+>   network you fully control, treat the token as exposed.
+> - Restrict the client host's outbound network access to the WinCC OA server.
+
 **Windows Path Issue:** If you encounter the error `"C:\Program" is either misspelled or could not be found`, use this alternative configuration:
 
 ```json
@@ -207,6 +243,8 @@ This method uses `cmd` to properly handle paths with spaces in Windows.
 > ```
 >
 > Use `--allow-http` only on a network you fully control, and treat the token as compromised if you do.
+> Over plain HTTP an on-path attacker can also trigger `mcp-remote`'s OAuth discovery and capture the
+> token — see the [`mcp-remote` security note](#mcp-remote-security-note).
 
 If you accept that risk, add the `--allow-http` flag to the `mcp-remote` args:
 
@@ -273,7 +311,7 @@ See **[🔧 TOOLS.md](docs/TOOLS.md)** for complete tool documentation.
 ## Support
 
 - **Repository:** [GitHub](https://github.com/winccoa/winccoa-ae-js-mcpserver)
-- **Issues:** [Report Bug](https://github.com/winccoa/winccoa-ae-js-mcpserver/issues)
+- **Issues:** [Report Bug](https://github.com/winccoa/winccoa-ae-js-mcpserver/issues) (not vulnerabilities: see [SECURITY.md](SECURITY.md))
 - **WinCC OA Docs:** [Official Documentation](https://www.winccoa.com/product-information/documentation.html)
 
 ## License
