@@ -99,7 +99,7 @@ Edit Claude Desktop config (File > Settings > Developer > Edit Config):
   "mcpServers": {
     "winccoa": {
       "command": "npx",
-      "args": ["mcp-remote", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
+      "args": ["mcp-remote@0.14.3", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
     }
   }
 }
@@ -112,7 +112,7 @@ Edit Claude Desktop config (File > Settings > Developer > Edit Config):
   "mcpServers": {
     "winccoa": {
       "command": "cmd",
-      "args": ["/c", "npx", "mcp-remote", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
+      "args": ["/c", "npx", "mcp-remote@0.14.3", "http://localhost:3000/mcp", "--header", "Authorization: Bearer YOUR_TOKEN_HERE"]
     }
   }
 }
