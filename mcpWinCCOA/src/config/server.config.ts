@@ -5,6 +5,7 @@
  */
 
 import { readFileSync } from 'fs';
+import { resolveRequestLimits } from './limits.js';
 import type { ServerConfig, SslCertificates } from '../types/index.js';
 
 // Server deployment configuration
@@ -119,7 +120,7 @@ export function isLoopbackHost(host: string): boolean {
  * @returns Array of validation error messages (empty if valid)
  */
 export function validateConfig(): string[] {
-  const errors: string[] = [];
+  const errors: string[] = [...resolveRequestLimits().errors];
 
   // Always require an API token.
   if (!serverConfig.http.auth.token) {

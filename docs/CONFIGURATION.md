@@ -74,6 +74,33 @@ IP_WHITELIST=192.168.1.10,192.168.1.20
 IP_BLACKLIST=192.168.1.100
 ```
 
+### Request Size Limits
+
+Two caps bound what a single request can make the server allocate
+([GHSA-46jr-4wx8-v453](https://github.com/advisories/GHSA-46jr-4wx8-v453)).
+
+```env
+# Max array elements + object keys in one tool call's arguments, summed over
+# all nesting levels (HTTP and STDIO). Default: 1000
+MCP_MAX_TOOL_INPUT_ELEMENTS=1000
+
+# Max HTTP request body size (HTTP mode only). Bytes, or with a kb/mb suffix.
+# Default: 1mb
+MCP_MAX_REQUEST_BODY=1mb
+```
+
+- A tool call over the element limit is rejected with an `isError` result
+  ("arguments contain more than the maximum of N elements"); the tool is not run.
+- A body over `MCP_MAX_REQUEST_BODY` gets HTTP `413` with a JSON-RPC error body.
+- A batch `dpSet` costs about 3 elements per datapoint (the entry plus its `dpeName` and `value`
+  keys), a batch `dpGet` about 1. The default of 1000 fits the recommended maximum of 300
+  datapoints per `dpGet`/`dpSet` call (about 900 elements for `dpSet`). Split larger batches into
+  several calls. Typical calls use fewer than 100 elements. Raise the limit only if you really
+  need larger calls.
+- Invalid values (zero, negative, non-numeric) stop the server at startup with a clear message;
+  a limit can not be switched off.
+- Tools that accept JSON as a string (for example `dpSet`) are only bounded by the body limit.
+
 ### CORS Settings
 
 ```env

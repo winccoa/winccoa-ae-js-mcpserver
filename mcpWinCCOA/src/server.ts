@@ -13,6 +13,7 @@ import path from "path";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import type { ServerContext } from "./types/index.js";
+import { resolveRequestLimits } from "./config/limits.js";
 
 /**
  * Memoised process-wide context.
@@ -288,10 +289,20 @@ function registerInstructionResources(
 export async function createServer(
   context: ServerContext,
 ): Promise<McpServer> {
-  const server = new McpServer({
-    name: "WinCC OA Extended with CNS/UNS",
-    version: loadVersion(),
-  });
+  // GHSA-46jr-4wx8-v453: the SDK's element cap is off unless set. Applies to
+  // both transports; an invalid env value must fail loudly, not disable it.
+  const limits = resolveRequestLimits();
+  if (limits.errors.length > 0) {
+    throw new Error(`Invalid configuration:\n  - ${limits.errors.join("\n  - ")}`);
+  }
+
+  const server = new McpServer(
+    {
+      name: "WinCC OA Extended with CNS/UNS",
+      version: loadVersion(),
+    },
+    { maxToolInputElements: limits.maxToolInputElements },
+  );
 
   registerInstructionResources(server, context);
   await loadAllTools(server, context);

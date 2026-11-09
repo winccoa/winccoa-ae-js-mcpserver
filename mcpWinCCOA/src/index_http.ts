@@ -59,6 +59,7 @@ let serverConfig: any;
 let loadSSLConfig: () => any;
 let validateConfig: () => string[];
 let isLoopbackHost: (host: string) => boolean;
+let resolveRequestLimits: () => { maxRequestBodyBytes: number };
 let https: any;
 let cors: any;
 let rateLimit: any;
@@ -80,6 +81,8 @@ try {
   ({ serverConfig, loadSSLConfig, validateConfig, isLoopbackHost } = await import('./config/server.config.js'));
   console.log('✅ server.config.js imported');
   log.debug('🔍 serverConfig.http.auth.token:', serverConfig.http.auth.token ? 'SET' : 'NOT SET');
+
+  ({ resolveRequestLimits } = await import('./config/limits.js'));
 
   console.log('🔄 Importing https...');
   https = await import('https');
@@ -108,8 +111,11 @@ let context: ServerContext;
 
 console.log('🔄 Setting up Express server...');
 const app = express();
-app.use(express.json());
-console.log('✅ Express JSON middleware enabled');
+// Explicit body cap (GHSA-46jr-4wx8-v453). An invalid MCP_MAX_REQUEST_BODY falls
+// back to the default here and is reported by validateConfig() in start().
+const maxRequestBodyBytes = resolveRequestLimits().maxRequestBodyBytes;
+app.use(express.json({ limit: maxRequestBodyBytes }));
+console.log(`✅ Express JSON middleware enabled (body limit ${maxRequestBodyBytes} bytes)`);
 
 // Apply CORS if enabled
 if (serverConfig.http.cors.enabled) {
@@ -255,6 +261,31 @@ function authenticate(req: Request, res: Response, next: NextFunction): void {
   log.debug('✅ Authentication successful');
   next();
 }
+
+// Body-parser failures must be JSON-RPC errors, not express's HTML error page.
+app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
+  if (res.headersSent) return next(err);
+  if (err?.type === 'entity.too.large' || err?.status === 413) {
+    res.status(413).json({
+      jsonrpc: '2.0',
+      error: {
+        code: -32600,
+        message: `Request body too large (limit ${maxRequestBodyBytes} bytes)`
+      },
+      id: null
+    });
+    return;
+  }
+  if (err?.type === 'entity.parse.failed' || err?.status === 400) {
+    res.status(400).json({
+      jsonrpc: '2.0',
+      error: { code: -32700, message: 'Parse error: invalid JSON' },
+      id: null
+    });
+    return;
+  }
+  next(err);
+});
 
 app.post('/mcp', authenticate, async (req: Request, res: Response) => {
   log.debug('📨 Received POST MCP request');
