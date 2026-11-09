@@ -3,9 +3,9 @@
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
   "version": 1,
-  "serialNumber": "urn:uuid:34a58741-37bd-4158-b9d4-9ae134ba3c08",
+  "serialNumber": "urn:uuid:7c6d83b8-b95f-43ce-aaf1-6bc73b0d9c67",
   "metadata": {
-    "timestamp": "2026-11-09T08:18:25.481Z",
+    "timestamp": "2026-11-09T13:50:56.111Z",
     "tools": {
       "components": [
         {
@@ -99,8 +99,8 @@
       "type": "application",
       "name": "winccoa-mcp-server",
       "group": "@etm-professional-control",
-      "version": "1.5.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2",
+      "version": "1.5.3",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3",
       "author": "ETM Control GesmbH",
       "description": "MCP Server for WinCC OA with field-specific configurations",
       "licenses": [
@@ -111,7 +111,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40etm-professional-control/winccoa-mcp-server@1.5.2?vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2Fwinccoa%2Fwinccoa-ae-js-mcpserver.git",
+      "purl": "pkg:npm/%40etm-professional-control/winccoa-mcp-server@1.5.3?vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2Fwinccoa%2Fwinccoa-ae-js-mcpserver.git",
       "externalReferences": [
         {
           "url": "git+https://github.com/winccoa/winccoa-ae-js-mcpserver.git",
@@ -147,7 +147,7 @@
       "name": "sdk",
       "group": "@modelcontextprotocol",
       "version": "1.32.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|@modelcontextprotocol/sdk@1.32.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|@modelcontextprotocol/sdk@1.32.0",
       "licenses": [
         {
           "license": {
@@ -181,7 +181,7 @@
           "type": "library",
           "name": "express-rate-limit",
           "version": "8.7.0",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|@modelcontextprotocol/sdk@1.32.0|express-rate-limit@8.7.0",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|@modelcontextprotocol/sdk@1.32.0|express-rate-limit@8.7.0",
           "licenses": [
             {
               "license": {
@@ -217,7 +217,7 @@
       "type": "library",
       "name": "cors",
       "version": "2.8.6",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|cors@2.8.6",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|cors@2.8.6",
       "licenses": [
         {
           "license": {
@@ -251,7 +251,7 @@
       "type": "library",
       "name": "dotenv",
       "version": "16.6.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|dotenv@16.6.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|dotenv@16.6.1",
       "licenses": [
         {
           "license": {
@@ -285,7 +285,7 @@
       "type": "library",
       "name": "express-rate-limit",
       "version": "7.5.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|express-rate-limit@7.5.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|express-rate-limit@7.5.1",
       "licenses": [
         {
           "license": {
@@ -319,7 +319,7 @@
       "type": "library",
       "name": "express",
       "version": "5.2.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|express@5.2.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|express@5.2.1",
       "licenses": [
         {
           "license": {
@@ -353,7 +353,7 @@
       "type": "library",
       "name": "mcp-remote",
       "version": "0.14.3",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3",
       "licenses": [
         {
           "license": {
@@ -387,7 +387,7 @@
           "type": "library",
           "name": "express",
           "version": "4.22.3",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|express@4.22.3",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|express@4.22.3",
           "licenses": [
             {
               "license": {
@@ -421,7 +421,7 @@
           "type": "library",
           "name": "accepts",
           "version": "1.3.8",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|accepts@1.3.8",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|accepts@1.3.8",
           "licenses": [
             {
               "license": {
@@ -455,7 +455,7 @@
           "type": "library",
           "name": "body-parser",
           "version": "1.20.9",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|body-parser@1.20.9",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|body-parser@1.20.9",
           "licenses": [
             {
               "license": {
@@ -489,7 +489,7 @@
           "type": "library",
           "name": "content-disposition",
           "version": "0.5.4",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|content-disposition@0.5.4",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|content-disposition@0.5.4",
           "licenses": [
             {
               "license": {
@@ -523,7 +523,7 @@
           "type": "library",
           "name": "cookie-signature",
           "version": "1.0.7",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|cookie-signature@1.0.7",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|cookie-signature@1.0.7",
           "licenses": [
             {
               "license": {
@@ -557,7 +557,7 @@
           "type": "library",
           "name": "debug",
           "version": "2.6.9",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|debug@2.6.9",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|debug@2.6.9",
           "licenses": [
             {
               "license": {
@@ -591,7 +591,7 @@
               "type": "library",
               "name": "ms",
               "version": "2.0.0",
-              "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|debug@2.6.9|ms@2.0.0",
+              "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|debug@2.6.9|ms@2.0.0",
               "licenses": [
                 {
                   "license": {
@@ -627,7 +627,7 @@
           "type": "library",
           "name": "finalhandler",
           "version": "1.3.2",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|finalhandler@1.3.2",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|finalhandler@1.3.2",
           "licenses": [
             {
               "license": {
@@ -661,7 +661,7 @@
           "type": "library",
           "name": "fresh",
           "version": "0.5.2",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|fresh@0.5.2",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|fresh@0.5.2",
           "licenses": [
             {
               "license": {
@@ -695,7 +695,7 @@
           "type": "library",
           "name": "merge-descriptors",
           "version": "1.0.3",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|merge-descriptors@1.0.3",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|merge-descriptors@1.0.3",
           "licenses": [
             {
               "license": {
@@ -729,7 +729,7 @@
           "type": "library",
           "name": "path-to-regexp",
           "version": "0.1.13",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|path-to-regexp@0.1.13",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|path-to-regexp@0.1.13",
           "licenses": [
             {
               "license": {
@@ -763,7 +763,7 @@
           "type": "library",
           "name": "send",
           "version": "0.19.2",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|send@0.19.2",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|send@0.19.2",
           "licenses": [
             {
               "license": {
@@ -797,7 +797,7 @@
           "type": "library",
           "name": "serve-static",
           "version": "1.16.3",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|serve-static@1.16.3",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|serve-static@1.16.3",
           "licenses": [
             {
               "license": {
@@ -831,7 +831,7 @@
           "type": "library",
           "name": "type-is",
           "version": "1.6.18",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|type-is@1.6.18",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|type-is@1.6.18",
           "licenses": [
             {
               "license": {
@@ -865,7 +865,7 @@
           "type": "library",
           "name": "mime-types",
           "version": "2.1.35",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|mime-types@2.1.35",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|mime-types@2.1.35",
           "licenses": [
             {
               "license": {
@@ -899,7 +899,7 @@
           "type": "library",
           "name": "negotiator",
           "version": "0.6.3",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|negotiator@0.6.3",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|negotiator@0.6.3",
           "licenses": [
             {
               "license": {
@@ -933,7 +933,7 @@
           "type": "library",
           "name": "iconv-lite",
           "version": "0.4.24",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|iconv-lite@0.4.24",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|iconv-lite@0.4.24",
           "licenses": [
             {
               "license": {
@@ -967,7 +967,7 @@
           "type": "library",
           "name": "raw-body",
           "version": "2.5.3",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|raw-body@2.5.3",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|raw-body@2.5.3",
           "licenses": [
             {
               "license": {
@@ -1001,7 +1001,7 @@
           "type": "library",
           "name": "media-typer",
           "version": "0.3.0",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|media-typer@0.3.0",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|media-typer@0.3.0",
           "licenses": [
             {
               "license": {
@@ -1035,7 +1035,7 @@
           "type": "library",
           "name": "mime-db",
           "version": "1.52.0",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|mime-db@1.52.0",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|mime-db@1.52.0",
           "licenses": [
             {
               "license": {
@@ -1071,7 +1071,7 @@
       "type": "library",
       "name": "zod",
       "version": "4.6.6",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|zod@4.6.6",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|zod@4.6.6",
       "licenses": [
         {
           "license": {
@@ -1106,7 +1106,7 @@
       "name": "node-server",
       "group": "@hono",
       "version": "2.1.6",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|@hono/node-server@2.1.6",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|@hono/node-server@2.1.6",
       "licenses": [
         {
           "license": {
@@ -1140,7 +1140,7 @@
       "type": "library",
       "name": "ajv-formats",
       "version": "3.0.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|ajv-formats@3.0.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|ajv-formats@3.0.1",
       "licenses": [
         {
           "license": {
@@ -1174,7 +1174,7 @@
       "type": "library",
       "name": "ajv",
       "version": "8.20.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|ajv@8.20.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|ajv@8.20.0",
       "licenses": [
         {
           "license": {
@@ -1208,7 +1208,7 @@
       "type": "library",
       "name": "content-type",
       "version": "1.0.5",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|content-type@1.0.5",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|content-type@1.0.5",
       "licenses": [
         {
           "license": {
@@ -1242,7 +1242,7 @@
       "type": "library",
       "name": "cross-spawn",
       "version": "7.0.6",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|cross-spawn@7.0.6",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|cross-spawn@7.0.6",
       "licenses": [
         {
           "license": {
@@ -1276,7 +1276,7 @@
       "type": "library",
       "name": "eventsource-parser",
       "version": "3.0.6",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|eventsource-parser@3.0.6",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|eventsource-parser@3.0.6",
       "licenses": [
         {
           "license": {
@@ -1310,7 +1310,7 @@
       "type": "library",
       "name": "eventsource",
       "version": "3.0.7",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|eventsource@3.0.7",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|eventsource@3.0.7",
       "licenses": [
         {
           "license": {
@@ -1344,7 +1344,7 @@
       "type": "library",
       "name": "hono",
       "version": "4.13.12",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|hono@4.13.12",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|hono@4.13.12",
       "licenses": [
         {
           "license": {
@@ -1378,7 +1378,7 @@
       "type": "library",
       "name": "jose",
       "version": "6.1.3",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|jose@6.1.3",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|jose@6.1.3",
       "licenses": [
         {
           "license": {
@@ -1412,7 +1412,7 @@
       "type": "library",
       "name": "json-schema-typed",
       "version": "8.0.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|json-schema-typed@8.0.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|json-schema-typed@8.0.2",
       "licenses": [
         {
           "license": {
@@ -1446,7 +1446,7 @@
       "type": "library",
       "name": "pkce-challenge",
       "version": "5.0.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|pkce-challenge@5.0.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|pkce-challenge@5.0.1",
       "licenses": [
         {
           "license": {
@@ -1480,7 +1480,7 @@
       "type": "library",
       "name": "raw-body",
       "version": "3.0.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|raw-body@3.0.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|raw-body@3.0.2",
       "licenses": [
         {
           "license": {
@@ -1514,7 +1514,7 @@
       "type": "library",
       "name": "zod-to-json-schema",
       "version": "3.25.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|zod-to-json-schema@3.25.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|zod-to-json-schema@3.25.1",
       "licenses": [
         {
           "license": {
@@ -1548,7 +1548,7 @@
       "type": "library",
       "name": "object-assign",
       "version": "4.1.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|object-assign@4.1.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|object-assign@4.1.1",
       "licenses": [
         {
           "license": {
@@ -1582,7 +1582,7 @@
       "type": "library",
       "name": "vary",
       "version": "1.1.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|vary@1.1.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|vary@1.1.2",
       "licenses": [
         {
           "license": {
@@ -1616,7 +1616,7 @@
       "type": "library",
       "name": "accepts",
       "version": "2.0.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|accepts@2.0.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|accepts@2.0.0",
       "licenses": [
         {
           "license": {
@@ -1650,7 +1650,7 @@
       "type": "library",
       "name": "body-parser",
       "version": "2.4.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|body-parser@2.4.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|body-parser@2.4.0",
       "licenses": [
         {
           "license": {
@@ -1684,7 +1684,7 @@
           "type": "library",
           "name": "content-type",
           "version": "2.1.0",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|body-parser@2.4.0|content-type@2.1.0",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|body-parser@2.4.0|content-type@2.1.0",
           "licenses": [
             {
               "license": {
@@ -1718,7 +1718,7 @@
           "type": "library",
           "name": "qs",
           "version": "6.17.1",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|body-parser@2.4.0|qs@6.17.1",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|body-parser@2.4.0|qs@6.17.1",
           "licenses": [
             {
               "license": {
@@ -1754,7 +1754,7 @@
       "type": "library",
       "name": "content-disposition",
       "version": "1.0.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|content-disposition@1.0.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|content-disposition@1.0.1",
       "licenses": [
         {
           "license": {
@@ -1788,7 +1788,7 @@
       "type": "library",
       "name": "cookie-signature",
       "version": "1.2.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|cookie-signature@1.2.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|cookie-signature@1.2.2",
       "licenses": [
         {
           "license": {
@@ -1822,7 +1822,7 @@
       "type": "library",
       "name": "cookie",
       "version": "0.7.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|cookie@0.7.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|cookie@0.7.2",
       "licenses": [
         {
           "license": {
@@ -1856,7 +1856,7 @@
       "type": "library",
       "name": "debug",
       "version": "4.4.3",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|debug@4.4.3",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|debug@4.4.3",
       "licenses": [
         {
           "license": {
@@ -1890,7 +1890,7 @@
       "type": "library",
       "name": "depd",
       "version": "2.0.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|depd@2.0.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|depd@2.0.0",
       "licenses": [
         {
           "license": {
@@ -1924,7 +1924,7 @@
       "type": "library",
       "name": "encodeurl",
       "version": "2.0.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|encodeurl@2.0.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|encodeurl@2.0.0",
       "licenses": [
         {
           "license": {
@@ -1958,7 +1958,7 @@
       "type": "library",
       "name": "escape-html",
       "version": "1.0.3",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|escape-html@1.0.3",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|escape-html@1.0.3",
       "licenses": [
         {
           "license": {
@@ -1992,7 +1992,7 @@
       "type": "library",
       "name": "etag",
       "version": "1.8.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|etag@1.8.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|etag@1.8.1",
       "licenses": [
         {
           "license": {
@@ -2026,7 +2026,7 @@
       "type": "library",
       "name": "finalhandler",
       "version": "2.1.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|finalhandler@2.1.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|finalhandler@2.1.1",
       "licenses": [
         {
           "license": {
@@ -2060,7 +2060,7 @@
       "type": "library",
       "name": "fresh",
       "version": "2.0.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|fresh@2.0.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|fresh@2.0.0",
       "licenses": [
         {
           "license": {
@@ -2094,7 +2094,7 @@
       "type": "library",
       "name": "http-errors",
       "version": "2.0.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|http-errors@2.0.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|http-errors@2.0.1",
       "licenses": [
         {
           "license": {
@@ -2128,7 +2128,7 @@
       "type": "library",
       "name": "merge-descriptors",
       "version": "2.0.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|merge-descriptors@2.0.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|merge-descriptors@2.0.0",
       "licenses": [
         {
           "license": {
@@ -2162,7 +2162,7 @@
       "type": "library",
       "name": "mime-types",
       "version": "3.0.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mime-types@3.0.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mime-types@3.0.2",
       "licenses": [
         {
           "license": {
@@ -2196,7 +2196,7 @@
       "type": "library",
       "name": "on-finished",
       "version": "2.4.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|on-finished@2.4.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|on-finished@2.4.1",
       "licenses": [
         {
           "license": {
@@ -2230,7 +2230,7 @@
       "type": "library",
       "name": "once",
       "version": "1.4.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|once@1.4.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|once@1.4.0",
       "licenses": [
         {
           "license": {
@@ -2264,7 +2264,7 @@
       "type": "library",
       "name": "parseurl",
       "version": "1.3.3",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|parseurl@1.3.3",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|parseurl@1.3.3",
       "licenses": [
         {
           "license": {
@@ -2298,7 +2298,7 @@
       "type": "library",
       "name": "proxy-addr",
       "version": "2.0.8",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|proxy-addr@2.0.8",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|proxy-addr@2.0.8",
       "licenses": [
         {
           "license": {
@@ -2332,7 +2332,7 @@
       "type": "library",
       "name": "qs",
       "version": "6.16.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|qs@6.16.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|qs@6.16.2",
       "licenses": [
         {
           "license": {
@@ -2366,7 +2366,7 @@
       "type": "library",
       "name": "range-parser",
       "version": "1.2.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|range-parser@1.2.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|range-parser@1.2.1",
       "licenses": [
         {
           "license": {
@@ -2400,7 +2400,7 @@
       "type": "library",
       "name": "router",
       "version": "2.2.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|router@2.2.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|router@2.2.0",
       "licenses": [
         {
           "license": {
@@ -2434,7 +2434,7 @@
       "type": "library",
       "name": "send",
       "version": "1.2.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|send@1.2.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|send@1.2.1",
       "licenses": [
         {
           "license": {
@@ -2468,7 +2468,7 @@
       "type": "library",
       "name": "serve-static",
       "version": "2.2.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|serve-static@2.2.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|serve-static@2.2.1",
       "licenses": [
         {
           "license": {
@@ -2502,7 +2502,7 @@
       "type": "library",
       "name": "statuses",
       "version": "2.0.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|statuses@2.0.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|statuses@2.0.2",
       "licenses": [
         {
           "license": {
@@ -2536,7 +2536,7 @@
       "type": "library",
       "name": "type-is",
       "version": "2.1.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|type-is@2.1.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|type-is@2.1.0",
       "licenses": [
         {
           "license": {
@@ -2570,7 +2570,7 @@
           "type": "library",
           "name": "content-type",
           "version": "2.1.0",
-          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|type-is@2.1.0|content-type@2.1.0",
+          "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|type-is@2.1.0|content-type@2.1.0",
           "licenses": [
             {
               "license": {
@@ -2606,7 +2606,7 @@
       "type": "library",
       "name": "open",
       "version": "10.2.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|open@10.2.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|open@10.2.0",
       "licenses": [
         {
           "license": {
@@ -2640,7 +2640,7 @@
       "type": "library",
       "name": "strict-url-sanitise",
       "version": "0.0.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|strict-url-sanitise@0.0.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|strict-url-sanitise@0.0.1",
       "licenses": [
         {
           "license": {
@@ -2674,7 +2674,7 @@
       "type": "library",
       "name": "undici",
       "version": "7.30.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|undici@7.30.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|undici@7.30.2",
       "licenses": [
         {
           "license": {
@@ -2708,7 +2708,7 @@
       "type": "library",
       "name": "fast-deep-equal",
       "version": "3.1.3",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|fast-deep-equal@3.1.3",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|fast-deep-equal@3.1.3",
       "licenses": [
         {
           "license": {
@@ -2742,7 +2742,7 @@
       "type": "library",
       "name": "fast-uri",
       "version": "3.1.9",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|fast-uri@3.1.9",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|fast-uri@3.1.9",
       "licenses": [
         {
           "license": {
@@ -2776,7 +2776,7 @@
       "type": "library",
       "name": "json-schema-traverse",
       "version": "1.0.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|json-schema-traverse@1.0.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|json-schema-traverse@1.0.0",
       "licenses": [
         {
           "license": {
@@ -2810,7 +2810,7 @@
       "type": "library",
       "name": "require-from-string",
       "version": "2.0.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|require-from-string@2.0.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|require-from-string@2.0.2",
       "licenses": [
         {
           "license": {
@@ -2844,7 +2844,7 @@
       "type": "library",
       "name": "path-key",
       "version": "3.1.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|path-key@3.1.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|path-key@3.1.1",
       "licenses": [
         {
           "license": {
@@ -2878,7 +2878,7 @@
       "type": "library",
       "name": "shebang-command",
       "version": "2.0.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|shebang-command@2.0.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|shebang-command@2.0.0",
       "licenses": [
         {
           "license": {
@@ -2912,7 +2912,7 @@
       "type": "library",
       "name": "which",
       "version": "2.0.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|which@2.0.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|which@2.0.2",
       "licenses": [
         {
           "license": {
@@ -2946,7 +2946,7 @@
       "type": "library",
       "name": "ip-address",
       "version": "10.7.6",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|ip-address@10.7.6",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|ip-address@10.7.6",
       "licenses": [
         {
           "license": {
@@ -2980,7 +2980,7 @@
       "type": "library",
       "name": "bytes",
       "version": "3.1.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|bytes@3.1.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|bytes@3.1.2",
       "licenses": [
         {
           "license": {
@@ -3014,7 +3014,7 @@
       "type": "library",
       "name": "iconv-lite",
       "version": "0.7.3",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|iconv-lite@0.7.3",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|iconv-lite@0.7.3",
       "licenses": [
         {
           "license": {
@@ -3048,7 +3048,7 @@
       "type": "library",
       "name": "unpipe",
       "version": "1.0.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|unpipe@1.0.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|unpipe@1.0.0",
       "licenses": [
         {
           "license": {
@@ -3082,7 +3082,7 @@
       "type": "library",
       "name": "negotiator",
       "version": "1.0.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|negotiator@1.0.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|negotiator@1.0.0",
       "licenses": [
         {
           "license": {
@@ -3116,7 +3116,7 @@
       "type": "library",
       "name": "ms",
       "version": "2.1.3",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|ms@2.1.3",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|ms@2.1.3",
       "licenses": [
         {
           "license": {
@@ -3150,7 +3150,7 @@
       "type": "library",
       "name": "inherits",
       "version": "2.0.4",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|inherits@2.0.4",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|inherits@2.0.4",
       "licenses": [
         {
           "license": {
@@ -3184,7 +3184,7 @@
       "type": "library",
       "name": "setprototypeof",
       "version": "1.2.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|setprototypeof@1.2.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|setprototypeof@1.2.0",
       "licenses": [
         {
           "license": {
@@ -3218,7 +3218,7 @@
       "type": "library",
       "name": "toidentifier",
       "version": "1.0.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|toidentifier@1.0.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|toidentifier@1.0.1",
       "licenses": [
         {
           "license": {
@@ -3252,7 +3252,7 @@
       "type": "library",
       "name": "mime-db",
       "version": "1.54.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mime-db@1.54.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mime-db@1.54.0",
       "licenses": [
         {
           "license": {
@@ -3286,7 +3286,7 @@
       "type": "library",
       "name": "ee-first",
       "version": "1.1.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|ee-first@1.1.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|ee-first@1.1.1",
       "licenses": [
         {
           "license": {
@@ -3320,7 +3320,7 @@
       "type": "library",
       "name": "wrappy",
       "version": "1.0.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|wrappy@1.0.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|wrappy@1.0.2",
       "licenses": [
         {
           "license": {
@@ -3354,7 +3354,7 @@
       "type": "library",
       "name": "forwarded",
       "version": "0.2.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|forwarded@0.2.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|forwarded@0.2.0",
       "licenses": [
         {
           "license": {
@@ -3388,7 +3388,7 @@
       "type": "library",
       "name": "ipaddr.js",
       "version": "1.9.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|ipaddr.js@1.9.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|ipaddr.js@1.9.1",
       "licenses": [
         {
           "license": {
@@ -3422,7 +3422,7 @@
       "type": "library",
       "name": "es-define-property",
       "version": "1.0.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|es-define-property@1.0.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|es-define-property@1.0.1",
       "licenses": [
         {
           "license": {
@@ -3456,7 +3456,7 @@
       "type": "library",
       "name": "side-channel",
       "version": "1.1.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|side-channel@1.1.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|side-channel@1.1.1",
       "licenses": [
         {
           "license": {
@@ -3490,7 +3490,7 @@
       "type": "library",
       "name": "is-promise",
       "version": "4.0.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|is-promise@4.0.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|is-promise@4.0.0",
       "licenses": [
         {
           "license": {
@@ -3524,7 +3524,7 @@
       "type": "library",
       "name": "path-to-regexp",
       "version": "8.4.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|path-to-regexp@8.4.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|path-to-regexp@8.4.2",
       "licenses": [
         {
           "license": {
@@ -3558,7 +3558,7 @@
       "type": "library",
       "name": "media-typer",
       "version": "1.1.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|media-typer@1.1.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|media-typer@1.1.0",
       "licenses": [
         {
           "license": {
@@ -3592,7 +3592,7 @@
       "type": "library",
       "name": "array-flatten",
       "version": "1.1.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|array-flatten@1.1.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|array-flatten@1.1.1",
       "licenses": [
         {
           "license": {
@@ -3626,7 +3626,7 @@
       "type": "library",
       "name": "methods",
       "version": "1.1.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|methods@1.1.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|methods@1.1.2",
       "licenses": [
         {
           "license": {
@@ -3660,7 +3660,7 @@
       "type": "library",
       "name": "safe-buffer",
       "version": "5.2.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|safe-buffer@5.2.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|safe-buffer@5.2.1",
       "licenses": [
         {
           "license": {
@@ -3694,7 +3694,7 @@
       "type": "library",
       "name": "utils-merge",
       "version": "1.0.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|utils-merge@1.0.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|utils-merge@1.0.1",
       "licenses": [
         {
           "license": {
@@ -3728,7 +3728,7 @@
       "type": "library",
       "name": "default-browser",
       "version": "5.4.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|default-browser@5.4.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|default-browser@5.4.0",
       "licenses": [
         {
           "license": {
@@ -3762,7 +3762,7 @@
       "type": "library",
       "name": "define-lazy-prop",
       "version": "3.0.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|define-lazy-prop@3.0.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|define-lazy-prop@3.0.0",
       "licenses": [
         {
           "license": {
@@ -3796,7 +3796,7 @@
       "type": "library",
       "name": "is-inside-container",
       "version": "1.0.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|is-inside-container@1.0.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|is-inside-container@1.0.0",
       "licenses": [
         {
           "license": {
@@ -3830,7 +3830,7 @@
       "type": "library",
       "name": "wsl-utils",
       "version": "0.1.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|wsl-utils@0.1.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|wsl-utils@0.1.0",
       "licenses": [
         {
           "license": {
@@ -3864,7 +3864,7 @@
       "type": "library",
       "name": "shebang-regex",
       "version": "3.0.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|shebang-regex@3.0.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|shebang-regex@3.0.0",
       "licenses": [
         {
           "license": {
@@ -3898,7 +3898,7 @@
       "type": "library",
       "name": "isexe",
       "version": "2.0.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|isexe@2.0.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|isexe@2.0.0",
       "licenses": [
         {
           "license": {
@@ -3932,7 +3932,7 @@
       "type": "library",
       "name": "safer-buffer",
       "version": "2.1.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|safer-buffer@2.1.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|safer-buffer@2.1.2",
       "licenses": [
         {
           "license": {
@@ -3966,7 +3966,7 @@
       "type": "library",
       "name": "es-errors",
       "version": "1.3.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|es-errors@1.3.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|es-errors@1.3.0",
       "licenses": [
         {
           "license": {
@@ -4000,7 +4000,7 @@
       "type": "library",
       "name": "object-inspect",
       "version": "1.13.4",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|object-inspect@1.13.4",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|object-inspect@1.13.4",
       "licenses": [
         {
           "license": {
@@ -4034,7 +4034,7 @@
       "type": "library",
       "name": "side-channel-list",
       "version": "1.0.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|side-channel-list@1.0.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|side-channel-list@1.0.1",
       "licenses": [
         {
           "license": {
@@ -4068,7 +4068,7 @@
       "type": "library",
       "name": "side-channel-map",
       "version": "1.0.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|side-channel-map@1.0.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|side-channel-map@1.0.1",
       "licenses": [
         {
           "license": {
@@ -4102,7 +4102,7 @@
       "type": "library",
       "name": "side-channel-weakmap",
       "version": "1.0.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|side-channel-weakmap@1.0.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|side-channel-weakmap@1.0.2",
       "licenses": [
         {
           "license": {
@@ -4136,7 +4136,7 @@
       "type": "library",
       "name": "destroy",
       "version": "1.2.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|destroy@1.2.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|destroy@1.2.0",
       "licenses": [
         {
           "license": {
@@ -4170,7 +4170,7 @@
       "type": "library",
       "name": "mime",
       "version": "1.6.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mime@1.6.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mime@1.6.0",
       "licenses": [
         {
           "license": {
@@ -4204,7 +4204,7 @@
       "type": "library",
       "name": "bundle-name",
       "version": "4.1.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|bundle-name@4.1.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|bundle-name@4.1.0",
       "licenses": [
         {
           "license": {
@@ -4238,7 +4238,7 @@
       "type": "library",
       "name": "default-browser-id",
       "version": "5.0.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|default-browser-id@5.0.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|default-browser-id@5.0.1",
       "licenses": [
         {
           "license": {
@@ -4272,7 +4272,7 @@
       "type": "library",
       "name": "is-docker",
       "version": "3.0.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|is-docker@3.0.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|is-docker@3.0.0",
       "licenses": [
         {
           "license": {
@@ -4306,7 +4306,7 @@
       "type": "library",
       "name": "is-wsl",
       "version": "3.1.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|is-wsl@3.1.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|is-wsl@3.1.0",
       "licenses": [
         {
           "license": {
@@ -4340,7 +4340,7 @@
       "type": "library",
       "name": "call-bound",
       "version": "1.0.4",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|call-bound@1.0.4",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|call-bound@1.0.4",
       "licenses": [
         {
           "license": {
@@ -4374,7 +4374,7 @@
       "type": "library",
       "name": "get-intrinsic",
       "version": "1.3.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|get-intrinsic@1.3.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|get-intrinsic@1.3.0",
       "licenses": [
         {
           "license": {
@@ -4408,7 +4408,7 @@
       "type": "library",
       "name": "run-applescript",
       "version": "7.1.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|run-applescript@7.1.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|run-applescript@7.1.0",
       "licenses": [
         {
           "license": {
@@ -4442,7 +4442,7 @@
       "type": "library",
       "name": "call-bind-apply-helpers",
       "version": "1.0.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|call-bind-apply-helpers@1.0.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|call-bind-apply-helpers@1.0.2",
       "licenses": [
         {
           "license": {
@@ -4476,7 +4476,7 @@
       "type": "library",
       "name": "es-object-atoms",
       "version": "1.1.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|es-object-atoms@1.1.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|es-object-atoms@1.1.1",
       "licenses": [
         {
           "license": {
@@ -4510,7 +4510,7 @@
       "type": "library",
       "name": "function-bind",
       "version": "1.1.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|function-bind@1.1.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|function-bind@1.1.2",
       "licenses": [
         {
           "license": {
@@ -4544,7 +4544,7 @@
       "type": "library",
       "name": "get-proto",
       "version": "1.0.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|get-proto@1.0.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|get-proto@1.0.1",
       "licenses": [
         {
           "license": {
@@ -4578,7 +4578,7 @@
       "type": "library",
       "name": "gopd",
       "version": "1.2.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|gopd@1.2.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|gopd@1.2.0",
       "licenses": [
         {
           "license": {
@@ -4612,7 +4612,7 @@
       "type": "library",
       "name": "has-symbols",
       "version": "1.1.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|has-symbols@1.1.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|has-symbols@1.1.0",
       "licenses": [
         {
           "license": {
@@ -4646,7 +4646,7 @@
       "type": "library",
       "name": "hasown",
       "version": "2.0.2",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|hasown@2.0.2",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|hasown@2.0.2",
       "licenses": [
         {
           "license": {
@@ -4680,7 +4680,7 @@
       "type": "library",
       "name": "math-intrinsics",
       "version": "1.1.0",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|math-intrinsics@1.1.0",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|math-intrinsics@1.1.0",
       "licenses": [
         {
           "license": {
@@ -4714,7 +4714,7 @@
       "type": "library",
       "name": "dunder-proto",
       "version": "1.0.1",
-      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|dunder-proto@1.0.1",
+      "bom-ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|dunder-proto@1.0.1",
       "licenses": [
         {
           "license": {
@@ -4747,794 +4747,794 @@
   ],
   "dependencies": [
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|@modelcontextprotocol/sdk@1.32.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|cors@2.8.6",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|dotenv@16.6.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|express-rate-limit@7.5.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|express@5.2.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|zod@4.6.6"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|@modelcontextprotocol/sdk@1.32.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|cors@2.8.6",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|dotenv@16.6.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|express-rate-limit@7.5.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|express@5.2.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|zod@4.6.6"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|@modelcontextprotocol/sdk@1.32.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|@modelcontextprotocol/sdk@1.32.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|@hono/node-server@2.1.6",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|ajv-formats@3.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|ajv@8.20.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|content-type@1.0.5",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|cors@2.8.6",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|cross-spawn@7.0.6",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|eventsource-parser@3.0.6",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|eventsource@3.0.7",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|@modelcontextprotocol/sdk@1.32.0|express-rate-limit@8.7.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|express@5.2.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|hono@4.13.12",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|jose@6.1.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|json-schema-typed@8.0.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|pkce-challenge@5.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|raw-body@3.0.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|zod-to-json-schema@3.25.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|zod@4.6.6"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|@hono/node-server@2.1.6",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|ajv-formats@3.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|ajv@8.20.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|content-type@1.0.5",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|cors@2.8.6",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|cross-spawn@7.0.6",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|eventsource-parser@3.0.6",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|eventsource@3.0.7",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|@modelcontextprotocol/sdk@1.32.0|express-rate-limit@8.7.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|express@5.2.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|hono@4.13.12",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|jose@6.1.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|json-schema-typed@8.0.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|pkce-challenge@5.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|raw-body@3.0.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|zod-to-json-schema@3.25.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|zod@4.6.6"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|@modelcontextprotocol/sdk@1.32.0|express-rate-limit@8.7.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|@modelcontextprotocol/sdk@1.32.0|express-rate-limit@8.7.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|debug@4.4.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|express@5.2.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|ip-address@10.7.6"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|debug@4.4.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|express@5.2.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|ip-address@10.7.6"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|cors@2.8.6",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|cors@2.8.6",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|object-assign@4.1.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|vary@1.1.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|object-assign@4.1.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|vary@1.1.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|dotenv@16.6.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|dotenv@16.6.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|express-rate-limit@7.5.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|express-rate-limit@7.5.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|express@5.2.1"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|express@5.2.1"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|express@5.2.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|express@5.2.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|accepts@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|body-parser@2.4.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|content-disposition@1.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|content-type@1.0.5",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|cookie-signature@1.2.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|cookie@0.7.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|debug@4.4.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|depd@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|encodeurl@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|escape-html@1.0.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|etag@1.8.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|finalhandler@2.1.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|fresh@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|http-errors@2.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|merge-descriptors@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mime-types@3.0.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|on-finished@2.4.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|once@1.4.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|parseurl@1.3.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|proxy-addr@2.0.8",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|qs@6.16.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|range-parser@1.2.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|router@2.2.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|send@1.2.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|serve-static@2.2.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|statuses@2.0.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|type-is@2.1.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|vary@1.1.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|accepts@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|body-parser@2.4.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|content-disposition@1.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|content-type@1.0.5",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|cookie-signature@1.2.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|cookie@0.7.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|debug@4.4.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|depd@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|encodeurl@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|escape-html@1.0.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|etag@1.8.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|finalhandler@2.1.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|fresh@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|http-errors@2.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|merge-descriptors@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mime-types@3.0.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|on-finished@2.4.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|once@1.4.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|parseurl@1.3.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|proxy-addr@2.0.8",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|qs@6.16.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|range-parser@1.2.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|router@2.2.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|send@1.2.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|serve-static@2.2.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|statuses@2.0.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|type-is@2.1.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|vary@1.1.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|express@4.22.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|open@10.2.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|strict-url-sanitise@0.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|undici@7.30.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|express@4.22.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|open@10.2.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|strict-url-sanitise@0.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|undici@7.30.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|express@4.22.3",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|express@4.22.3",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|accepts@1.3.8",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|array-flatten@1.1.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|body-parser@1.20.9",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|content-disposition@0.5.4",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|content-type@1.0.5",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|cookie-signature@1.0.7",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|cookie@0.7.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|debug@2.6.9",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|depd@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|encodeurl@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|escape-html@1.0.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|etag@1.8.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|finalhandler@1.3.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|fresh@0.5.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|http-errors@2.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|merge-descriptors@1.0.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|methods@1.1.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|on-finished@2.4.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|parseurl@1.3.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|path-to-regexp@0.1.13",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|proxy-addr@2.0.8",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|qs@6.16.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|range-parser@1.2.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|safe-buffer@5.2.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|send@0.19.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|serve-static@1.16.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|setprototypeof@1.2.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|statuses@2.0.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|type-is@1.6.18",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|utils-merge@1.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|vary@1.1.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|accepts@1.3.8",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|array-flatten@1.1.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|body-parser@1.20.9",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|content-disposition@0.5.4",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|content-type@1.0.5",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|cookie-signature@1.0.7",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|cookie@0.7.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|debug@2.6.9",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|depd@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|encodeurl@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|escape-html@1.0.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|etag@1.8.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|finalhandler@1.3.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|fresh@0.5.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|http-errors@2.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|merge-descriptors@1.0.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|methods@1.1.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|on-finished@2.4.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|parseurl@1.3.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|path-to-regexp@0.1.13",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|proxy-addr@2.0.8",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|qs@6.16.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|range-parser@1.2.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|safe-buffer@5.2.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|send@0.19.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|serve-static@1.16.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|setprototypeof@1.2.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|statuses@2.0.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|type-is@1.6.18",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|utils-merge@1.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|vary@1.1.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|accepts@1.3.8",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|accepts@1.3.8",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|mime-types@2.1.35",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|negotiator@0.6.3"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|mime-types@2.1.35",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|negotiator@0.6.3"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|body-parser@1.20.9",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|body-parser@1.20.9",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|bytes@3.1.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|content-type@1.0.5",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|debug@2.6.9",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|depd@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|destroy@1.2.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|http-errors@2.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|iconv-lite@0.4.24",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|on-finished@2.4.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|qs@6.16.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|raw-body@2.5.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|type-is@1.6.18",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|unpipe@1.0.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|bytes@3.1.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|content-type@1.0.5",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|debug@2.6.9",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|depd@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|destroy@1.2.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|http-errors@2.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|iconv-lite@0.4.24",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|on-finished@2.4.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|qs@6.16.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|raw-body@2.5.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|type-is@1.6.18",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|unpipe@1.0.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|content-disposition@0.5.4",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|content-disposition@0.5.4",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|safe-buffer@5.2.1"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|safe-buffer@5.2.1"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|cookie-signature@1.0.7"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|cookie-signature@1.0.7"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|debug@2.6.9",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|debug@2.6.9",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|debug@2.6.9|ms@2.0.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|debug@2.6.9|ms@2.0.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|debug@2.6.9|ms@2.0.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|debug@2.6.9|ms@2.0.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|finalhandler@1.3.2",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|finalhandler@1.3.2",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|debug@2.6.9",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|encodeurl@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|escape-html@1.0.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|on-finished@2.4.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|parseurl@1.3.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|statuses@2.0.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|unpipe@1.0.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|debug@2.6.9",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|encodeurl@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|escape-html@1.0.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|on-finished@2.4.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|parseurl@1.3.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|statuses@2.0.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|unpipe@1.0.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|fresh@0.5.2"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|fresh@0.5.2"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|merge-descriptors@1.0.3"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|merge-descriptors@1.0.3"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|path-to-regexp@0.1.13"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|path-to-regexp@0.1.13"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|send@0.19.2",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|send@0.19.2",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|debug@2.6.9",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|depd@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|destroy@1.2.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|encodeurl@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|escape-html@1.0.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|etag@1.8.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|fresh@0.5.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|http-errors@2.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mime@1.6.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|ms@2.1.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|on-finished@2.4.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|range-parser@1.2.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|statuses@2.0.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|debug@2.6.9",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|depd@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|destroy@1.2.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|encodeurl@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|escape-html@1.0.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|etag@1.8.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|fresh@0.5.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|http-errors@2.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mime@1.6.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|ms@2.1.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|on-finished@2.4.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|range-parser@1.2.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|statuses@2.0.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|serve-static@1.16.3",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|serve-static@1.16.3",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|encodeurl@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|escape-html@1.0.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|parseurl@1.3.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|send@0.19.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|encodeurl@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|escape-html@1.0.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|parseurl@1.3.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|send@0.19.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|type-is@1.6.18",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|type-is@1.6.18",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|media-typer@0.3.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|mime-types@2.1.35"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|media-typer@0.3.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|mime-types@2.1.35"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|mime-types@2.1.35",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|mime-types@2.1.35",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|mime-db@1.52.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|mime-db@1.52.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|negotiator@0.6.3"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|negotiator@0.6.3"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|iconv-lite@0.4.24",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|iconv-lite@0.4.24",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|safer-buffer@2.1.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|safer-buffer@2.1.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|raw-body@2.5.3",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|raw-body@2.5.3",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|bytes@3.1.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|http-errors@2.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|iconv-lite@0.4.24",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|unpipe@1.0.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|bytes@3.1.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|http-errors@2.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|iconv-lite@0.4.24",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|unpipe@1.0.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|media-typer@0.3.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|media-typer@0.3.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mcp-remote@0.14.3|mime-db@1.52.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mcp-remote@0.14.3|mime-db@1.52.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|zod@4.6.6"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|zod@4.6.6"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|@hono/node-server@2.1.6",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|@hono/node-server@2.1.6",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|hono@4.13.12"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|hono@4.13.12"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|ajv-formats@3.0.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|ajv-formats@3.0.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|ajv@8.20.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|ajv@8.20.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|ajv@8.20.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|ajv@8.20.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|fast-deep-equal@3.1.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|fast-uri@3.1.9",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|json-schema-traverse@1.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|require-from-string@2.0.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|fast-deep-equal@3.1.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|fast-uri@3.1.9",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|json-schema-traverse@1.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|require-from-string@2.0.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|content-type@1.0.5"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|content-type@1.0.5"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|cross-spawn@7.0.6",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|cross-spawn@7.0.6",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|path-key@3.1.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|shebang-command@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|which@2.0.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|path-key@3.1.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|shebang-command@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|which@2.0.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|eventsource-parser@3.0.6"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|eventsource-parser@3.0.6"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|eventsource@3.0.7",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|eventsource@3.0.7",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|eventsource-parser@3.0.6"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|eventsource-parser@3.0.6"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|hono@4.13.12"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|hono@4.13.12"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|jose@6.1.3"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|jose@6.1.3"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|json-schema-typed@8.0.2"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|json-schema-typed@8.0.2"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|pkce-challenge@5.0.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|pkce-challenge@5.0.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|raw-body@3.0.2",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|raw-body@3.0.2",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|bytes@3.1.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|http-errors@2.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|iconv-lite@0.7.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|unpipe@1.0.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|bytes@3.1.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|http-errors@2.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|iconv-lite@0.7.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|unpipe@1.0.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|zod-to-json-schema@3.25.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|zod-to-json-schema@3.25.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|zod@4.6.6"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|zod@4.6.6"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|object-assign@4.1.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|object-assign@4.1.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|vary@1.1.2"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|vary@1.1.2"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|accepts@2.0.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|accepts@2.0.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mime-types@3.0.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|negotiator@1.0.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mime-types@3.0.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|negotiator@1.0.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|body-parser@2.4.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|body-parser@2.4.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|bytes@3.1.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|body-parser@2.4.0|content-type@2.1.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|debug@4.4.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|http-errors@2.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|iconv-lite@0.7.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|on-finished@2.4.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|body-parser@2.4.0|qs@6.17.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|raw-body@3.0.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|type-is@2.1.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|bytes@3.1.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|body-parser@2.4.0|content-type@2.1.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|debug@4.4.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|http-errors@2.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|iconv-lite@0.7.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|on-finished@2.4.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|body-parser@2.4.0|qs@6.17.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|raw-body@3.0.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|type-is@2.1.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|body-parser@2.4.0|content-type@2.1.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|body-parser@2.4.0|content-type@2.1.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|body-parser@2.4.0|qs@6.17.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|body-parser@2.4.0|qs@6.17.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|es-define-property@1.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|side-channel@1.1.1"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|es-define-property@1.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|side-channel@1.1.1"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|content-disposition@1.0.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|content-disposition@1.0.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|cookie-signature@1.2.2"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|cookie-signature@1.2.2"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|cookie@0.7.2"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|cookie@0.7.2"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|debug@4.4.3",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|debug@4.4.3",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|ms@2.1.3"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|ms@2.1.3"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|depd@2.0.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|depd@2.0.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|encodeurl@2.0.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|encodeurl@2.0.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|escape-html@1.0.3"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|escape-html@1.0.3"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|etag@1.8.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|etag@1.8.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|finalhandler@2.1.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|finalhandler@2.1.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|debug@4.4.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|encodeurl@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|escape-html@1.0.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|on-finished@2.4.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|parseurl@1.3.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|statuses@2.0.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|debug@4.4.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|encodeurl@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|escape-html@1.0.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|on-finished@2.4.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|parseurl@1.3.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|statuses@2.0.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|fresh@2.0.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|fresh@2.0.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|http-errors@2.0.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|http-errors@2.0.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|depd@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|inherits@2.0.4",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|setprototypeof@1.2.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|statuses@2.0.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|toidentifier@1.0.1"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|depd@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|inherits@2.0.4",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|setprototypeof@1.2.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|statuses@2.0.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|toidentifier@1.0.1"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|merge-descriptors@2.0.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|merge-descriptors@2.0.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mime-types@3.0.2",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mime-types@3.0.2",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mime-db@1.54.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mime-db@1.54.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|on-finished@2.4.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|on-finished@2.4.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|ee-first@1.1.1"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|ee-first@1.1.1"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|once@1.4.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|once@1.4.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|wrappy@1.0.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|wrappy@1.0.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|parseurl@1.3.3"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|parseurl@1.3.3"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|proxy-addr@2.0.8",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|proxy-addr@2.0.8",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|forwarded@0.2.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|ipaddr.js@1.9.1"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|forwarded@0.2.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|ipaddr.js@1.9.1"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|qs@6.16.2",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|qs@6.16.2",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|es-define-property@1.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|side-channel@1.1.1"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|es-define-property@1.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|side-channel@1.1.1"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|range-parser@1.2.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|range-parser@1.2.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|router@2.2.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|router@2.2.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|debug@4.4.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|depd@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|is-promise@4.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|parseurl@1.3.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|path-to-regexp@8.4.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|debug@4.4.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|depd@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|is-promise@4.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|parseurl@1.3.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|path-to-regexp@8.4.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|send@1.2.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|send@1.2.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|debug@4.4.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|encodeurl@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|escape-html@1.0.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|etag@1.8.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|fresh@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|http-errors@2.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mime-types@3.0.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|ms@2.1.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|on-finished@2.4.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|range-parser@1.2.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|statuses@2.0.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|debug@4.4.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|encodeurl@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|escape-html@1.0.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|etag@1.8.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|fresh@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|http-errors@2.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mime-types@3.0.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|ms@2.1.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|on-finished@2.4.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|range-parser@1.2.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|statuses@2.0.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|serve-static@2.2.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|serve-static@2.2.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|encodeurl@2.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|escape-html@1.0.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|parseurl@1.3.3",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|send@1.2.1"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|encodeurl@2.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|escape-html@1.0.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|parseurl@1.3.3",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|send@1.2.1"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|statuses@2.0.2"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|statuses@2.0.2"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|type-is@2.1.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|type-is@2.1.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|type-is@2.1.0|content-type@2.1.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|media-typer@1.1.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|mime-types@3.0.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|type-is@2.1.0|content-type@2.1.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|media-typer@1.1.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|mime-types@3.0.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|type-is@2.1.0|content-type@2.1.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|type-is@2.1.0|content-type@2.1.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|open@10.2.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|open@10.2.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|default-browser@5.4.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|define-lazy-prop@3.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|is-inside-container@1.0.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|wsl-utils@0.1.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|default-browser@5.4.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|define-lazy-prop@3.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|is-inside-container@1.0.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|wsl-utils@0.1.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|strict-url-sanitise@0.0.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|strict-url-sanitise@0.0.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|undici@7.30.2"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|undici@7.30.2"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|fast-deep-equal@3.1.3"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|fast-deep-equal@3.1.3"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|fast-uri@3.1.9"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|fast-uri@3.1.9"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|json-schema-traverse@1.0.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|json-schema-traverse@1.0.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|require-from-string@2.0.2"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|require-from-string@2.0.2"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|path-key@3.1.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|path-key@3.1.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|shebang-command@2.0.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|shebang-command@2.0.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|shebang-regex@3.0.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|shebang-regex@3.0.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|which@2.0.2",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|which@2.0.2",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|isexe@2.0.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|isexe@2.0.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|ip-address@10.7.6"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|ip-address@10.7.6"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|bytes@3.1.2"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|bytes@3.1.2"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|iconv-lite@0.7.3",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|iconv-lite@0.7.3",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|safer-buffer@2.1.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|safer-buffer@2.1.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|unpipe@1.0.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|unpipe@1.0.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|negotiator@1.0.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|negotiator@1.0.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|ms@2.1.3"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|ms@2.1.3"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|inherits@2.0.4"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|inherits@2.0.4"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|setprototypeof@1.2.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|setprototypeof@1.2.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|toidentifier@1.0.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|toidentifier@1.0.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mime-db@1.54.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mime-db@1.54.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|ee-first@1.1.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|ee-first@1.1.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|wrappy@1.0.2"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|wrappy@1.0.2"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|forwarded@0.2.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|forwarded@0.2.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|ipaddr.js@1.9.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|ipaddr.js@1.9.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|es-define-property@1.0.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|es-define-property@1.0.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|side-channel@1.1.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|side-channel@1.1.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|es-errors@1.3.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|object-inspect@1.13.4",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|side-channel-list@1.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|side-channel-map@1.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|side-channel-weakmap@1.0.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|es-errors@1.3.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|object-inspect@1.13.4",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|side-channel-list@1.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|side-channel-map@1.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|side-channel-weakmap@1.0.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|is-promise@4.0.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|is-promise@4.0.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|path-to-regexp@8.4.2"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|path-to-regexp@8.4.2"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|media-typer@1.1.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|media-typer@1.1.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|array-flatten@1.1.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|array-flatten@1.1.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|methods@1.1.2"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|methods@1.1.2"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|safe-buffer@5.2.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|safe-buffer@5.2.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|utils-merge@1.0.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|utils-merge@1.0.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|default-browser@5.4.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|default-browser@5.4.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|bundle-name@4.1.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|default-browser-id@5.0.1"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|bundle-name@4.1.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|default-browser-id@5.0.1"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|define-lazy-prop@3.0.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|define-lazy-prop@3.0.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|is-inside-container@1.0.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|is-inside-container@1.0.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|is-docker@3.0.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|is-docker@3.0.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|wsl-utils@0.1.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|wsl-utils@0.1.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|is-wsl@3.1.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|is-wsl@3.1.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|shebang-regex@3.0.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|shebang-regex@3.0.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|isexe@2.0.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|isexe@2.0.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|safer-buffer@2.1.2"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|safer-buffer@2.1.2"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|es-errors@1.3.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|es-errors@1.3.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|object-inspect@1.13.4"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|object-inspect@1.13.4"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|side-channel-list@1.0.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|side-channel-list@1.0.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|es-errors@1.3.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|object-inspect@1.13.4"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|es-errors@1.3.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|object-inspect@1.13.4"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|side-channel-map@1.0.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|side-channel-map@1.0.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|call-bound@1.0.4",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|es-errors@1.3.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|get-intrinsic@1.3.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|object-inspect@1.13.4"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|call-bound@1.0.4",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|es-errors@1.3.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|get-intrinsic@1.3.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|object-inspect@1.13.4"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|side-channel-weakmap@1.0.2",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|side-channel-weakmap@1.0.2",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|call-bound@1.0.4",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|es-errors@1.3.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|get-intrinsic@1.3.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|object-inspect@1.13.4",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|side-channel-map@1.0.1"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|call-bound@1.0.4",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|es-errors@1.3.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|get-intrinsic@1.3.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|object-inspect@1.13.4",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|side-channel-map@1.0.1"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|destroy@1.2.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|destroy@1.2.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|mime@1.6.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|mime@1.6.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|bundle-name@4.1.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|bundle-name@4.1.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|run-applescript@7.1.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|run-applescript@7.1.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|default-browser-id@5.0.1"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|default-browser-id@5.0.1"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|is-docker@3.0.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|is-docker@3.0.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|is-wsl@3.1.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|is-wsl@3.1.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|is-inside-container@1.0.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|is-inside-container@1.0.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|call-bound@1.0.4",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|call-bound@1.0.4",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|call-bind-apply-helpers@1.0.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|get-intrinsic@1.3.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|call-bind-apply-helpers@1.0.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|get-intrinsic@1.3.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|get-intrinsic@1.3.0",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|get-intrinsic@1.3.0",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|call-bind-apply-helpers@1.0.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|es-define-property@1.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|es-errors@1.3.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|es-object-atoms@1.1.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|function-bind@1.1.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|get-proto@1.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|gopd@1.2.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|has-symbols@1.1.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|hasown@2.0.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|math-intrinsics@1.1.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|call-bind-apply-helpers@1.0.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|es-define-property@1.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|es-errors@1.3.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|es-object-atoms@1.1.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|function-bind@1.1.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|get-proto@1.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|gopd@1.2.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|has-symbols@1.1.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|hasown@2.0.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|math-intrinsics@1.1.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|run-applescript@7.1.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|run-applescript@7.1.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|call-bind-apply-helpers@1.0.2",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|call-bind-apply-helpers@1.0.2",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|es-errors@1.3.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|function-bind@1.1.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|es-errors@1.3.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|function-bind@1.1.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|es-object-atoms@1.1.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|es-object-atoms@1.1.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|es-errors@1.3.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|es-errors@1.3.0"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|function-bind@1.1.2"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|function-bind@1.1.2"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|get-proto@1.0.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|get-proto@1.0.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|dunder-proto@1.0.1",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|es-object-atoms@1.1.1"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|dunder-proto@1.0.1",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|es-object-atoms@1.1.1"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|gopd@1.2.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|gopd@1.2.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|has-symbols@1.1.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|has-symbols@1.1.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|hasown@2.0.2",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|hasown@2.0.2",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|function-bind@1.1.2"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|function-bind@1.1.2"
       ]
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|math-intrinsics@1.1.0"
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|math-intrinsics@1.1.0"
     },
     {
-      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.2|dunder-proto@1.0.1",
+      "ref": "@etm-professional-control/winccoa-mcp-server@1.5.3|dunder-proto@1.0.1",
       "dependsOn": [
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|call-bind-apply-helpers@1.0.2",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|es-errors@1.3.0",
-        "@etm-professional-control/winccoa-mcp-server@1.5.2|gopd@1.2.0"
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|call-bind-apply-helpers@1.0.2",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|es-errors@1.3.0",
+        "@etm-professional-control/winccoa-mcp-server@1.5.3|gopd@1.2.0"
       ]
     }
   ]

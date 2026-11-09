@@ -4,7 +4,10 @@ All notable changes to the WinCC OA MCP Server are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.5.3] — 2026-11-09
+
+Documentation and security-guidance release. There are no code or dependency changes; the `mcp-remote`
+pin stays at 0.14.3.
 
 ### Security
 

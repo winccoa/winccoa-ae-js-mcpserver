@@ -1,6 +1,6 @@
 # WinCC OA MCP Server - Quick Start Guide
 
-**Version 1.5.2** | AI Integration for Industrial Automation
+**Version 1.5.3** | AI Integration for Industrial Automation
 
 This Model Context Protocol (MCP) server connects AI assistants to WinCC OA SCADA systems.
 
