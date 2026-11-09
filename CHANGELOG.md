@@ -4,6 +4,30 @@ All notable changes to the WinCC OA MCP Server are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Security
+
+- **`mcp-remote` OAuth metadata discovery (CVE-2026-51994, CVE-2026-51995) is documented as a known,
+  unfixed issue** ([#40](https://github.com/winccoa/winccoa-ae-js-mcpserver/issues/40), thanks to
+  playb0t). An endpoint's `401` challenge can make the bridge fetch metadata from an origin the endpoint
+  selects and send the statically configured Bearer token there. It is reported for 0.14.3 and for the
+  latest 0.16.5; no fixed release is known, so the pin stays at 0.14.3. The README has a new
+  `mcp-remote` security note: general rules for all clients (HTTPS beyond `localhost`, prefer native
+  Streamable HTTP clients, dedicated least-privilege token with rotation) and rules for `mcp-remote`
+  (trusted server only, no `--allow-http` beyond `localhost`, restricted outbound access).
+- **Clarified:** Siemens SVM notification 236904, cited for the 1.5.1 update to `mcp-remote` 0.14.3,
+  corresponds to CVE-2026-51995 (CVSS 7.5) and lists 0.1.39 as the fix. The reporter states the behaviour
+  still reproduces on 0.14.3 and 0.16.5, so it is not treated as resolved. CVE-2026-51994 (critical, CVSS
+  9.1) is not covered by that notification and has no fixed release. `OSS.md` says so.
+
+### Docs
+
+- New `SECURITY.md` with the supported versions; vulnerabilities are reported to Siemens ProductCERT.
+  Linked from the README's cybersecurity section.
+- The quick start no longer suggests adding `--allow-http` for a remote host; it points to TLS and the
+  `mcp-remote` security note. The troubleshooting guide links the note too.
+
 ## [1.5.2] — 2026-11-09
 
 Security release: MCP SDK 1.32.0, zod 4, and new request size limits.

@@ -118,7 +118,15 @@ Edit Claude Desktop config (File > Settings > Developer > Edit Config):
 }
 ```
 
-**Remote host?** Add `"--allow-http"` to the args array.
+**Remote host?** Enable TLS on the server and use an `https://` URL. `--allow-http` sends the token in
+clear text; use it only on a network you fully control
+([details](https://github.com/winccoa/winccoa-ae-js-mcpserver/blob/main/README.md#remote-host-transport-security)).
+
+**Security note:** `mcp-remote` has two reported OAuth-discovery issues (CVE-2026-51994, critical;
+CVE-2026-51995, high) that can expose the token to an endpoint-selected origin. Prefer a client with
+native HTTP support such as Claude Code below; if you use `mcp-remote`, connect it only to a server you
+trust, over HTTPS, with a dedicated token. See the
+[`mcp-remote` security note](https://github.com/winccoa/winccoa-ae-js-mcpserver/blob/main/README.md#mcp-remote-security-note).
 
 #### Claude Code (CLI)
 
@@ -151,4 +159,4 @@ Replace `YOUR_TOKEN_HERE` with the token from your `.env` file. Restart your AI 
 
 - Full documentation: https://github.com/winccoa/winccoa-ae-js-mcpserver
 - Tool reference: https://github.com/winccoa/winccoa-ae-js-mcpserver/blob/main/docs/TOOLS.md
-- Issues: https://github.com/winccoa/winccoa-ae-js-mcpserver/issues
+- Issues: https://github.com/winccoa/winccoa-ae-js-mcpserver/issues  (vulnerabilities: see https://github.com/winccoa/winccoa-ae-js-mcpserver/blob/main/SECURITY.md)

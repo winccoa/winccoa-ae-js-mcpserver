@@ -141,6 +141,9 @@ Use `cmd` to properly handle paths with spaces:
 
 This wraps the npx command in Windows Command Prompt, which correctly handles paths containing spaces.
 
+The same `mcp-remote` security constraints apply as for the direct `npx` form - see the
+[`mcp-remote` security note](../README.md#mcp-remote-security-note).
+
 ### "Invalid token" Errors
 
 **Symptoms:**
@@ -565,7 +568,9 @@ MCP_SSL_CA_PATH=/path/to/ca.pem   # optional
 ```
 
 See [Configuration → SSL/TLS](CONFIGURATION.md#ssltls-configuration) for the full option list. With
-TLS enabled, use an `https://` URL in your client and **do not** pass `--allow-http`.
+TLS enabled, use an `https://` URL in your client and **do not** pass `--allow-http`. For `mcp-remote`
+this also matters beyond eavesdropping: see the
+[`mcp-remote` security note](../README.md#mcp-remote-security-note).
 
 **Actual limitations:**
 
@@ -667,7 +672,7 @@ find src/tools -name "*.js" -type f
 
 ### Support Channels
 
-- **GitHub Issues:** [Report bugs](https://github.com/winccoa/winccoa-ae-js-mcpserver/issues)
+- **GitHub Issues:** [Report bugs](https://github.com/winccoa/winccoa-ae-js-mcpserver/issues) (not vulnerabilities: see [SECURITY.md](../SECURITY.md))
 - **Documentation:** [Official docs](https://www.winccoa.com/product-information/documentation.html)
 - **Community:** WinCC OA user forums and communities
 
