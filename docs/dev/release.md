@@ -345,7 +345,7 @@ Better approach: Publish fixed version immediately
 - [ ] **`mcpWinCCOA/QUICKSTART.md` "Version x.y.z" line bumped** (hardcoded, not checked by CI)
 - [ ] **`CHANGELOG.md` updated**
 - [ ] `npm audit --audit-level=high` clean locally
-- [ ] `OSS.md` reflects any dependency change, and SVM entries updated
+- [ ] `OSS.md` reflects any dependency change, and vilocify monitoring entries updated
 - [ ] NPM_TOKEN secret is configured
 - [ ] All changes committed and pushed
 - [ ] GitHub release created with a tag matching the bumped version

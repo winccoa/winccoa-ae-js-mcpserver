@@ -4,6 +4,47 @@ All notable changes to the WinCC OA MCP Server are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.5.2] — 2026-11-09
+
+Security release: MCP SDK 1.32.0, zod 4, and new request size limits.
+
+### ⚠️ Upgrade notes
+
+- **zod 3.25.76 → 4.6.6 (major).** zod is an internal dependency used for tool input schemas; the tool
+  names and JSON schemas exposed to MCP clients are unchanged and the full test suite passes. Nobody is
+  expected to import zod-dependent internals of this package; if you do, check the zod 4 migration guide.
+- **New request limits are on by default**: tool calls with more than 1,000 array elements and object
+  keys, and HTTP bodies over 1 MiB, are now rejected (see Security). Typical calls use under 100
+  elements, and 1,000 fits a 300-datapoint `dpSet` (the recommended maximum per `dpGet`/`dpSet` call;
+  split larger batches). Raise the limits with the new variables if you really need larger calls.
+
+### Security
+
+- **`@modelcontextprotocol/sdk` 1.30.0 → 1.32.0** fixes GHSA-f897-62hf-6gxq, GHSA-6qxp-vccf-f47h,
+  GHSA-46jr-4wx8-v453 and GHSA-22jm-h49p-29qw.
+- **GHSA-46jr-4wx8-v453 (one request exhausting server memory)**: the SDK fix is opt-in, so the
+  server now sets it. `McpServer` is created with `maxToolInputElements` (default 1000; over-limit
+  calls get an `isError` result) and the HTTP JSON parser has an explicit body limit (default 1 MiB;
+  oversized bodies get a JSON-RPC `413`, malformed JSON a JSON-RPC `400`).
+- **zod** 3.25.76 → 4.6.6 fixes GHSA-mrhx-c7xc-m3w5.
+- Transitive fixes: `proxy-addr` (critical, GHSA-jqcg-44mw-7w3h), `body-parser` (GHSA-27r3-jxmh-p828),
+  `undici`, and dev-only `vite` / `source-map-js`. `npm audit --audit-level=high` is clean. The remaining
+  moderate findings are dev-only (vitest, cyclonedx tooling) and are not shipped.
+
+### Added
+
+- `MCP_MAX_TOOL_INPUT_ELEMENTS` (default `1000`): maximum array elements plus object keys in one tool
+  call, HTTP and stdio.
+- `MCP_MAX_REQUEST_BODY` (default `1mb`, accepts bytes or `kb`/`mb`): maximum HTTP request body.
+  Invalid values stop the server at startup; the limits cannot be disabled.
+
+### Docs
+
+- `mcp-remote` is pinned to 0.14.3 in the client configuration examples, and `--allow-http` is removed
+  from the `claude mcp add` example ([#38](https://github.com/winccoa/winccoa-ae-js-mcpserver/pull/38),
+  thanks to playb0t).
+- Vulnerability tracking is now described as Siemens vulnerability monitoring (vilocify).
+
 ## [1.5.1] — 2026-09-30
 
 Maintenance and security release: Node.js 24 LTS, an `mcp-remote` security update, and a flat SIOS

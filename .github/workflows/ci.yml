@@ -144,7 +144,7 @@ jobs:
         working-directory: mcpWinCCOA
         # winccoa-manager is proprietary Siemens code supplied by the WinCC OA
         # installation and must never appear in a distributed SBOM. A component
-        # with no license, or a leaked local build path, also fails the SVM review.
+        # with no license, or a leaked local build path, also fails the vulnerability-monitoring (vilocify) review.
         run: |
           node -e "
             const s = require('./sbom.json');

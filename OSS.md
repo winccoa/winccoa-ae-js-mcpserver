@@ -34,13 +34,13 @@ machine-readable CycloneDX SBOM (`sbom.json`) is published with each release.
 
 | Component | Open Source Software [Yes/No] | Acknowledgements/Comment | License conditions and copyright notices |
 |-----------|------------------------------|-------------------------|----------------------------------------|
-| @modelcontextprotocol/sdk 1.30.0 | Yes | Model Context Protocol server/client SDK. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. Pinned above the advisory range 1.10.0-1.25.3 (cross-client data leak via shared server/transport instance reuse). | [MIT](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/LICENSE) |
-| cors 2.8.6 | Yes | Express CORS middleware. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. | [MIT](https://github.com/expressjs/cors/blob/master/LICENSE) |
-| dotenv 16.6.1 | Yes | Loads `.env` configuration. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. | [BSD-2-Clause](https://github.com/motdotla/dotenv/blob/master/LICENSE) |
-| express 5.2.1 | Yes | HTTP server for the streamable HTTP transport. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. | [MIT](https://github.com/expressjs/express/blob/master/LICENSE) |
-| express-rate-limit 7.5.1 | Yes | Request rate limiting. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. | [MIT](https://github.com/express-rate-limit/express-rate-limit/blob/main/LICENSE) |
-| mcp-remote 0.14.3 | Yes | Remote MCP client bridge. Under Siemens vulnerability monitoring as of 2026-09-30. Updated from 0.1.37 to 0.14.3 for Siemens SVM notification 236904 (Remote Information Disclosure in OAuth scope handling, versions 0.1.32 to 0.1.38, fixed in 0.1.39). Also **not affected** by the older Remote Command Injection vulnerability in versions 0.0.5 to 0.1.15 (fixed in 0.1.16). | [MIT](https://github.com/geelen/mcp-remote/blob/main/LICENSE) |
-| zod 3.25.76 | Yes | Runtime schema validation for tool inputs. Under Siemens vulnerability monitoring as of 2026-09-01; no known vulnerabilities. | [MIT](https://github.com/colinhacks/zod/blob/main/LICENSE) |
+| @modelcontextprotocol/sdk 1.32.0 | Yes | Model Context Protocol server/client SDK. Under Siemens vulnerability monitoring (vilocify) as of 2026-09-01. Updated from 1.30.0 to 1.32.0 for GHSA-f897-62hf-6gxq, GHSA-6qxp-vccf-f47h, GHSA-46jr-4wx8-v453 and GHSA-22jm-h49p-29qw (fixed in 1.30.1, 1.31.0 and 1.32.0). Pinned above the advisory range 1.10.0-1.25.3 (cross-client data leak via shared server/transport instance reuse). | [MIT](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/LICENSE) |
+| cors 2.8.6 | Yes | Express CORS middleware. Under Siemens vulnerability monitoring (vilocify) as of 2026-09-01; no known vulnerabilities. | [MIT](https://github.com/expressjs/cors/blob/master/LICENSE) |
+| dotenv 16.6.1 | Yes | Loads `.env` configuration. Under Siemens vulnerability monitoring (vilocify) as of 2026-09-01; no known vulnerabilities. | [BSD-2-Clause](https://github.com/motdotla/dotenv/blob/master/LICENSE) |
+| express 5.2.1 | Yes | HTTP server for the streamable HTTP transport. Under Siemens vulnerability monitoring (vilocify) as of 2026-09-01; no known vulnerabilities. | [MIT](https://github.com/expressjs/express/blob/master/LICENSE) |
+| express-rate-limit 7.5.1 | Yes | Request rate limiting. Under Siemens vulnerability monitoring (vilocify) as of 2026-09-01; no known vulnerabilities. | [MIT](https://github.com/express-rate-limit/express-rate-limit/blob/main/LICENSE) |
+| mcp-remote 0.14.3 | Yes | Remote MCP client bridge. Under Siemens vulnerability monitoring (vilocify) as of 2026-09-30. Updated from 0.1.37 to 0.14.3 for Siemens SVM notification 236904 (Remote Information Disclosure in OAuth scope handling, versions 0.1.32 to 0.1.38, fixed in 0.1.39). Also **not affected** by the older Remote Command Injection vulnerability in versions 0.0.5 to 0.1.15 (fixed in 0.1.16). | [MIT](https://github.com/geelen/mcp-remote/blob/main/LICENSE) |
+| zod 4.6.6 | Yes | Runtime schema validation for tool inputs. Under Siemens vulnerability monitoring (vilocify) as of 2026-09-01. Updated from 3.25.76 to 4.6.6 for GHSA-mrhx-c7xc-m3w5 (memory exhaustion validating oversized collections, versions before 4.6.6; no fixed 3.x release). | [MIT](https://github.com/colinhacks/zod/blob/main/LICENSE) |
 
 ### Not distributed
 
@@ -63,13 +63,13 @@ Licence summary: MIT (100), ISC (7), BSD-2-Clause (2), BSD-3-Clause (2). All are
 
 | Component | Version | Licence | Direct dependency |
 |-----------|---------|---------|-------------------|
-| @hono/node-server | 2.1.1 | [MIT](https://opensource.org/license/mit) | no |
-| @modelcontextprotocol/sdk | 1.30.0 | [MIT](https://opensource.org/license/mit) | yes |
+| @hono/node-server | 2.1.6 | [MIT](https://opensource.org/license/mit) | no |
+| @modelcontextprotocol/sdk | 1.32.0 | [MIT](https://opensource.org/license/mit) | yes |
 | accepts | 2.0.0 | [MIT](https://opensource.org/license/mit) | no |
 | ajv | 8.20.0 | [MIT](https://opensource.org/license/mit) | no |
 | ajv-formats | 3.0.1 | [MIT](https://opensource.org/license/mit) | no |
 | array-flatten | 1.1.1 | [MIT](https://opensource.org/license/mit) | no |
-| body-parser | 2.3.0 | [MIT](https://opensource.org/license/mit) | no |
+| body-parser | 2.4.0 | [MIT](https://opensource.org/license/mit) | no |
 | bundle-name | 4.1.0 | [MIT](https://opensource.org/license/mit) | no |
 | bytes | 3.1.2 | [MIT](https://opensource.org/license/mit) | no |
 | call-bind-apply-helpers | 1.0.2 | [MIT](https://opensource.org/license/mit) | no |
@@ -100,7 +100,7 @@ Licence summary: MIT (100), ISC (7), BSD-2-Clause (2), BSD-3-Clause (2). All are
 | express | 5.2.1 | [MIT](https://opensource.org/license/mit) | yes |
 | express-rate-limit | 7.5.1 | [MIT](https://opensource.org/license/mit) | yes |
 | fast-deep-equal | 3.1.3 | [MIT](https://opensource.org/license/mit) | no |
-| fast-uri | 3.1.8 | [BSD-3-Clause](https://opensource.org/license/bsd-3-clause) | no |
+| fast-uri | 3.1.9 | [BSD-3-Clause](https://opensource.org/license/bsd-3-clause) | no |
 | finalhandler | 2.1.1 | [MIT](https://opensource.org/license/mit) | no |
 | forwarded | 0.2.0 | [MIT](https://opensource.org/license/mit) | no |
 | fresh | 2.0.0 | [MIT](https://opensource.org/license/mit) | no |
@@ -112,9 +112,9 @@ Licence summary: MIT (100), ISC (7), BSD-2-Clause (2), BSD-3-Clause (2). All are
 | hasown | 2.0.2 | [MIT](https://opensource.org/license/mit) | no |
 | hono | 4.13.12 | [MIT](https://opensource.org/license/mit) | no |
 | http-errors | 2.0.1 | [MIT](https://opensource.org/license/mit) | no |
-| iconv-lite | 0.7.2 | [MIT](https://opensource.org/license/mit) | no |
+| iconv-lite | 0.7.3 | [MIT](https://opensource.org/license/mit) | no |
 | inherits | 2.0.4 | [ISC](https://opensource.org/license/isc-license-txt) | no |
-| ip-address | 10.7.2 | [MIT](https://opensource.org/license/mit) | no |
+| ip-address | 10.7.6 | [MIT](https://opensource.org/license/mit) | no |
 | ipaddr.js | 1.9.1 | [MIT](https://opensource.org/license/mit) | no |
 | is-docker | 3.0.0 | [MIT](https://opensource.org/license/mit) | no |
 | is-inside-container | 1.0.0 | [MIT](https://opensource.org/license/mit) | no |
@@ -143,8 +143,8 @@ Licence summary: MIT (100), ISC (7), BSD-2-Clause (2), BSD-3-Clause (2). All are
 | path-key | 3.1.1 | [MIT](https://opensource.org/license/mit) | no |
 | path-to-regexp | 8.4.2 | [MIT](https://opensource.org/license/mit) | no |
 | pkce-challenge | 5.0.1 | [MIT](https://opensource.org/license/mit) | no |
-| proxy-addr | 2.0.7 | [MIT](https://opensource.org/license/mit) | no |
-| qs | 6.16.0 | [BSD-3-Clause](https://opensource.org/license/bsd-3-clause) | no |
+| proxy-addr | 2.0.8 | [MIT](https://opensource.org/license/mit) | no |
+| qs | 6.16.2 | [BSD-3-Clause](https://opensource.org/license/bsd-3-clause) | no |
 | range-parser | 1.2.1 | [MIT](https://opensource.org/license/mit) | no |
 | raw-body | 3.0.2 | [MIT](https://opensource.org/license/mit) | no |
 | require-from-string | 2.0.2 | [MIT](https://opensource.org/license/mit) | no |
@@ -165,14 +165,14 @@ Licence summary: MIT (100), ISC (7), BSD-2-Clause (2), BSD-3-Clause (2). All are
 | strict-url-sanitise | 0.0.1 | [MIT](https://opensource.org/license/mit) | no |
 | toidentifier | 1.0.1 | [MIT](https://opensource.org/license/mit) | no |
 | type-is | 2.1.0 | [MIT](https://opensource.org/license/mit) | no |
-| undici | 7.30.0 | [MIT](https://opensource.org/license/mit) | no |
+| undici | 7.30.2 | [MIT](https://opensource.org/license/mit) | no |
 | unpipe | 1.0.0 | [MIT](https://opensource.org/license/mit) | no |
 | utils-merge | 1.0.1 | [MIT](https://opensource.org/license/mit) | no |
 | vary | 1.1.2 | [MIT](https://opensource.org/license/mit) | no |
 | which | 2.0.2 | [ISC](https://opensource.org/license/isc-license-txt) | no |
 | wrappy | 1.0.2 | [ISC](https://opensource.org/license/isc-license-txt) | no |
 | wsl-utils | 0.1.0 | [MIT](https://opensource.org/license/mit) | no |
-| zod | 3.25.76 | [MIT](https://opensource.org/license/mit) | yes |
+| zod | 4.6.6 | [MIT](https://opensource.org/license/mit) | yes |
 | zod-to-json-schema | 3.25.1 | [ISC](https://opensource.org/license/isc-license-txt) | no |
 
 <!-- END GENERATED COMPONENT LIST -->

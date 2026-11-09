@@ -176,3 +176,42 @@ describe('failure reporting', () => {
     expect(occurrences).toHaveLength(1);
   });
 });
+
+describe('request body cap (GHSA-46jr-4wx8-v453)', () => {
+  it('answers an oversized body with a JSON-RPC 413, not a crash or HTML', async () => {
+    const server = app.listen(0, '127.0.0.1');
+    await new Promise<void>(r => server.once('listening', () => r()));
+    const { port } = server.address() as { port: number };
+    try {
+      const big = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'x', params: { pad: 'a'.repeat(1024 * 1024 + 10) } });
+      const res = await fetch(`http://127.0.0.1:${port}/mcp`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${TOKEN}` },
+        body: big
+      });
+      expect(res.status).toBe(413);
+      const json: any = await res.json();
+      expect(json.jsonrpc).toBe('2.0');
+      expect(json.error.message).toContain('too large');
+    } finally {
+      server.close();
+    }
+  });
+
+  it('answers malformed JSON with a JSON-RPC 400 parse error', async () => {
+    const server = app.listen(0, '127.0.0.1');
+    await new Promise<void>(r => server.once('listening', () => r()));
+    const { port } = server.address() as { port: number };
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/mcp`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{not json'
+      });
+      expect(res.status).toBe(400);
+      expect(((await res.json()) as any).error.code).toBe(-32700);
+    } finally {
+      server.close();
+    }
+  });
+});
