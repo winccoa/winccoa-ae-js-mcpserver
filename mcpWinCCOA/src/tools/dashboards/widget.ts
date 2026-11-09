@@ -299,13 +299,11 @@ Build command elements in the WinCC OA UI instead.`,
     {
       dashboardId: z.string().min(1, 'Dashboard ID is required'),
       type: z.enum(['gauge', 'label', 'trend', 'pie', 'progressbar', 'barchart'], {
-        errorMap: () => ({
-          message:
-            'Widget type must be gauge, label, trend, pie, progressbar, or barchart. ' +
-            'These are all read-only visualisations. Command widgets that write to datapoints ' +
-            'or trigger control actions are not supported by this tool - build those in the ' +
-            'WinCC OA UI instead.'
-        })
+        error:
+          'Widget type must be gauge, label, trend, pie, progressbar, or barchart. ' +
+          'These are all read-only visualisations. Command widgets that write to datapoints ' +
+          'or trigger control actions are not supported by this tool - build those in the ' +
+          'WinCC OA UI instead.'
       }),
       title: z.string().min(1, 'Widget title is required'),
       dataPoint: z.string().optional(),
