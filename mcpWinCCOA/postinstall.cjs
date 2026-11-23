@@ -8,14 +8,25 @@ const { buildRuntimeManifest } = require('./manifest.cjs');
 const packageJson = require('./package.json');
 const packageName = packageJson.name;
 
-// Determine the installation directory (where npm install was run)
-const installDir = process.env.INIT_CWD || process.cwd();
-const nodeModulesPath = path.join(installDir, 'node_modules', packageName);
+// The package root is where this script lives. It is inside a node_modules folder
+// whenever the package was installed (also hoisted or with a non-default layout);
+// in a repository checkout it is not.
+const packageRoot = __dirname;
+const isInstalledPackage = packageRoot.split(path.sep).includes('node_modules');
+
+// Two entry points share this script:
+//  - npm "postinstall" lifecycle (npm 11 and older): INIT_CWD is the directory where
+//    `npm install` was run, process.cwd() is the package folder itself.
+//  - the "winccoa-mcp-install" bin (`npx winccoa-mcp-install`, required on npm 12+,
+//    where install scripts are opt-in): the user's project directory is process.cwd().
+const isLifecycle = process.env.npm_lifecycle_event === 'postinstall';
+const installDir = path.resolve(isLifecycle ? (process.env.INIT_CWD || process.cwd()) : process.cwd());
+const nodeModulesPath = packageRoot;
 const srcPath = path.join(nodeModulesPath, 'src');
 
-// Skip postinstall if running inside the package itself (development mode)
-// Check if we're in the package directory by comparing with process.cwd()
-const isDevMode = !fs.existsSync(nodeModulesPath) || process.cwd() === installDir;
+// Skip when running inside the repository itself (development mode): the package is not
+// installed under node_modules, or the target would be the package folder itself.
+const isDevMode = !isInstalledPackage || installDir === path.resolve(packageRoot);
 
 if (isDevMode) {
   console.log('Development mode detected - skipping postinstall.');
@@ -38,6 +49,12 @@ try {
       const srcPath = path.join(buildDir, file.name);
       const destPath = path.join(installDir, file.name);
       
+      // User-owned files: never overwrite on a re-run. fields/ is handled below
+      // (per file, existing files are kept).
+      if (file.name === 'fields' || ((file.name === '.env' || file.name === 'systemprompt.md') && fs.existsSync(destPath))) {
+        continue;
+      }
+
       if (file.isDirectory()) {
         // Copy directory recursively
         fs.cpSync(srcPath, destPath, { recursive: true });
@@ -119,6 +136,7 @@ try {
 
     
     console.log('\n✅ Installation complete!');
+    console.log('(Safe to re-run: npx winccoa-mcp-install. Needed on npm 12+, where install scripts are opt-in.)');
     console.log('\nNext steps:');
     console.log('1. Copy the environment file: cp .env.example .env');
     console.log('2. Edit .env with your configuration');
@@ -130,6 +148,6 @@ try {
   }
   
 } catch (error) {
-  console.error('Error during postinstall:', error.message);
+  console.error('Error during setup:', error.message);
   process.exit(1);
 }

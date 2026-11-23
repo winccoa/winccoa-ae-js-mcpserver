@@ -1,11 +1,12 @@
 {
   "name": "@etm-professional-control/winccoa-mcp-server",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "MCP Server for WinCC OA with field-specific configurations",
   "type": "module",
   "bin": {
     "winccoa-mcp-stdio": "./build/index_stdio.js",
-    "winccoa-mcp-http": "./build/index_http.js"
+    "winccoa-mcp-http": "./build/index_http.js",
+    "winccoa-mcp-install": "./postinstall.cjs"
   },
   "scripts": {
     "build": "node build.mjs",

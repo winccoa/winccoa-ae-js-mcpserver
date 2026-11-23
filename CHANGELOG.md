@@ -4,6 +4,22 @@ All notable changes to the WinCC OA MCP Server are documented here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.5.4] — 2026-11-23
+
+### Fixed
+
+- **Installation with npm 12:** npm 12 makes install scripts opt-in, so the automatic file setup no longer
+  ran and `index_http.js`, `index_stdio.js`, `fields/`, `config/`, `systemprompt.md`, `.env.example` and the
+  runtime `package.json` were not copied into the project directory. The new command
+  `npx winccoa-mcp-install` performs that setup. Run it after `npm install` (required on npm 12 and later,
+  harmless on older npm, where the setup still runs automatically). It can be run repeatedly and keeps an
+  existing `.env`, `systemprompt.md` and edited files in `fields/`. Alternatively, approve the install script with
+  `npm install-scripts approve @etm-professional-control/winccoa-mcp-server`.
+
+### Docs
+
+- README and Installation Guide describe the extra install step and the npm 12 alternative.
+
 ## [1.5.3] — 2026-11-09
 
 Documentation and security-guidance release. There are no code or dependency changes; the `mcp-remote`
