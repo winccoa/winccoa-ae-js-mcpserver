@@ -81,6 +81,22 @@ Then install the required packages:
 npm install @etm-professional-control/winccoa-mcp-server
 ```
 
+Run the setup step to copy the server files into the project directory:
+
+```bash
+npx winccoa-mcp-install
+```
+
+**npm 12 and later do not run install scripts by default**, so this step is required there; on older npm
+the files are copied automatically and running it again is harmless (it keeps your `.env`, `systemprompt.md` and
+any edited files in `fields/`). Alternatively, approve the package's install script once and re-install:
+
+```bash
+npm install-scripts approve @etm-professional-control/winccoa-mcp-server
+```
+
+(or allow it through the `allowScripts` setting in your npm configuration).
+
 Install the WinCC OA JavaScript Manager package from your local WinCC OA installation. The path depends on your WinCC OA version and installation:
 
 **WinCC OA 3.20** (default path):
